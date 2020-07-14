@@ -1,6 +1,8 @@
 Battle = {}
 Battle.mt =  {__index = Battle}
 local lg = love.graphics
+local lfs = love.filesystem
+local nfs = require("nativefs")
 
 Battle.s = {}
 
@@ -26,6 +28,36 @@ function Battle:setUp(x, y, w, h)
   self.channel:setUp(x, y, w, h)
 end
 
+local progress_channel = love.thread.getChannel("progress")
+local requests_channel = love.thread.getChannel("requests")
+function Battle:update(dt)
+  local progress_update = progress_channel:pop()
+  while progress_update do
+    if progress_update.finished then
+      self.dl_status.finished = true
+      self.dl_status.downloading = false
+      self:getMinimap()
+      lobby.refreshBattleList()
+    end
+    if progress_update.file_size then
+      self.dl_status.file_size = progress_update.file_size
+    end
+    if progress_update.chunk then
+      self.dl_status.downloaded = self.dl_status.downloaded + progress_update.chunk
+    end
+    if progress_update.error then
+      self.mirrorID = self.mirrorID + 1
+      if self.mirrorID > #self.mirrors then
+        self.dl_status = nil
+        self.download_thread = nil
+        return
+      end
+      self:pushDownloadRequest(self.mirrorID)
+    end
+    progress_update = progress_channel:pop()
+  end
+end
+
 function Battle:draw()
   lg.setFont(fonts.roboto)
   local fontHeight = fonts.roboto:getHeight()
@@ -33,6 +65,9 @@ function Battle:draw()
   lg.printf(self.mapName, lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8 + 20 + fontHeight, 1024/8, "left")
   if self.minimap then
     lg.draw(self.minimap, lobby.fixturePoint[2].x - 10 - 1024/8, 20 + fontHeight, 0, 1/8, 1/8)
+  elseif self.dl_status and not self.dl_status.finished then
+    lg.print(self.dl_status.filename, lobby.fixturePoint[2].x - 10 - 1024/8, 20 + fontHeight)
+    lg.print(self.dl_status.downloaded / self.dl_status.file_size .. "%", lobby.fixturePoint[2].x - 10 - 1024/8, 20 + 2*fontHeight)
   else
     lg.draw(img["nomap"], lobby.fixturePoint[2].x - 10 - 1024/8, 20 + fontHeight, 0, 1024/(8*50))
   end
@@ -95,31 +130,61 @@ function Battle:draw()
   lg.origin()
 end
 
-function Battle:getMinimap()
-  local mapName = string.gsub(self.mapName:lower(), " ", "_")
-  local success = love.filesystem.mount(mapName .. ".sd7", "map")
-  if not success then 
-    success = love.filesystem.mount(mapName .. ".sdz", "map")
-  end
-  if not success then
-    self.minimap = nil
-    return
-  end
-  local smf = ""
-  for i, k in pairs(love.filesystem.getDirectoryItems( "map/maps" )) do
-    if string.find(k, ".smf") then
-      smf = k
-      break
+local function hasMap(map)
+  for i, k in pairs(nfs.getDirectoryItems(lobby.mapFolder)) do
+    if string.find(k, map) then
+      return k
     end
   end
-  if smf == "" then
-    self.minimap = nil
-    return
+  return false
+end
+
+function Battle:mapHandler()
+  local mapName = string.gsub(self.mapName:lower(), " ", "_")
+  if hasMap(self.mapName) or self.dl_status then return end
+  self.mirrors = {}
+  self.mirrors[1] = "https://api.springfiles.com/files/maps/" .. mapName .. ".sd7"
+  self.mirrors[2] = "https://api.springfiles.com/files/maps/" .. mapName .. ".sdz"
+  self.mirrors[3] = "https://springfightclub.com/data/maps/" .. mapName .. ".sd7"
+  self.mirrors[4] = "https://springfightclub.com/data/maps/" .. mapName .. ".sdz"
+  self.mirrorID = 1
+  self.download_thread = love.thread.newThread("downloader.lua")
+  self.download_thread:start()
+  self:pushDownloadRequest(self.mirrorID)
+end
+
+function Battle:pushDownloadRequest(mirror)
+  self.dl_status = {
+    downloading = true,
+    finished = false,
+    downloaded = 0,
+    file_size = 0,
+    filename = string.match(self.mirrors[mirror], ".*/(.*)")
+  }
+  return requests_channel:push({
+    url = self.mirrors[mirror],
+    filename = self.dl_status.filename,
+    filepath = lobby.mapFolder
+  })
+end
+
+local function getSMF()
+  for i, k in pairs(lfs.getDirectoryItems( "map/maps" )) do
+    if string.find(k, ".smf") then
+      return k
+    end
   end
-  local mapData = love.filesystem.read("map/maps/" .. smf)
-  
-  love.filesystem.unmount(mapName .. ".sdz")
-  love.filesystem.unmount(mapName .. ".sd7")
+  return false
+end
+
+function Battle:getMinimap()
+  local mapName = string.gsub(self.mapName:lower(), " ", "_")
+  local mapArchive = hasMap(mapName)
+  if not nfs.mount(lobby.mapFolder .. mapArchive, "map") then self.minimap = nil return end
+  local smf = getSMF()
+  if not smf then return self.minimap = nil return end
+  local mapData, err = lfs.read("map/maps/" .. smf)
+  nfs.unmount(lobby.mapFolder .. mapArchive, "map")
   
   local v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,mapOffset,i = love.data.unpack("c16i4I4i4i4i4i4i4ffi4i4i4i4", mapData)
 

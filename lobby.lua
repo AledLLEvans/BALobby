@@ -214,7 +214,7 @@ function lobby.update( dt )
   end
   --Map downloading
   local battle = Battle:getActiveBattle()
-  if battle then battle:update(dt) end
+  if battle and battle.dl_status and not battle.dl_status.finished then battle:update(dt) end
 end
 
 function lobby.resize( w, h )
