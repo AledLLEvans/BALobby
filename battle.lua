@@ -46,6 +46,7 @@ function Battle:update(dt)
       self.dl_status.downloaded = self.dl_status.downloaded + progress_update.chunk
     end
     if progress_update.error then
+      print(self.mirrors[self.mirrorID], self.dl_status.filename, progress_update.error)
       self.mirrorID = self.mirrorID + 1
       if self.mirrorID > #self.mirrors then
         self.dl_status = nil
@@ -67,7 +68,7 @@ function Battle:draw()
     lg.draw(self.minimap, lobby.fixturePoint[2].x - 10 - 1024/8, 20 + fontHeight, 0, 1/8, 1/8)
   elseif self.dl_status and not self.dl_status.finished then
     lg.print(self.dl_status.filename, lobby.fixturePoint[2].x - 10 - 1024/8, 20 + fontHeight)
-    lg.print(self.dl_status.downloaded / self.dl_status.file_size .. "%", lobby.fixturePoint[2].x - 10 - 1024/8, 20 + 2*fontHeight)
+    lg.print(tostring(math.ceil(100*self.dl_status.downloaded/self.dl_status.file_size)) .. "%", lobby.fixturePoint[2].x - 10 - 1024/8, 20 + 2*fontHeight)
   else
     lg.draw(img["nomap"], lobby.fixturePoint[2].x - 10 - 1024/8, 20 + fontHeight, 0, 1024/(8*50))
   end
@@ -75,7 +76,7 @@ function Battle:draw()
   fontHeight = fonts.robotosmall:getHeight()
   lg.setFont(fonts.robotosmall)
   lg.translate(lobby.fixturePoint[1].x + 25, 0 )
-  self.startButton:draw()
+  --self.startButton:draw()
   local teamNo = 1
   for i, user in pairs(self.playersByTeam) do
     local username = user.name
@@ -107,7 +108,8 @@ function Battle:draw()
   end
   y = math.max(8*fontHeight, y + fontHeight)
   lg.print("Spectators", 60, 40 + y)
-  y = y + fontHeight/2
+  y = y + 3*fontHeight/2
+  local specy = y
   for username, user in pairs(self.users) do
     if user.isSpectator and user.battleStatus then
       if user.icon then
@@ -120,7 +122,8 @@ function Battle:draw()
       y = y + fontHeight
       if y > lobby.fixturePoint[1].y then
         lg.translate(120, 0)
-        if lg.inverseTransformPoint( 120 ) > lobby.fixturePoint[2].x - lobby.fixturePoint[1].x then
+        y = specy
+        if lg.inverseTransformPoint( 120, 0 ) > lobby.fixturePoint[2].x - lobby.fixturePoint[1].x then
           lg.origin()
           return
         end
@@ -131,10 +134,9 @@ function Battle:draw()
 end
 
 local function hasMap(map)
+  map = string.gsub(map, "%-", "%%%-")
   for i, k in pairs(nfs.getDirectoryItems(lobby.mapFolder)) do
-    if string.find(k, map) then
-      return k
-    end
+    if string.find(k, map) then return k end
   end
   return false
 end
@@ -168,10 +170,14 @@ function Battle:pushDownloadRequest(mirror)
   })
 end
 
-local function getSMF()
-  for i, k in pairs(lfs.getDirectoryItems( "map/maps" )) do
-    if string.find(k, ".smf") then
-      return k
+local function getSMF(dir)
+  for i, k in pairs(lfs.getDirectoryItems( dir )) do
+    local path = dir .. "/" .. k
+    if lfs.getInfo(path).type == "directory" then
+      local smf = getSMF(path)
+      if smf then return smf end
+    elseif string.find(k, ".smf") then
+      return path
     end
   end
   return false
@@ -180,10 +186,9 @@ end
 function Battle:getMinimap()
   local mapName = string.gsub(self.mapName:lower(), " ", "_")
   local mapArchive = hasMap(mapName)
-  if not nfs.mount(lobby.mapFolder .. mapArchive, "map") then self.minimap = nil return end
-  local smf = getSMF()
-  if not smf then return self.minimap = nil return end
-  local mapData, err = lfs.read("map/maps/" .. smf)
+  if not mapArchive or not nfs.mount(lobby.mapFolder .. mapArchive, "map") then self.minimap = nil return end
+  local mapData = lfs.read(getSMF("map"))
+  if not mapData then self.minimap = nil return end
   nfs.unmount(lobby.mapFolder .. mapArchive, "map")
   
   local v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,mapOffset,i = love.data.unpack("c16i4I4i4i4i4i4i4ffi4i4i4i4", mapData)

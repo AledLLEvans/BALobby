@@ -233,9 +233,9 @@ function BATTLEOPENED.respond(words, sentances)
   battle.engineName = sentances[2]
   battle.engineVersion = sentances[2]
   
-  battle.map = words[11]
+  battle.mapName = words[11]
   for i = 12, #words do
-    battle.map = battle.map .. " " .. words[i]
+    battle.mapName = battle.mapName .. " " .. words[i]
   end
   battle.title = string.gsub(string.gsub(sentances[2], "%a+ ", "", 1), "%b() ", "", 1)
   battle.gameName = sentances[#sentances] or "gameName"
@@ -243,7 +243,6 @@ function BATTLEOPENED.respond(words, sentances)
   --battle.channel = words[16]
   battle.spectatorCount = 0
   battle.locked = false
-  battle.mapName = "mapName"
   battle.users = {}
   battle.userCount = 0
   
@@ -403,12 +402,12 @@ function JOINBATTLE.respond(words, sentances)
   else
     battle.channel.display = true
   end
-  battle.startButton = Button:create(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50, 90, 40, "Start", function() print("buttonpressed") end)
+  battle:mapHandler()
+  --battle.startButton = Button:create(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50, 90, 40, "Start", function() print("buttonpressed") end)
   Channel:refreshTabs()
   Channel.active = Channel.s["Battle_" .. id]
   battle.display = true
   lobby.refreshBattleList()
-  battle:mapHandler()
 end
 function JOINBATTLEFAILED.respond(words, sentances)
   Channel:broadcast(" REQUEST TO JOIN BATTLE FAILED, REASON: " .. string.gsub(sentances[1], "%S+ ", "", 1))
@@ -603,14 +602,12 @@ function UPDATEBATTLEINFO.respond(words, sentances)
   local spectatorCount = words[2] or 0
   local locked = words[3]
   local mapHash = words[4]
-  local mapName = string.gsub(string.gsub(string.gsub(sentances[1], "%a+ ", "", 1), "%d+ ", "", 4), "-", "")
+  local mapName = string.gsub(string.gsub(sentances[1], "%a+ ", "", 1), "-*%d+ ", "", 4)
   Battle.s[id].locked = locked
   Battle.s[id].mapHash = mapHash
   Battle.s[id].spectatorCount = spectatorCount
   Battle.s[id].mapName = mapName
-  
   --Battle.s[id]:mapHandler()
-  
   Battle.s[id]:getMinimap()
   lobby.refreshBattleList()
 end

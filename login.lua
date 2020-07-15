@@ -33,7 +33,6 @@ function login.enter()
   end
   
   Button:releaseAll()
-  love.window.setMode( 800, 600, {resizable = true, minwidth = 640, minheight = 400} )
   lobby.width = 800
   lobby.height = 600
   login.width = 800

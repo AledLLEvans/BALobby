@@ -94,7 +94,7 @@ end
 BattleButton = Button:create()
 BattleButton.mt = {__index = BattleButton}
 BattleButton.s = {}
-function BattleButton:create(id, right)
+function BattleButton:create(id)
   local new = {}
   setmetatable(new, BattleButton.mt)
   
@@ -128,7 +128,7 @@ function BattleButton:draw()
   --lg.printf(battle.gameName, x-5, y +10, w, "center")
   lg.printf(battle.title, x+60, y+5, w-60, "left")
   local _, wt = fonts.robotosmall:getWrap(battle.title,w-60)
-  lg.printf(battle.map, x+5, y + h - fontHeight - 2, w-5, "left")
+  lg.printf(battle.mapName, x+5, y + h - fontHeight - 2, w-5, "left")
   lg.printf(battle.userCount - battle.spectatorCount + 1 .. "/" .. battle.maxPlayers .. " +" .. battle.spectatorCount, x+60, y+5+fontHeight*#wt + 1, w, "left")
   lg.setColor(1,1,1)
   if battle.minimap then
