@@ -4,7 +4,7 @@ local lg = love.graphics
 
 Button.actives = {}
 
-function Button:create(x,y,w,h,text,func)
+function Button:new(x,y,w,h,text,func)
   local o = {}
   setmetatable(o, Button.mt)
   o.type = "default"
@@ -46,19 +46,15 @@ function Button:click()
   self.func()
 end
 
-function Button:cancel()
-  self.func = function() end
-end
-
 function Button:setFunc(func)
   self.func = func
 end
 
-ChannelTab = Button:create()
+ChannelTab = Button:new()
 ChannelTab.mt =  {__index = ChannelTab}
 ChannelTab.s = {}
 
-function ChannelTab:create(x,y,w,h,text,func)
+function ChannelTab:new(x,y,w,h,text,func)
   local o = {}
   setmetatable(o, ChannelTab.mt)
   o.type = "default"
@@ -91,12 +87,12 @@ function ChannelTab:draw()
   lg.printf(self.text, self.x, self.y + self.h/2 + h - fonts.robotosmall:getHeight()/2, self.w, "center")
 end
 
-BattleButton = Button:create()
-BattleButton.mt = {__index = BattleButton}
-BattleButton.s = {}
-function BattleButton:create(id)
-  local new = {}
-  setmetatable(new, BattleButton.mt)
+BattleTab = Button:new()
+BattleTab.mt = {__index = BattleTab}
+BattleTab.s = {}
+function BattleTab:new(id)
+  local new = Button:new(id)
+  setmetatable(new, BattleTab.mt)
   
   new.visible = true
   new.battleid = id
@@ -107,13 +103,14 @@ function BattleButton:create(id)
     end
     local sp = string.match(love.math.random(), "0%.(.*)")
     Battle.s[id].myScriptPassword = sp
-    tcp:send("JOINBATTLE " .. id .. " " .. sp .."\n")
+    tcp:send("JOINBATTLE " .. id .. " EMPTY " .. sp .."\n")
+    print("JOINBATTLE " .. id .. " EMPTY " .. sp .."\n")
   end
   table.insert(self.s, new)
   return new
 end
 
-function BattleButton:draw()
+function BattleTab:draw()
   local battle = Battle.s[self.battleid]
   local y = self.y
   local x = self.x
@@ -136,4 +133,16 @@ function BattleButton:draw()
   else
     lg.draw(img["nomap"], x + 4, y + 15)
   end
+end
+
+BattleButton = Button:new()
+BattleButton.mt = {__index = BattleButton}
+BattleButton.s = {}
+function BattleButton:new(x,y,w,h,text,func)
+  local new = Button:new(x,y,w,h,text,func)
+  setmetatable(new, BattleButton.mt)
+  
+  new.visible = true
+  table.insert(self.s, new)
+  return new
 end

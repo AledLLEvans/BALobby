@@ -9,14 +9,14 @@ local address, port = "springfightclub.com", 8200
 function lobby.writeScript()
   local battle = Battle:getActiveBattle()
   script = {
-    player0 = {name = lobby.username},
-    gametype = battle.gameName,
+    --player0 = {name = lobby.username},
+    --gametype = battle.gameName,
     HostIP = battle.ip,
     HostPort = battle.hostport or battle.port,
-    MapName = battle.mapName,
+    --MapName = battle.mapName,
     MyPlayerName = lobby.username,
     IsHost=0,
-    SourcePort=0,
+    --SourcePort=0,
     MyPasswd=battle.myScriptPassword
   }
   
@@ -77,7 +77,7 @@ function lobby.mousepressed(x,y,b)
   if math.abs(y - lobby.fixturePoint[1].y) < 10 and x > lobby.fixturePoint[1].x and x < lobby.fixturePoint[2].x  then
     lobby.dragY = true
   end
-  for i, k in pairs(BattleButton.s) do
+  for i, k in pairs(BattleTab.s) do
     if x > k.x and x < k.x + k.w and y > k.y and y < k.y + k.h then
       lobby.clickedBattleID = i
     end
@@ -150,7 +150,7 @@ function lobby.mousereleased(x,y,b)
       k:click()
     end
   end
-  for i, k in pairs(BattleButton.s) do
+  for i, k in pairs(BattleTab.s) do
     if x > k.x and x < k.x + k.w and y > k.y and y < k.y + k.h and lobby.clickedBattleID == i then
       k:click()
     end
@@ -326,18 +326,52 @@ function lobby.refreshBattleList()
   for rank = 1, #BattleIDsByPlayerCount do
     Battle.s[BattleIDsByPlayerCount[rank]].rankByPlayerCount = rank
   end
-  BattleButton.s = {}
-  lobby.createBattleButtons(BattleIDsByPlayerCount)
+  BattleTab.s = {}
+  lobby.createBattleTabs(BattleIDsByPlayerCount)
 end
 
-function lobby.createBattleButtons(BattleIDsByPlayerCount)
+function lobby.setSynced(b)
+  User.s[lobby.username].synced = b
+  lobby.sendMyBattleStatus()
+end
+
+function lobby.setSpectator(b)
+  User.s[lobby.username].spectator = b
+  lobby.sendMyBattleStatus()
+end
+
+function lobby.setReady(b)
+  User.s[lobby.username].ready = b
+  lobby.sendMyBattleStatus()
+end
+
+function lobby.setColor(r, g, b, a) --needs completing
+  if type(r) == "table" then r = r[1] g = r[2] b = r[3] a = r[4] end
+  --User.s[lobby.username].color = r * 255
+  lobby.sendMyBattleStatus()
+end
+
+function lobby.sendMyBattleStatus()
+  local user = User.s[lobby.username]
+  --local status = user.battleStatus
+  local b = {
+    user.ready and 1 or 0,
+    user.spectator and 0 or 1,
+    user.synced and 1 or 0
+  }
+  local newstatus = b[1] * 2 + b[2] * 2 ^ 10 + 2 ^ (23 - b[3])
+  local color = user.color
+  lobby.send("MYBATTLESTATUS " .. newstatus .. " " .. color .. "\n")
+end
+
+function lobby.createBattleTabs(BattleIDsByPlayerCount)
   local i = 1
   local y = 0
   local x = 0
   while y < lobby.height and x + 170 < lobby.fixturePoint[1].x and i < #BattleIDsByPlayerCount do
-    local battleButton = BattleButton:create(BattleIDsByPlayerCount[i])
-    battleButton:setPos(x + 10, y+70)
-    battleButton:setDimensions(160, 80)
+    local BattleTab = BattleTab:new(BattleIDsByPlayerCount[i])
+    BattleTab:setPos(x + 10, y+70)
+    BattleTab:setDimensions(160, 80)
     i = i + 1
     y = y + 90
     if y + 90 + 90 > lobby.height then
@@ -387,7 +421,7 @@ function lobby.window.battleList()
   local w = fonts.notable:getWidth("BATTLES")
   if w + 10 < lobby.fixturePoint[1].x then lg.print("BATTLES", 10, 10) end
   lg.setFont(fonts.robotosmall)
-  for i, k in pairs(BattleButton.s) do
+  for i, k in pairs(BattleTab.s) do
     k:draw()
   end
 end

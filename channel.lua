@@ -80,7 +80,7 @@ function Channel:refreshTabs()
         showChanName = "Battle"
       end
       local textWidth = fonts.robotosmall:getWidth(chanName)
-      self.tabs[chanName] = ChannelTab:create(
+      self.tabs[chanName] = ChannelTab:new(
         totalWidth + lobby.fixturePoint[1].x + 4,
         lobby.fixturePoint[1].y + 3,
         3 + textWidth,

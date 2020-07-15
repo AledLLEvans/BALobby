@@ -200,9 +200,10 @@ function ADDUSER.respond(words, sentances)
   user.isBot = false
   user.icon = false
   if user.name == lobby.username then
-    user.toggleready = 1
-    user.spectator = 0
+    user.ready = 0
+    user.spectator = 1
     user.synced = 0
+    user.color = 0
   end
   User:new(user)
 end
@@ -403,7 +404,15 @@ function JOINBATTLE.respond(words, sentances)
     battle.channel.display = true
   end
   battle:mapHandler()
-  --battle.startButton = Button:create(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50, 90, 40, "Start", function() print("buttonpressed") end)
+    
+  battle.buttons = {
+  spectate = BattleButton:new(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50, 90, 40,
+    "Spectate",
+    function() lobby.setSpectator(not User.s[lobby.username].spectator) end),
+  ready = BattleButton:new(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50, 90, 40,
+    "Ready",
+    function() lobby.setReady(not User.s[lobby.username].ready) end),
+    }
   Channel:refreshTabs()
   Channel.active = Channel.s["Battle_" .. id]
   battle.display = true
@@ -495,10 +504,7 @@ function REMOVEUSER.respond(words, sentances)
   end
 end
 function REQUESTBATTLESTATUS.respond(words, sentances)
-  local user = User.s[lobby.username]
-  local status = User.s[lobby.username].battleStatus
-  local newstatus = user.toggleready * 2 + user.spectator * 2 ^ 10 + 2 ^ (23 - user.synced)
-  lobby.send("MYBATTLESTATUS " .. newstatus .. " 255" .. "\n")
+  lobby.sendMyBattleStatus()
 end
 function RESENDVERIFICATIONACCEPTED.respond(words, sentances)
 end

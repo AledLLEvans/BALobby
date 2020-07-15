@@ -37,6 +37,7 @@ function Battle:update(dt)
       self.dl_status.finished = true
       self.dl_status.downloading = false
       self:getMinimap()
+      User.s[lobby.username].synced = true
       lobby.refreshBattleList()
     end
     if progress_update.file_size then
@@ -143,7 +144,11 @@ end
 
 function Battle:mapHandler()
   local mapName = string.gsub(self.mapName:lower(), " ", "_")
-  if hasMap(self.mapName) or self.dl_status then return end
+  if hasMap(mapName) then 
+    lobby.setSynced(true)
+    return
+  end
+  if self.dl_status then return end
   self.mirrors = {}
   self.mirrors[1] = "https://api.springfiles.com/files/maps/" .. mapName .. ".sd7"
   self.mirrors[2] = "https://api.springfiles.com/files/maps/" .. mapName .. ".sdz"
