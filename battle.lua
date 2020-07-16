@@ -65,6 +65,8 @@ function Battle:update(dt)
 end
 
 function Battle:draw()
+  self.buttons.spectate:draw()
+  self.buttons.ready:draw()
   lg.setFont(fonts.roboto)
   local fontHeight = fonts.roboto:getHeight()
   lg.print(self.title, lobby.fixturePoint[1].x + 10, 10)
@@ -81,7 +83,6 @@ function Battle:draw()
   fontHeight = fonts.robotosmall:getHeight()
   lg.setFont(fonts.robotosmall)
   lg.translate(lobby.fixturePoint[1].x + 25, 0 )
-  --self.startButton:draw()
   local teamNo = 1
   for i, user in pairs(self.playersByTeam) do
     local username = user.name

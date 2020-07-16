@@ -21,10 +21,6 @@ function lobby.writeScript()
     MyPasswd=battle.myScriptPassword
   }
   
-  for i, k in pairs(script) do
-    print(i, k)
-  end
-  
   local txt = io.open('script.txt', 'w+')
 
 	txt:write('[GAME]\n{\n\n')
@@ -136,21 +132,21 @@ function lobby.mousereleased(x,y,b)
   if not b == 1 then return end
   Channel:getTextbox():click(x,y)
   for i, k in pairs(Button.actives) do
-    if x > k.x and x < k.x + k.w and y > k.y and y < k.y + k.h then
-      k:click()
-    end
+    k:click(x,y)
   end
   for i, k in pairs(Channel.tabs) do
-    if x > k.x and x < k.x + k.w and y > k.y and y < k.y + k.h then
-      k:click()
-    end
+    k:click(x,y)
   end
   for i, k in pairs(BattleTab.s) do
-    if x > k.x and x < k.x + k.w and y > k.y and y < k.y + k.h and lobby.clickedBattleID == i then
-      k:click()
+    if lobby.clickedBattleID == i then
+      k:click(x,y)
     end
   end
   lobby.clickedBattleID = 0
+  if Battle:getActiveBattle() then
+    Battle:getActiveBattle().buttons.spectate:click(x,y)
+    Battle:getActiveBattle().buttons.ready:click(x,y)
+  end
 end
   
   
@@ -239,6 +235,10 @@ function lobby.resize( w, h )
   Channel:refreshTabs()
   Channel.textbox:setPos(lobby.fixturePoint[1].x, lobby.height - 20):setDimensions(lobby.fixturePoint[2].x - lobby.fixturePoint[1].x, 20)
   lobby.refreshBattleList()
+  if Battle:getActiveBattle() then
+    Battle:getActiveBattle().buttons.spectate:setPos(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50)
+    Battle:getActiveBattle().buttons.ready:setPos(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50)
+  end
 end
 
 function lobby.textinput (text)
@@ -373,6 +373,7 @@ end
 
 function lobby.setSpectator(b)
   User.s[lobby.username].spectator = b
+  User.s[lobby.username].ready = false
   lobby.sendMyBattleStatus()
 end
 
@@ -472,15 +473,17 @@ function lobby.window.users()
   
   if channel then 
     if channel.title == "server" then
-      lg.print("Server", lobby.fixturePoint[2].x + 10, 10)
+      lg.print("Users on the Server", lobby.fixturePoint[2].x + 10, 10)
       list = User.s
-    elseif string.find(channel.title, "battle_%d+") then
-      lg.print("Battle", lobby.fixturePoint[2].x + 10, 10)
+    elseif string.find(channel.title, "Battle_%d+") then
+      lg.print("Users in this battle", lobby.fixturePoint[2].x + 10, 10)
       list = Battle:getActiveBattle():getUsers()
     else
-      lg.print(channel, lobby.fixturePoint[2].x + 10, 10)
+      lg.print("Users in channel " .. channel.title, lobby.fixturePoint[2].x + 10, 10)
       list = channel.users
     end
+  else
+    lg.print("Users on the Server", lobby.fixturePoint[2].x + 10, 10)
   end
   
   for username, user in pairs(list) do

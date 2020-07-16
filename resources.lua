@@ -11,7 +11,8 @@ local IMAGE_FILES = {
   "nomap",
   "gamepad",
   "nothome",
-  "monitor"
+  "monitor",
+  "popup_box"
 }
 
 local flag_codes ={

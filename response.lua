@@ -208,10 +208,12 @@ function ADDUSER.respond(words, sentances)
   User:new(user)
 end
 function AGREEMENT.respond(words, sentances)
+  table.insert(login.log, {from = true, msg = sentances[1] })
 end
 function AGREEMENTEND.respond(words, sentances)
-  lobby.send("CONFIRMAGREEMENT\n")
+  lobby.send("CONFIRMAGREEMENT" .. "\n")
   lobby.send(lobby.loginString)
+  table.insert(login.log, {from = true, msg = reason })
 end
 function BATTLECLOSED.respond(words, sentances)
   local id = words[1]
@@ -410,9 +412,9 @@ function JOINBATTLE.respond(words, sentances)
   spectate = BattleButton:new(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50, 90, 40,
     "Spectate",
     function() lobby.setSpectator(not User.s[lobby.username].spectator) end),
-  ready = BattleButton:new(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50, 90, 40,
+  ready = BattleButton:new(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50, 90, 40,
     "Ready",
-    function() lobby.setReady(not User.s[lobby.username].ready) end),
+    function() if not User.s[lobby.username].spectator then lobby.setReady(not User.s[lobby.username].ready) end end),
     }
   Channel:refreshTabs()
   Channel.active = Channel.s["Battle_" .. id]
@@ -488,8 +490,12 @@ end
 function REDIRECT.respond(words, sentances)
 end
 function REGISTRATIONACCEPTED.respond(words, sentances)
+  local reason = sentances[1]
+  table.insert(login.log, {from = true, msg = reason })
 end
 function REGISTRATIONDENIED.respond(words, sentances)
+  local reason = sentances[1]
+  table.insert(login.log, {from = true, msg = reason })
 end
 function REMOVEBOT.respond(words, sentances)
 end

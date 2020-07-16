@@ -51,6 +51,13 @@ function login.enter()
     y = lobby.height/2-152/2+40 + 40,
     w = 100, h = 20, name = 'Password'})
   
+  login.mode = "login"
+  
+  login.buttons = {
+    login = Button:new(lobby.width/2 - 80, loginBox.y - 115, 80, 30, "Login", function() login.mode = "login" end),
+    register = Button:new(lobby.width/2, loginBox.y - 115, 80, 30, "Register", function() login.mode = "register" end)
+  }
+  
   state = STATE_LOGIN
   love.keyboard.setKeyRepeat(true)
   settings.unpack()
@@ -179,6 +186,17 @@ function settings.add(t)
   return settings.pack()
 end
 
+function login.registerAccount()
+  local ip, _ = tcp:getsockname()
+  if not ip then table.insert(login.log, {msg = "NO IP, NOT CONNECTED, CHECK INTERNET CONNECTION"}) return end
+  login.registerString = "REGISTER " .. 
+  login.nameBox.text .. 
+  " " .. 
+  login.passBox.base64 .. "\n"
+  tcp:send(login.registerString)
+  table.insert(login.log, {to = true, msg = "REGISTER " .. login.nameBox.text })
+end
+
 function login.connectToServer()
   if login.savePass then
     settings.add({name = login.nameBox.text, pass = login.passBox.base64})
@@ -251,6 +269,8 @@ function login.resize( w, h )
   loginBox.y = h/2
   login.nameBox:setPos(w/2 - 244/2 + 60, h/2 - 152/2 + 40)
   login.passBox:setPos(w/2 - 244/2 + 60, h/2 - 152/2 + 40 + 40)
+  login.buttons.login:setPos(lobby.width/2 - 80, loginBox.y - 115)
+  login.buttons.register:setPos(lobby.width/2, loginBox.y - 115)
 end
 
 function login.textinput (text)
@@ -275,8 +295,12 @@ local keypress = {
   end,
   ["return"] = function()
     if login.delay > 0 then return end
-    login.connectToServer()
     login.delay = 0.5
+    if login.mode == "login" then
+      login.connectToServer()
+    elseif login.mode == "register" then
+      login.registerAccount()
+    end
   end,
   ["tab"] = function() 
     login.nameBox:toggle()
@@ -304,19 +328,28 @@ function login.mousereleased (x, y, b)
   if not b == 1 then return end
   login.nameBox:click(x,y)
   login.passBox:click(x,y)
-  for i, k in pairs(Button.actives) do
-    if x > k.x and x < k.x + k.w and y > k.y and y < k.y + k.h then
-      k:click()
-    end
+  for i, k in pairs(login.buttons) do
+    k:click(x,y)
   end
 end
 
 function login.drawLoginBox()
-  lg.draw(img["loginBox"], loginBox.x, loginBox.y, 0, 1, 1, 244/2, 152/2) 
-
+  lg.draw(img["popup_box"], loginBox.x-8, loginBox.y-35, 0, 1.2, 1.2, 240/2, 200/2)
+  lg.draw(img["loginBox"], loginBox.x-8, loginBox.y-8, 0, 1, 1, 244/2, 152/2)
+  lg.print("Press Enter to continue", loginBox.x-90, loginBox.y-145)
   login.nameBox:draw()
   login.passBox:draw()
+  lg.setColor(0,0,0)
+  lg.rectangle("fill",
+    login.buttons[login.mode].x,
+    login.buttons[login.mode].y,
+    login.buttons[login.mode].w,
+    login.buttons[login.mode].h
+  )
   lg.setColor(1,1,1)
+  for _, k in pairs(login.buttons) do
+    k:draw()
+  end
 end
 
 function login.drawDownloadBars()
@@ -345,7 +378,6 @@ function login.drawDownloadBars()
 end
 
 function login.draw()
-  --lg.draw(img["balanced+annihilation+big+loadscreen-min"], 0, 0)
   lg.draw(login.video, 0, 0, 0, login.width/1920, login.height/1080)
   login.drawLoginBox()
   if not lobby.gotEngine then login.drawDownloadBars() end
@@ -357,8 +389,5 @@ function login.draw()
     local _, wt = fonts.robotosmall:getWrap(txt, 156)
     lg.printf(txt, 12, 70 + i*fontHeight, 156, "left")
     i = i - #wt
-  end
-  for i, k in pairs(Button.actives) do
-    k:draw()
   end
 end

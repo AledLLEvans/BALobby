@@ -42,8 +42,10 @@ function Button:releaseAll()
   self.actives = {}
 end
 
-function Button:click()
-  self.func()
+function Button:click(x,y)
+  if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
+    self.func()
+  end
 end
 
 function Button:setFunc(func)
@@ -111,7 +113,6 @@ function BattleTab:new(id)
     local sp = string.match(love.math.random(), "0%.(.*)")
     Battle.s[id].myScriptPassword = sp
     tcp:send("JOINBATTLE " .. id .. " EMPTY " .. sp .."\n")
-    print("JOINBATTLE " .. id .. " EMPTY " .. sp .."\n")
   end
   table.insert(self.s, new)
   return new
