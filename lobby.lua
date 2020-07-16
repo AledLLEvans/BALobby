@@ -1,5 +1,6 @@
 lobby = {}
 local lg = love.graphics
+local lk = love.keyboard
 local base64 = require("base64")
 local md5 = require("md5")
   
@@ -108,6 +109,9 @@ function lobby.mousemoved( x, y, dx, dy, istouch )
   local Ymax = lobby.height - 100
   if lobby.dragLeftX then
     lobby.fixturePoint[1].x = math.min(leftMax, math.max(leftMin, x))
+    for _, chantab in pairs(ChannelTab.s) do
+      chantab.x = chantab.x + dx
+    end
   end
   if lobby.dragRightX then
     lobby.fixturePoint[2].x = math.min(rightMax, math.max(rightMin, x))
@@ -115,10 +119,8 @@ function lobby.mousemoved( x, y, dx, dy, istouch )
   if lobby.dragY then
     lobby.fixturePoint[1].y = math.min(Ymax, math.max(Ymin, y))
     lobby.fixturePoint[2].y = lobby.fixturePoint[1].y
-  end
-  if lobby.dragLeftX or lobby.dragY then
     for _, chantab in pairs(ChannelTab.s) do
-      chantab.x, chantab.y = chantab.x + dx, chantab.y + dy
+      chantab.y = chantab.y + dy
     end
   end
 end
@@ -133,13 +135,6 @@ function lobby.mousereleased(x,y,b)
   end
   if not b == 1 then return end
   Channel:getTextbox():click(x,y)
-  if Battle.startButton then
-    local BsB = Battle.startButton
-    if x > BsB.x and x < BsB.x + BsB.w and y > BsB.y and y < BsB.y + BsB.h then
-      print("buttonhit")
-      BsB:click()
-    end
-  end
   for i, k in pairs(Button.actives) do
     if x > k.x and x < k.x + k.w and y > k.y and y < k.y + k.h then
       k:click()
@@ -177,6 +172,25 @@ function lobby.update( dt )
   if not lobby.connected then
     return
   end
+
+  Channel:getTextbox():update(dt)
+  lobby.timer = lobby.timer + dt
+  lobby.reeltimer = lobby.reeltimer + dt
+
+  --receive data from server
+  lobby.receiveData(dt)
+  
+  --for Map downloading
+  local battle = Battle:getActiveBattle()
+  if battle and battle.dl_status and not battle.dl_status.finished then battle:update(dt) end
+  
+end
+
+function lobby.receiveData(dt)
+  if lobby.timer > 30 then
+    lobby.send("PING" .. "\n")
+    lobby.timer = 0
+  end
   lobby.timeSinceLastPong = lobby.timeSinceLastPong + dt
   if lobby.timeSinceLastPong > 120 then
     lobby.connected = false
@@ -184,15 +198,9 @@ function lobby.update( dt )
     table.insert(lobby.serverChannel.lines, {msg = txt})
     Channel:broadcast(txt)
   end
-  Channel:getTextbox():update(dt)
-  lobby.timer = lobby.timer + dt
-  lobby.reeltimer = lobby.reeltimer + dt
-  if lobby.timer > 30 then
-    lobby.send("PING" .. "\n")
-    lobby.timer = 0
-  end
   data = tcp:receive()
   if data then
+    table.insert(lobby.serverChannel.lines, {from = true, msg = data})
     love.filesystem.append( "log.txt", data .. "\n" )
     local cmd = string.match(data, "^%u+")
     local words = {}
@@ -210,11 +218,7 @@ function lobby.update( dt )
     if responses[cmd] then
       responses[cmd].respond(words, sentances, data)
     end
-    table.insert(lobby.serverChannel.lines, {from = true, msg = data})
   end
-  --Map downloading
-  local battle = Battle:getActiveBattle()
-  if battle and battle.dl_status and not battle.dl_status.finished then battle:update(dt) end
 end
 
 function lobby.resize( w, h )
@@ -244,10 +248,39 @@ function lobby.textinput (text)
 end
 
 local keypress = {
+  ["c"] = function()
+    if (lk.isDown("lctrl") or lk.isDown("rctrl")) and Channel:getTextbox():isActive() then
+      love.system.setClipboardText( Channel:getTextbox():getText() )
+    end
+  end,
+  ["v"] = function()
+    if (lk.isDown("lctrl") or lk.isDown("rctrl")) and Channel:getTextbox():isActive() then
+      Channel:getTextbox():addText(love.system.getClipboardText( ))
+    end
+  end,
   ["0"] = function()
     lobby.writeScript()
     local exec = "\"" .. lobby.exeFilePath .. "\"" .. " script.txt"
-    os.execute(exec) end,
+    os.execute(exec)
+  end,
+  ["up"] = function()
+    if lobby.channelMessageHistoryID then
+      lobby.channelMessageHistoryID = math.max(1, lobby.channelMessageHistoryID - 1)
+    else
+      table.insert(Channel:getActive().sents, Channel:getActive():getText())
+      lobby.channelMessageHistoryID = #Channel:getActive().sents
+    end
+    if Channel:getActive().sents[lobby.channelMessageHistoryID] then
+      Channel:getActive():getTextbox():setText(Channel:getActive().sents[lobby.channelMessageHistoryID])
+    end
+  end,
+  ["down"] = function()
+    if not lobby.channelMessageHistoryID then return end
+    lobby.channelMessageHistoryID = math.min(lobby.channelMessageHistoryID + 1, #Channel:getActive().sents)
+    if Channel:getActive().sents[lobby.channelMessageHistoryID] then
+      Channel:getActive():getTextbox():setText(Channel:getActive().sents[lobby.channelMessageHistoryID])
+    end
+  end,
   ["delete"] = function()
     Channel:getTextbox():delete()
   end,
@@ -256,6 +289,7 @@ local keypress = {
   end,
   ["return"] = function()
     if Channel:getTextbox():isActive() then
+      if Channel:getTextbox():getText() == "" then return end
       if Channel:getActive():getName() == "server" then
         lobby.send(Channel:getActive():getText() .. "\n")
         return
@@ -271,6 +305,8 @@ local keypress = {
       local text, sub = string.gsub(Channel:getActive():getText(), "^/me ", "", 1)
       if sub == 1 then cmd = cmd .. "EX" end
       lobby.send(cmd .. to .. text .. "\n")
+      lobby.channelMessageHistoryID = false
+      table.insert(Channel:getActive().sents, Channel:getTextbox():getText())
       Channel:getTextbox():clearText()
     end
   end,
@@ -432,11 +468,18 @@ function lobby.window.users()
   local x = lobby.fixturePoint[2].x
   local fontHeight = fonts.robotosmall:getHeight()
   local list = User.s
-  if Channel:getActive() then 
-    if Channel:getActive().title == "server" then
+  local channel = Channel:getActive()
+  
+  if channel then 
+    if channel.title == "server" then
+      lg.print("Server", lobby.fixturePoint[2].x + 10, 10)
       list = User.s
+    elseif string.find(channel.title, "battle_%d+") then
+      lg.print("Battle", lobby.fixturePoint[2].x + 10, 10)
+      list = Battle:getActiveBattle():getUsers()
     else
-      list = Channel:getActive().users
+      lg.print(channel, lobby.fixturePoint[2].x + 10, 10)
+      list = channel.users
     end
   end
   

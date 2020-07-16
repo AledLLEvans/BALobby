@@ -11,7 +11,8 @@ function Channel:new(o, bool)
   
   o.offset = 0
   o.lines = {}
-  o.users = {}  
+  o.users = {} 
+  o.sents = {}
   o.display = true
   o.text = ""
   
@@ -39,6 +40,10 @@ end
 
 function Channel:getActive()
   return self.active
+end
+
+function Channel:isActive()
+  return self.active == self
 end
 
 function Channel:isUser()
@@ -75,7 +80,7 @@ function Channel:refreshTabs()
   self.tabs = {}
   for chanName, channel in pairs(self.s) do
     if channel.display then
-    local showChanName = chanName
+      local showChanName = chanName
       if string.find(chanName, "Battle") then
         showChanName = "Battle"
       end
@@ -87,8 +92,14 @@ function Channel:refreshTabs()
         20,
         showChanName,
         function()
+          if Channel:getActive() then
+            Channel:getActive().newMessage = false
+          end
           self.active = channel
-        end)
+          channel.newMessage = false
+          lobby.channelMessageHistoryID = false
+        end
+      )
       i = i + 1
       totalWidth = totalWidth + textWidth + 6
     end
@@ -101,6 +112,7 @@ end
 
 local drawFunc = {
   ["user"] = function(t) return  "<" .. t .. ">"  end,
+  ["mention"] = function(t) lg.setColor(1,0,0) return  "<" .. t .. ">"  end,
   ["ex"] = function(t) lg.setColor(1,1,0) return  "*" .. t .. "*"  end,
   ["system"] = function() lg.setColor(1,0,0) return  "! SYSTEM !"  end
 }
@@ -115,9 +127,7 @@ function Channel:draw()
   local h = lobby.height - lobby.fixturePoint[1].y - 1
   local w = lobby.fixturePoint[2].x - lobby.fixturePoint[1].x - 20
   while i > 0 and h - 4*fontHeight > m do
-    local drawType = self.lines[i].user and 
-    (self.lines[i].ex and "ex" or "user") 
-    or "system"
+    local drawType = self.lines[i].user and (self.lines[i].ex and "ex" or self.lines[i].mention and "mention" or "user") or "system"
     local text = drawFunc[drawType](self.lines[i].user) .. self.lines[i].msg
     local _, wt = fonts.robotosmall:getWrap(text, w)
     local j = #wt
@@ -165,9 +175,7 @@ function BattleChannel:draw()
   m = 0
   lg.setColor(1, 1, 1)
   while i > 0 and h - 4*fontHeight > m do
-    local drawType = self.lines[i].user and 
-    (self.lines[i].ex and "ex" or "user") 
-    or "system"
+    local drawType = self.lines[i].user and (self.lines[i].ex and "ex" or self.lines[i].mention and "mention" or "user") or "system"
     local text = drawFunc[drawType](self.lines[i].user) .. self.lines[i].msg
     local _, wt = fonts.robotosmall:getWrap(text, w - 10)
     local j = #wt

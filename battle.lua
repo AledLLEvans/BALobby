@@ -24,6 +24,10 @@ function Battle:getPlayers()
   return self.players
 end
 
+function Battle:getUsers()
+  return self.users
+end
+
 function Battle:setUp(x, y, w, h)
   self.channel:setUp(x, y, w, h)
 end

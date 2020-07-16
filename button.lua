@@ -73,18 +73,25 @@ function ChannelTab:new(x,y,w,h,text,func)
 end
 
 function ChannelTab:draw()
-  local rect = "line"
   local h = 0
-  if Channel:getActive()
-  and (Channel:getActive().title == self.text
-  or (string.find(Channel:getActive().title, "Battle") and "Battle" == self.text) )then
-    rect = "fill"
-    lg.setColor(0,0,0)
-    h = 3
+  local channel = self.text
+  if channel == "Battle" then
+    channel = Battle:getActiveBattle():getChannel().title
   end
-  lg.rectangle(rect, self.x, self.y, self.w, self.h + h)
+  if Channel:getActive() and (channel == Channel:getActive().title) then
+    h = 3
+    lg.rectangle("fill", self.x, self.y, self.w, self.h + h)
+    lg.setColor(0,0,0)
+    lg.printf(self.text, self.x, self.y + self.h/2 + h - fonts.robotosmall:getHeight()/2, self.w, "center")
+  elseif Channel.s[channel].newMessage then
+    h = 3
+    lg.rectangle("line", self.x, self.y, self.w, self.h + h)
+    lg.printf(self.text, self.x, self.y + self.h/2 + h - fonts.robotosmall:getHeight()/2, self.w, "center")
+  else
+    lg.rectangle("line", self.x, self.y, self.w, self.h + h)
+    lg.printf(self.text, self.x, self.y + self.h/2 + h - fonts.robotosmall:getHeight()/2, self.w, "center")
+  end
   lg.setColor(1,1,1)
-  lg.printf(self.text, self.x, self.y + self.h/2 + h - fonts.robotosmall:getHeight()/2, self.w, "center")
 end
 
 BattleTab = Button:new()
@@ -117,7 +124,11 @@ function BattleTab:draw()
   local w = self.w
   local h = self.h
   local fontHeight = fonts.robotosmall:getHeight()
-  lg.setColor(1,1,1,0.75)
+  if User.s[battle.founder].ingame then
+    lg.setColor(0,0.8,0.1,0.9)
+  else
+    lg.setColor(1,1,1,0.75)
+  end
   lg.rectangle("fill", x, y, w, h)
   lg.setColor(0,0,0)
   lg.rectangle("line", x, y, w, h)
@@ -132,6 +143,9 @@ function BattleTab:draw()
     lg.draw(battle.minimap, x + 4, y + 12, 0, 50/1024, 50/1024)
   else
     lg.draw(img["nomap"], x + 4, y + 15)
+  end
+  if User.s[battle.founder].ingame then
+    lg.draw(img["gamepad"], x + w - 18, y + h - 16, 0, 1/4)
   end
 end
 

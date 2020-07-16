@@ -375,6 +375,7 @@ function FAILED.respond(words, sentances)
 end
 function FORCEQUITBATTLE.respond(words, sentances)
   Battle:getActiveBattle():getChannel():addMessage("You were kicked from the battle!")
+  love.window.showMessageBox("For your information", "You were kicked from the battle!", "info" )
 end
 function HOSTPORT.respond(words, sentances)
   local port = words[1]
@@ -521,34 +522,53 @@ end
 function RING.respond(words, sentances)
   sound["ring"]:play()
 end
+local function mentioned(text, channel)
+  channel.newMessage = true
+  if string.find(text, lobby.username) then
+    if not channel:isActive() then
+      sound["ding"]:play()
+    end
+    if not love.window.isOpen() then
+      love.window.requestAttention( )
+      sound["ding"]:play()
+    end
+    return true
+  end
+  return false
+end
 function SAID.respond(words, sentances, data)
   local chan = words[1]
   local user = words[2]
   local text = string.gsub(sentances[1], "%S+", "", 3) .. "\n"
-  table.insert(Channel.s[chan].lines, {user = user, msg = text})
+  local mention = mentioned(text, Channel.s[chan])
+  table.insert(Channel.s[chan].lines, {mention = mention, user = user, msg = text})
   love.filesystem.write( "chatlogs/" .. chan .. ".txt", user .. ": " .. text )
 end
 function SAIDBATTLE.respond(words, sentances)
   local user = words[1]
   local text = string.gsub(sentances[1], "%S+", "", 2) .. "\n"
-  table.insert(Battle:getActiveBattle():getChannel().lines, {user = user, msg = text})
+  local chan = Battle:getActiveBattle():getChannel()
+  local mention = mentioned(text, chan)
+  table.insert(chan.lines, {mention = mention, user = user, msg = text})
 end
 function SAIDBATTLEEX.respond(words, sentances)
   local user = words[1]
   local text = string.gsub(sentances[1], "%S+", "", 2) .. "\n"
   local battle = Battle:getActiveBattle()
   local founder = battle.founder
+  local mention = mentioned(text, battle:getChannel())
   if user == founder then
     table.insert(battle:getChannel().infolines, {ex = true, user = user, msg = text})
   else
-    table.insert(battle:getChannel().lines, {ex = true, user = user, msg = text})
+    table.insert(battle:getChannel().lines, {mention = mention, ex = true, user = user, msg = text})
   end
 end
 function SAIDEX.respond(words, sentances)
   local chan = words[1]
   local user = words[2]
   local text = string.gsub(sentances[1], "%S+", "", 3) .. "\n"
-  table.insert(Channel.s[chan].lines, {ex = true, user = user, msg = text})
+  local mention = mentioned(text, Channel.s[chan])
+  table.insert(Channel.s[chan].lines, {mention = mention, ex = true, user = user, msg = text})
   love.filesystem.write( "chatlogs/" .. chan .. ".txt", user .. ": " .. text )
 end
 function SAIDFROM.respond(words, sentances)
@@ -560,6 +580,7 @@ function SAIDPRIVATE.respond(words, sentances)
     Channel.s[user] = Channel:new({title = user, user = true, display = true})
     Channel:refreshTabs()
   end
+  mentioned(lobby.username, Channel.s[user])
   table.insert(Channel.s[user].lines, {user = user, msg = text})
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
 end
@@ -569,6 +590,7 @@ function SAIDPRIVATEEX.respond(words, sentances)
   if not Channel.s[user] then
     Channel.s[user] = Channel:new({title = user, user = true})
   end
+  mentioned(lobby.username, Channel.s[user])
   table.insert(Channel.s[user].lines, {ex = true, user = user, msg = text})
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
 end

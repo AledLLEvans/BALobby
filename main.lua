@@ -20,10 +20,6 @@ gamestates = {[0]=launchpad, [1]=login, [2]=lobby}
 local nfs = require "nativefs"
 local lg = love.graphics
 function love.load()
-  fonts = {}
-  fonts.notable = lg.newFont("fonts/Notable/Notable-Regular.ttf", 30)
-  fonts.roboto = lg.newFont("fonts/Roboto/Roboto-Black.ttf", 20)
-  fonts.robotosmall = lg.newFont("fonts/Roboto/Roboto-Black.ttf", 12)
   lg.setFont(fonts.robotosmall)
   love.filesystem.setIdentity("BALobby")
   lobby.springFilePath = [[C:\Users\]] .. os.getenv("USERNAME") .. '\\Documents\\My Games\\Spring\\'

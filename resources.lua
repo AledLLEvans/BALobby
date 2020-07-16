@@ -259,32 +259,38 @@ local flag_codes ={
 
 ranks = {}
 for i=1,8 do
-  ranks[i] = lg.newImage("data/ranks/rank"..i..".png")
+  ranks[i] = lg.newImage("data/images/ranks/rank"..i..".png")
 end
 
 
 local function loadImages()
   	for i,v in ipairs(IMAGE_FILES) do
-		img[v] = lg.newImage("data/"..v..".png")
+		img[v] = lg.newImage("data/images/"..v..".png")
 	end
 end
 
 cursor = {}
-cursor[2] = love.mouse.newCursor("data/scrollVertical.png", 25, 25)
-cursor[3] = love.mouse.newCursor("data/scrollHorizontal.png", 25, 25)
+cursor[2] = love.mouse.newCursor("data/images/scrollVertical.png", 25, 25)
+cursor[3] = love.mouse.newCursor("data/images/scrollHorizontal.png", 25, 25)
 
 flag = {}
 local function loadFlags()
   	for i,v in ipairs(flag_codes) do
-		flag[v] = lg.newImage("data/png/"..v:lower()..".png")
+		flag[v] = lg.newImage("data/images/png/"..v:lower()..".png")
 	end
 end
 
 loadFlags()
 loadImages()
 
+fonts = {}
+fonts.notable = lg.newFont("data/fonts/Notable/Notable-Regular.ttf", 30)
+fonts.roboto = lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 20)
+fonts.robotosmall = lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 12)
+  
 sound = {}
-sound.ring = love.audio.newSource("data/doorbell-old-tring.ogg", "static")
+sound.ring = love.audio.newSource("data/sounds/doorbell-old-tring.ogg", "static")
+sound.ding = love.audio.newSource("data/sounds/bell_02.ogg", "static")
 
 --[[local function WriteScript(script)
   local txt = io.open('script.txt', 'w+')

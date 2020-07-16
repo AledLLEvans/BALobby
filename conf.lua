@@ -1,6 +1,6 @@
 function love.conf(t)
   t.window.title = "Balanced Annihilation Lobby"
-  t.window.icon = "data/icon.png"
+  t.window.icon = "data/images/icon.png"
     
   t.window.width = 800
   t.window.height = 600
