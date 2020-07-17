@@ -1,4 +1,5 @@
 local bit = require("bit")
+local lw = love.window
 local ACCEPTED = {}
 local ADDBOT = {}
 local ADDSTARTRECT = {}
@@ -377,7 +378,7 @@ function FAILED.respond(words, sentances)
 end
 function FORCEQUITBATTLE.respond(words, sentances)
   Battle:getActiveBattle():getChannel():addMessage("You were kicked from the battle!")
-  love.window.showMessageBox("For your information", "You were kicked from the battle!", "info" )
+  lw.showMessageBox("For your information", "You were kicked from the battle!", "info" )
 end
 function HOSTPORT.respond(words, sentances)
   local port = words[1]
@@ -406,8 +407,9 @@ function JOINBATTLE.respond(words, sentances)
   else
     battle.channel.display = true
   end
-  battle:mapHandler()
-    
+  if battle:mapHandler() and battle:modHandler() then
+    lobby.setSynced(true)
+  end
   battle.buttons = {
   spectate = BattleButton:new(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50, 90, 40,
     "Spectate",
@@ -423,6 +425,7 @@ function JOINBATTLE.respond(words, sentances)
 end
 function JOINBATTLEFAILED.respond(words, sentances)
   Channel:broadcast(" REQUEST TO JOIN BATTLE FAILED, REASON: " .. string.gsub(sentances[1], "%S+ ", "", 1))
+  lw.showMessageBox("REQUEST TO JOIN BATTLE FAILED", "REASON: " .. string.gsub(sentances[1], "%S+ ", "", 1), "info" )
 end
 function JOINBATTLEREQUEST.respond(words, sentances)
 end
@@ -534,8 +537,8 @@ local function mentioned(text, channel)
     if not channel:isActive() then
       sound["ding"]:play()
     end
-    if not love.window.isOpen() then
-      love.window.requestAttention( )
+    if not lw.isOpen() then
+      lw.requestAttention( )
       sound["ding"]:play()
     end
     return true

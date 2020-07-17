@@ -44,6 +44,8 @@ end
 
 function Button:click(x,y)
   if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
+    sound["click"]:stop()
+    sound["click"]:play()
     self.func()
   end
 end

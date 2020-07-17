@@ -263,7 +263,6 @@ for i=1,8 do
   ranks[i] = lg.newImage("data/images/ranks/rank"..i..".png")
 end
 
-
 local function loadImages()
   	for i,v in ipairs(IMAGE_FILES) do
 		img[v] = lg.newImage("data/images/"..v..".png")
@@ -292,60 +291,6 @@ fonts.robotosmall = lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 12)
 sound = {}
 sound.ring = love.audio.newSource("data/sounds/doorbell-old-tring.ogg", "static")
 sound.ding = love.audio.newSource("data/sounds/bell_02.ogg", "static")
-
---[[local function WriteScript(script)
-  local txt = io.open('script.txt', 'w+')
-
-	txt:write('[Game]\n{\n\n')
-	-- First write Tables
-	for key, value in pairs(script) do
-		if type(value) == 'table' then
-			txt:write('\t['..key..']\n\t{\n')
-			for key, value in pairs(value) do
-				txt:write('\t\t'..key..' = '..value..';\n')
-			end
-			txt:write('\t}\n\n')
-		end
-	end
-	-- Then the rest (purely for aesthetics)
-	for key, value in pairs(script) do
-		if type(value) ~= 'table' then
-			txt:write('\t'..key..' = '..value..';\n')
-		end
-	end
-	txt:write('}')
-
-	txt:close()
-end
-
-local script = {
-	player0  =  {
-		isfromdemo = 0,
-		name = 'Local',
-		rank = 0,
-		spectator = 0,
-		team = 0,
-	},
-	
-	team0  =  {
-		allyteam = 0,
-		rgbcolor = '0.99609375 0.546875 0',
-		side = 'CORE',
-		teamleader = 0,
-	},
-	
-	allyteam0  =  {
-		numallies = 0,
-	},
-
-	gametype = 'Balanced Annihilation Reloaded Core $VERSION',
-	hostip = '127.0.0.1',
-	hostport = 8452,
-	ishost = 1,
-	mapname = 'Icy_Shell_v01',
-	myplayername = 'Local',
-	nohelperais = 0,
-	numplayers = 1,
-	numusers = 2,
-	startpostype = 2,
-}]]
+sound.click = love.audio.newSource("data/sounds/metal_02.ogg", "static")
+sound.click:setVolume(0.5)
+sound.click:setPitch(0.5)

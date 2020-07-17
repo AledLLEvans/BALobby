@@ -178,8 +178,10 @@ function lobby.update( dt )
   
   --for Map downloading
   local battle = Battle:getActiveBattle()
-  if battle and battle.dl_status and not battle.dl_status.finished then battle:update(dt) end
-  
+  if battle then battle:update(dt) end
+  for i, k in pairs(Download.s) do
+    k:update(dt)
+  end
 end
 
 function lobby.receiveData(dt)

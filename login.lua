@@ -9,8 +9,6 @@ local lg = love.graphics
 local lfs = love.filesystem
 local address, port = "springfightclub.com", 8200
 
-local requests_channel = love.thread.getChannel("requests")
-local progress_channel = love.thread.getChannel("progress")
 local unpacker_channel = love.thread.getChannel("unpacker")
 
 local socket = require "socket"
@@ -85,13 +83,14 @@ function login.enter()
   end
 end
 
+local progress_channel = love.thread.getChannel("progress_login")
 function login.startEngineDownload()
+  local progress_channel = love.thread.getChannel("progress_login")
   local url = "https://springrts.com/dl/buildbot/default/master/103.0/win64/spring_103.0_win64-minimal-portable.7z"
   local download_thread = love.thread.newThread("downloader.lua")
-  download_thread:start()
+  download_thread:start(url, filename, filepath, "login")
   login.downloading = true
   login.dl_status = {finished = false, downloaded = 0, file_size = 0}
-  requests_channel:push({url = url, filename = "spring_103.0_win64-minimal-portable.7z", filepath = lobby.engineFolder})
   login.downloadText = "Retrieving URL .."
 end
 
@@ -100,7 +99,9 @@ function login.startEngineUnpack()
   login.downloadText = "Unpacking .."
   nfs.createDirectory(lobby.springFilePath .. "engine\\blobby\\103.0")
   local unpacker_thread = love.thread.newThread("unpacker.lua")
-  unpacker_thread:start(lobby.engineFolder .. "spring_103.0_win64-minimal-portable.7z", lobby.springFilePath .. "engine\\blobby\\103.0")
+  unpacker_thread:start(
+    lobby.engineFolder .. "spring_103.0_win64-minimal-portable.7z",
+    lobby.springFilePath .. "engine\\blobby\\103.0")
   nfs.createDirectory(lobby.mapFolder)
   nfs.createDirectory(lobby.gameFolder)
 end

@@ -32,38 +32,51 @@ function Battle:setUp(x, y, w, h)
   self.channel:setUp(x, y, w, h)
 end
 
-local progress_channel = love.thread.getChannel("progress")
-local requests_channel = love.thread.getChannel("requests")
 function Battle:update(dt)
-  local progress_update = progress_channel:pop()
-  while progress_update do
-    if progress_update.finished then
-      self.dl_status.finished = true
-      self.dl_status.downloading = false
-      self:getMinimap()
-      User.s[lobby.username].synced = true
-      lobby.refreshBattleList()
+  --Mod
+  if self.modDownload then
+    if self.modDownload.finished then
+      if (not self.mapDownload) or self.mapDownload.finished then lobby.setSynced(true) end
+      self.modDownload.thread:release()
+      self.modDownload = nil
+      return
     end
-    if progress_update.file_size then
-      self.dl_status.file_size = progress_update.file_size
-    end
-    if progress_update.chunk then
-      self.dl_status.downloaded = self.dl_status.downloaded + progress_update.chunk
-    end
-    if progress_update.error then
-      print(self.mirrors[self.mirrorID], self.dl_status.filename, progress_update.error)
-      self.mirrorID = self.mirrorID + 1
-      if self.mirrorID > #self.mirrors then
-        self.dl_status = nil
-        self.download_thread = nil
+    if self.modDownload.error then
+      self.modMirrorID = self.modMirrorID + 1
+      if self.modMirrorID > #self.modMirrors then
+        love.window.showMessageBox("Error auto-downloading game", "\n" .. self.modDownload.error .. "\nTry installing manually", "error" )
+        self.modDownload:release()
+        self.modDownload = nil
         return
       end
-      self:pushDownloadRequest(self.mirrorID)
+      local filename = string.match(self.modMirrors[self.modMirrorID], ".*/(.*)")
+      self.modDownload:push(self.modMirrors[self.modMirrorID], filename, lobby.modFolder)
     end
-    progress_update = progress_channel:pop()
+  end
+  --Map
+  if self.mapDownload then
+    if self.mapDownload.finished then
+      self:getMinimap()
+      self.mapDownload:release()
+      self.mapDownload = nil
+      if (not self.modDownload) or self.modDownload.finished then lobby.setSynced(true) end
+      lobby.refreshBattleList()
+      return
+    end
+    if self.mapDownload.error then
+      self.mapMirrorID = self.mapMirrorID + 1
+      if self.mapMirrorID > #self.mapMirrors then
+        love.window.showMessageBox("Error auto-downloading map", "\nFailed to find URL\nTry installing manually", "error" )
+        self.mapDownload:release()
+        self.mapDownload = nil
+        return
+      end
+      local filename = string.match(self.mapMirrors[self.mapMirrorID], ".*/(.*)")
+      self.mapDownload:push(self.mapMirrors[self.mapMirrorID], filename, lobby.mapFolder)
+    end
   end
 end
-
+  
 function Battle:draw()
   self.buttons.spectate:draw()
   self.buttons.ready:draw()
@@ -73,11 +86,17 @@ function Battle:draw()
   lg.printf(self.mapName, lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8 + 20 + fontHeight, 1024/8, "left")
   if self.minimap then
     lg.draw(self.minimap, lobby.fixturePoint[2].x - 10 - 1024/8, 20 + fontHeight, 0, 1/8, 1/8)
-  elseif self.dl_status and not self.dl_status.finished then
-    lg.print(self.dl_status.filename, lobby.fixturePoint[2].x - 10 - 1024/8, 20 + fontHeight)
-    lg.print(tostring(math.ceil(100*self.dl_status.downloaded/self.dl_status.file_size)) .. "%", lobby.fixturePoint[2].x - 10 - 1024/8, 20 + 2*fontHeight)
+  elseif self.mapDownload and not self.mapDownload.finished then
+    lg.print(self.mapDownload.filename, lobby.fixturePoint[2].x - 10 - 1024/8, 20 + fontHeight)
+    lg.print(tostring(math.ceil(100*self.mapDownload.downloaded/self.mapDownload.file_size)) .. "%", lobby.fixturePoint[2].x - 10 - 1024/8, 20 + 2*fontHeight)
   else
     lg.draw(img["nomap"], lobby.fixturePoint[2].x - 10 - 1024/8, 20 + fontHeight, 0, 1024/(8*50))
+  end
+  if self.modDownload then
+    lg.printf(self.modDownload.filename, lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8 + 20 + 3*fontHeight, 1024/8, "left")
+    lg.printf(tostring(math.ceil(100*self.modDownload.downloaded/self.modDownload.file_size)) .. "%", lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8 + 20 + 4*fontHeight, 1024/8, "left")
+  else
+    lg.printf(self.gameName, lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8 + 20 + 3*fontHeight, 1024/8, "left")
   end
   local y = 50 + self.userListScrollOffset
   fontHeight = fonts.robotosmall:getHeight()
@@ -139,45 +158,55 @@ function Battle:draw()
   lg.origin()
 end
 
-local function hasMap(map)
-  map = string.gsub(map, "%-", "%%%-")
+local function hasMap(mapName)
   for i, k in pairs(nfs.getDirectoryItems(lobby.mapFolder)) do
-    if string.find(k, map) then return k end
+    if k == mapName .. ".sdz" or k == mapName .. ".sd7" then return k end
   end
+  return false
+end
+
+local function hasMod(gameName)
+  for i, k in pairs(nfs.getDirectoryItems(lobby.gameFolder)) do
+    if k == gameName .. ".sdz" or k == gameName .. ".sd7" then return k end
+  end
+  return false
+end
+
+function Battle:downloadHandler()
+  if self:mapHandler() and self:modHandler() then
+    return true
+  end
+end
+
+function Battle:modHandler()
+  local gameName = string.gsub(self.gameName:lower(), " ", "_", 1)
+  gameName = string.gsub(gameName, " ", "-", 1)
+  gameName = string.gsub(gameName, " ", "_")
+  if hasMod(gameName) then return true end
+  self.modMirrors = {
+    "https://www.springfightclub.com/data/" .. gameName .. ".sdz"
+  }
+  self.modMirrorID = 1
+  self.modDownload = Download:new()
+  local filename = string.match(self.modMirrors[self.modMirrorID], ".*/(.*)")
+  self.modDownload:push(self.modMirrors[self.modMirrorID], filename, lobby.gameFolder)
   return false
 end
 
 function Battle:mapHandler()
   local mapName = string.gsub(self.mapName:lower(), " ", "_")
-  if hasMap(mapName) then 
-    lobby.setSynced(true)
-    return
-  end
-  if self.dl_status then return end
-  self.mirrors = {}
-  self.mirrors[1] = "https://api.springfiles.com/files/maps/" .. mapName .. ".sd7"
-  self.mirrors[2] = "https://api.springfiles.com/files/maps/" .. mapName .. ".sdz"
-  self.mirrors[3] = "https://springfightclub.com/data/maps/" .. mapName .. ".sd7"
-  self.mirrors[4] = "https://springfightclub.com/data/maps/" .. mapName .. ".sdz"
-  self.mirrorID = 1
-  self.download_thread = love.thread.newThread("downloader.lua")
-  self.download_thread:start()
-  self:pushDownloadRequest(self.mirrorID)
-end
-
-function Battle:pushDownloadRequest(mirror)
-  self.dl_status = {
-    downloading = true,
-    finished = false,
-    downloaded = 0,
-    file_size = 0,
-    filename = string.match(self.mirrors[mirror], ".*/(.*)")
+  if hasMap(mapName) then return true end
+  self.mapMirrors = {
+    "https://api.springfiles.com/files/maps/" .. mapName .. ".sd7",
+    "https://api.springfiles.com/files/maps/" .. mapName .. ".sdz",
+    "https://springfightclub.com/data/maps/" .. mapName .. ".sd7",
+    "https://springfightclub.com/data/maps/" .. mapName .. ".sdz"
   }
-  return requests_channel:push({
-    url = self.mirrors[mirror],
-    filename = self.dl_status.filename,
-    filepath = lobby.mapFolder
-  })
+  self.mapDownload = Download:new()
+  self.mapMirrorID = 1
+  local filename = string.match(self.mapMirrors[self.mapMirrorID], ".*/(.*)")
+  self.mapDownload:push(self.mapMirrors[self.mapMirrorID], filename, lobby.mapFolder)
+  return false
 end
 
 local function getSMF(dir)
