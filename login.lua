@@ -159,8 +159,10 @@ function settings.unpack()
   if lfs.getInfo( "settings.lua" ) then
     t = require "settings"
   end
-  for i, k in pairs(t) do
-    settings[i] = k
+  if t then
+    for i, k in pairs(t) do
+      settings[i] = k
+    end
   end
   return settings
 end
