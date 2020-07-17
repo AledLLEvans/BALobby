@@ -23,7 +23,6 @@ function Download:new(o)
 end
 
 function Download:push(url, filename, filepath)
-  print(url, filepath, filename)
   self.filename = filename
   self.thread:start(url, filename, filepath, self.id)
 end

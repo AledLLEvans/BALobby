@@ -20,8 +20,11 @@ gamestates = {[0]=launchpad, [1]=login, [2]=lobby}
 local nfs = require "nativefs"
 local lg = love.graphics
 function love.load()
-  lg.setFont(fonts.robotosmall)
   love.filesystem.setIdentity("BALobby")
+  if not love.filesystem.getInfo("chatlogs") then
+    love.filesystem.createDirectory("chatlogs")
+  end
+  lg.setFont(fonts.robotosmall)
   lobby.springFilePath = [[C:\Users\]] .. os.getenv("USERNAME") .. '\\Documents\\My Games\\Spring\\'
   lobby.exeFilePath = love.filesystem.getUserDirectory() .. 'Documents\\My Games\\Spring\\engine\\blobby\\103.0\\spring.exe'
   lobby.engineFolder = lobby.springFilePath .. "engine\\"

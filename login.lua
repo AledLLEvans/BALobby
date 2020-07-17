@@ -85,10 +85,10 @@ end
 
 local progress_channel = love.thread.getChannel("progress_login")
 function login.startEngineDownload()
-  local progress_channel = love.thread.getChannel("progress_login")
   local url = "https://springrts.com/dl/buildbot/default/master/103.0/win64/spring_103.0_win64-minimal-portable.7z"
+  
   local download_thread = love.thread.newThread("downloader.lua")
-  download_thread:start(url, filename, filepath, "login")
+  download_thread:start(url, "spring_103.0_win64-minimal-portable.7z", lobby.springFilePath .. "engine", "login")
   login.downloading = true
   login.dl_status = {finished = false, downloaded = 0, file_size = 0}
   login.downloadText = "Retrieving URL .."
@@ -97,11 +97,11 @@ end
 function login.startEngineUnpack()
   login.unpacking = true
   login.downloadText = "Unpacking .."
-  nfs.createDirectory(lobby.springFilePath .. "engine\\blobby\\103.0")
+  nfs.createDirectory(lobby.springFilePath .. "engine\\103.0")
   local unpacker_thread = love.thread.newThread("unpacker.lua")
   unpacker_thread:start(
     lobby.engineFolder .. "spring_103.0_win64-minimal-portable.7z",
-    lobby.springFilePath .. "engine\\blobby\\103.0")
+    lobby.springFilePath .. "engine\\103.0")
   nfs.createDirectory(lobby.mapFolder)
   nfs.createDirectory(lobby.gameFolder)
 end
