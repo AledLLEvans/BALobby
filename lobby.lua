@@ -149,7 +149,6 @@ function lobby.mousereleased(x,y,b)
   end
 end
   
-  
 function lobby.wheelmoved(x, y)
   local msx, msy = love.mouse.getPosition()
   if msx > lobby.fixturePoint[1].x and msy > lobby.fixturePoint[1].y then
@@ -182,6 +181,12 @@ function lobby.update( dt )
   for i, k in pairs(Download.s) do
     k:update(dt)
   end
+  if login.downloading then
+    login.updateDownload(dt)
+  end
+  if login.unpacking then
+    login.updateUnpack(dt)
+  end
 end
 
 function lobby.receiveData(dt)
@@ -193,12 +198,12 @@ function lobby.receiveData(dt)
   if lobby.timeSinceLastPong > 120 then
     lobby.connected = false
     local txt = "Disconnected from server, last PONG over two minutes ago."
-    table.insert(lobby.serverChannel.lines, {msg = txt})
+    table.insert(lobby.serverChannel.lines, {time = os.date("%X"), msg = txt})
     Channel:broadcast(txt)
   end
-  data = tcp:receive()
+  local data = tcp:receive()
   if data then
-    table.insert(lobby.serverChannel.lines, {from = true, msg = data})
+    table.insert(lobby.serverChannel.lines, {time = os.date("%X"), from = true, msg = data})
     love.filesystem.append( "log.txt", data .. "\n" )
     local cmd = string.match(data, "^%u+")
     local words = {}
@@ -249,6 +254,11 @@ function lobby.textinput (text)
   end
 end
 
+local launchCode = [[
+  local exec = ...
+  os.execute(exec)
+]]
+
 local keypress = {
   ["c"] = function()
     if (lk.isDown("lctrl") or lk.isDown("rctrl")) and Channel:getTextbox():isActive() then
@@ -263,7 +273,10 @@ local keypress = {
   ["0"] = function()
     lobby.writeScript()
     local exec = "\"" .. lobby.exeFilePath .. "\"" .. " script.txt"
-    os.execute(exec)
+    if not lobby.springThread then
+      lobby.springThread = love.thread.newThread( launchCode )
+    end
+    lobby.springThread:start( exec )
   end,
   ["up"] = function()
     if lobby.channelMessageHistoryID then

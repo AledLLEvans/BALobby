@@ -26,7 +26,7 @@ function login.enter()
   tcp:connect(address, port)
   tcp:settimeout(0)
   function lobby.send(msg)
-    table.insert(lobby.serverChannel.lines, {to = true, msg = msg})
+    table.insert(lobby.serverChannel.lines, {time = os.date("%X"), to = true, msg = msg})
     return tcp:send(msg)
   end
   
@@ -234,7 +234,7 @@ function login.update( dt )
     table.insert(login.log, {to = true, msg = "PING"})
     lobby.timer = 0
   end
-  data = tcp:receive()
+  local data = tcp:receive()
   if data then
     love.filesystem.append( "log.txt", data .. "\n" )
     local cmd = string.match(data, "^%u+")

@@ -258,6 +258,8 @@ local flag_codes ={
 "ZW",
 }
 
+--success = love.system.openURL( url )
+
 ranks = {}
 for i=1,8 do
   ranks[i] = lg.newImage("data/images/ranks/rank"..i..".png")

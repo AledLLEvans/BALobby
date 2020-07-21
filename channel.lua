@@ -128,7 +128,7 @@ function Channel:draw()
   local w = lobby.fixturePoint[2].x - lobby.fixturePoint[1].x - 20
   while i > 0 and h - 4*fontHeight > m do
     local drawType = self.lines[i].user and (self.lines[i].ex and "ex" or self.lines[i].mention and "mention" or "user") or "system"
-    local text = drawFunc[drawType](self.lines[i].user) .. self.lines[i].msg
+    local text = "[" .. self.lines[i].time .. "] " .. drawFunc[drawType](self.lines[i].user) .. self.lines[i].msg
     local _, wt = fonts.robotosmall:getWrap(text, w)
     local j = #wt
     local align = self.lines[i].user and "left" or "center"
@@ -176,7 +176,7 @@ function BattleChannel:draw()
   lg.setColor(1, 1, 1)
   while i > 0 and h - 4*fontHeight > m do
     local drawType = self.lines[i].user and (self.lines[i].ex and "ex" or self.lines[i].mention and "mention" or "user") or "system"
-    local text = drawFunc[drawType](self.lines[i].user) .. self.lines[i].msg
+    local text = "[" .. self.lines[i].time .. "] " .. drawFunc[drawType](self.lines[i].user) .. self.lines[i].msg
     local _, wt = fonts.robotosmall:getWrap(text, w - 10)
     local j = #wt
     local align = self.lines[i].user and "left" or "center"
@@ -202,7 +202,7 @@ function ServerChannel:draw()
   local h = lobby.height - lobby.fixturePoint[1].y - 1
   local w = lobby.fixturePoint[2].x - lobby.fixturePoint[1].x - 20
   while i > 0 and h - 4*fontHeight > m do
-    local text = self.lines[i].msg
+    local text = "[" .. self.lines[i].time .. "] " .. self.lines[i].msg
     local _, wt = fonts.robotosmall:getWrap(text, w)
     local j = #wt
     local align = self.lines[i].to and "left" or self.lines[i].from and "right" or "center"

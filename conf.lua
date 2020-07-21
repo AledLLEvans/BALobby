@@ -1,4 +1,5 @@
 function love.conf(t)
+  t.identity = "BALobby"
   t.window.title = "Balanced Annihilation Lobby"
   t.window.icon = "data/images/icon.png"
     

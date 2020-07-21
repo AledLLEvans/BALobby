@@ -41,7 +41,6 @@ local function progress_sink(output_sink)
   end
 end
 
-
 while true do
   local proceed
   do
