@@ -557,8 +557,13 @@ end
 function SAIDBATTLE.respond(words, sentances)
   local user = words[1]
   local text = string.gsub(sentances[1], "%S+", "", 2) .. "\n"
-  local chan = Battle:getActiveBattle():getChannel()
+  local battle = Battle:getActiveBattle()
+  local founder = battle.founder
+  local chan = battle:getChannel()
   local mention = mentioned(text, chan)
+  if user == founder then
+    user = "ingame"
+  end
   table.insert(chan.lines, {time = os.date("%X"), mention = mention, user = user, msg = text})
 end
 function SAIDBATTLEEX.respond(words, sentances)

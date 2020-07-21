@@ -19,7 +19,7 @@ local lg = love.graphics
 local function checkOS()
   local os = love.system.getOS( )
   if os == "Windows" then
-    lobby.springFilePath = lfs.getUserDirectory() .. '\\Documents\\My Games\\Spring\\'
+    lobby.springFilePath = lfs.getUserDirectory() .. 'Documents\\My Games\\Spring\\'
     lobby.engineFolder = lobby.springFilePath .. "engine\\"
     lobby.exeFilePath = lobby.engineFolder .. "103.0\\spring.exe"
     lobby.gameFolder = lobby.springFilePath .. "games\\"
@@ -47,7 +47,7 @@ end
 
 
 function love.threaderror(thread, err)
-  error(err)
+  print(thread,err)
 end
 
 function love.resize( w, h )

@@ -1,7 +1,6 @@
 local http = require("socket.http")
 local nativefs = require "nativefs"
 
-
 local url, filename, filepath, pid = ...
 
 local progress_channel = love.thread.getChannel("progress_" .. pid)
@@ -35,13 +34,14 @@ local function progress_sink(output_sink)
         progress_channel:push({error = err})
       else
         progress_channel:push({finished = true, downloading = false})
+        download_finished = true
       end
     end
     return output_sink(chunk, err)
   end
 end
 
-while true do
+while not download_finished do
   local proceed
   do
     local request = {

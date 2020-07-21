@@ -35,6 +35,7 @@ end
 function Battle:update(dt)
   --Mod
   if self.modDownload then
+    self.modDownload:update(dt)
     if self.modDownload.finished then
       if (not self.mapDownload) or self.mapDownload.finished then lobby.setSynced(true) end
       self.modDownload.thread:release()
@@ -55,9 +56,10 @@ function Battle:update(dt)
   end
   --Map
   if self.mapDownload then
+    self.mapDownload:update(dt)
     if self.mapDownload.finished then
       self:getMinimap()
-      self.mapDownload:release()
+      --self.mapDownload:release()
       self.mapDownload = nil
       if (not self.modDownload) or self.modDownload.finished then lobby.setSynced(true) end
       lobby.refreshBattleList()

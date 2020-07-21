@@ -178,9 +178,6 @@ function lobby.update( dt )
   --for Map downloading
   local battle = Battle:getActiveBattle()
   if battle then battle:update(dt) end
-  for i, k in pairs(Download.s) do
-    k:update(dt)
-  end
   if login.downloading then
     login.updateDownload(dt)
   end

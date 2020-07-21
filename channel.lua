@@ -34,7 +34,7 @@ end
 
 function Channel:broadcast(msg)
   for i, k in pairs(self.s) do
-    table.insert(k.lines, {msg=msg})
+    table.insert(k.lines, {time = os.date("%X"), msg=msg})
   end
 end
 
