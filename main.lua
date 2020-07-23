@@ -93,9 +93,9 @@ function love.mousereleased(x,y,b)
 end
 
 function love.textinput(text)
-	if gamestates[state].textinput then
-		gamestates[state].textinput(text)
-	end
+  if gamestates[state].textinput then
+    gamestates[state].textinput(text)
+  end
 end
 
 function love.wheelmoved(x, y)
