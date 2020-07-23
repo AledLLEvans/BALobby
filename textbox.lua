@@ -102,7 +102,7 @@ function Textbox:delete()
   self:display()
 end
 
-function Textbox:setPos(x,y)
+function Textbox:setPosition(x,y)
   self.x, self.y = x,y
   return self
 end

@@ -1,10 +1,10 @@
 require("resources")
+require("user")
 require("textbox")
-require("button")
 require("download")
+require("menu")
 require("lobby")
 require("login")
-require("user")
 require("battle")
 require("channel")
 
@@ -25,7 +25,6 @@ local function checkOS()
     lobby.gameFolder = lobby.springFilePath .. "games\\"
     lobby.mapFolder = lobby.springFilePath .. "maps\\"
   elseif os == "Linux" then
-    lobby.springFilePath = [[C:\Users\]] .. os.getenv("USERNAME") .. '\\Documents\\My Games\\Spring\\'
   elseif os == "OS X" then
     
   else
@@ -44,7 +43,6 @@ function love.load()
   end
   login.enter()
 end
-
 
 function love.threaderror(thread, err)
   print(thread,err)

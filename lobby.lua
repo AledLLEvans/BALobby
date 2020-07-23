@@ -48,7 +48,6 @@ end
 function lobby.enter()
   lobby.timeSinceLastPong = 0
   cursor[1] = love.mouse.getCursor( )
-  Button:releaseAll()
   state = STATE_LOBBY
   
   lobby.fixturePoint = {
@@ -56,7 +55,7 @@ function lobby.enter()
     {x = 650, y = 2*lobby.height/3}
   }
   
-  Channel.textbox:setPos(lobby.fixturePoint[1].x, lobby.height - 20):setDimensions(lobby.fixturePoint[2].x - lobby.fixturePoint[1].x, 20)
+  Channel.textbox:setPosition(lobby.fixturePoint[1].x, lobby.height - 20):setDimensions(lobby.fixturePoint[2].x - lobby.fixturePoint[1].x, 20)
   
   Channel:refreshTabs()
   
@@ -124,16 +123,13 @@ end
 function lobby.mousereleased(x,y,b)
   if lobby.dragLeftX or lobby.dragRightX or lobby.dragY then
     Channel:refreshTabs()
-    Channel.textbox:setPos(lobby.fixturePoint[1].x, lobby.height - 20):setDimensions(lobby.fixturePoint[2].x - lobby.fixturePoint[1].x, 20)
+    Channel.textbox:setPosition(lobby.fixturePoint[1].x, lobby.height - 20):setDimensions(lobby.fixturePoint[2].x - lobby.fixturePoint[1].x, 20)
     lobby.refreshBattleList()
     lobby.dragLeftX, lobby.dragRightX, lobby.dragY = false, false, false
     return
   end
   if not b == 1 then return end
   Channel:getTextbox():click(x,y)
-  for i, k in pairs(Button.actives) do
-    k:click(x,y)
-  end
   for i, k in pairs(Channel.tabs) do
     k:click(x,y)
   end
@@ -167,6 +163,7 @@ function lobby.update( dt )
   if not lobby.connected then
     return
   end
+  --lobby.render()
 
   Channel:getTextbox():update(dt)
   lobby.timer = lobby.timer + dt
@@ -237,11 +234,11 @@ function lobby.resize( w, h )
     }
   }
   Channel:refreshTabs()
-  Channel.textbox:setPos(lobby.fixturePoint[1].x, lobby.height - 20):setDimensions(lobby.fixturePoint[2].x - lobby.fixturePoint[1].x, 20)
+  Channel.textbox:setPosition(lobby.fixturePoint[1].x, lobby.height - 20):setDimensions(lobby.fixturePoint[2].x - lobby.fixturePoint[1].x, 20)
   lobby.refreshBattleList()
   if Battle:getActiveBattle() then
-    Battle:getActiveBattle().buttons.spectate:setPos(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50)
-    Battle:getActiveBattle().buttons.ready:setPos(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50)
+    Battle:getActiveBattle().buttons.spectate:setPosition(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50)
+    Battle:getActiveBattle().buttons.ready:setPosition(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50)
   end
 end
 
@@ -419,7 +416,7 @@ function lobby.createBattleTabs(BattleIDsByPlayerCount)
   local x = 0
   while y < lobby.height and x + 170 < lobby.fixturePoint[1].x and i < #BattleIDsByPlayerCount do
     local BattleTab = BattleTab:new(BattleIDsByPlayerCount[i])
-    BattleTab:setPos(x + 10, y+70)
+    BattleTab:setPosition(x + 10, y+70)
     BattleTab:setDimensions(160, 80)
     i = i + 1
     y = y + 90
@@ -469,7 +466,7 @@ function lobby.window.battleList()
   lg.setFont(fonts.notable)
   local w = fonts.notable:getWidth("BATTLES")
   if w + 10 < lobby.fixturePoint[1].x then lg.print("BATTLES", 10, 10) end
-  lg.setFont(fonts.robotosmall)
+  lg.setFont(fonts.latosmall)
   for i, k in pairs(BattleTab.s) do
     k:draw()
   end
@@ -479,7 +476,7 @@ function lobby.window.users()
   local i = 0
   local m = 0
   local x = lobby.fixturePoint[2].x
-  local fontHeight = fonts.robotosmall:getHeight()
+  local fontHeight = fonts.latosmall:getHeight()
   local list = User.s
   local channel = Channel:getActive()
   
@@ -504,7 +501,7 @@ function lobby.window.users()
       x = x + 100
       m = 0
     end]]
-    local _, wt = fonts.robotosmall:getWrap(username, lobby.width - lobby.fixturePoint[2].x)
+    local _, wt = fonts.latosmall:getWrap(username, lobby.width - lobby.fixturePoint[2].x)
     m = m + #wt*fontHeight
     if m > lobby.height then return end
     lg.draw(user.flag, x + 6, 12 + m)
@@ -515,7 +512,10 @@ function lobby.window.users()
   end
 end
 
---lobby.state = ""
+--lobby.canvas = lg.newCanvas()
+--[[function lobby.render()
+  lobby.canvas:clear()
+  lobby.canvas:renderTo(]]
 function lobby.draw()
   --lg.draw(img["balanced+annihilation+big+loadscreen-min"], 0, 0)
       
@@ -532,9 +532,6 @@ function lobby.draw()
   lobby.window.battleList()
   lobby.window.users()
   
-  for i, k in pairs(Button.actives) do
-    k:draw()
-  end
   if login.dl_status or login.unpackerCount > 0 then
     if not settings.engine_downloaded or not settings.engine_unpacked then
       login.drawDownloadBars()

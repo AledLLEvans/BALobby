@@ -84,7 +84,7 @@ function Channel:refreshTabs()
       if string.find(chanName, "Battle") then
         showChanName = "Battle"
       end
-      local textWidth = fonts.robotosmall:getWidth(chanName)
+      local textWidth = fonts.latosmall:getWidth(chanName)
       self.tabs[chanName] = ChannelTab:new(
         totalWidth + lobby.fixturePoint[1].x + 4,
         lobby.fixturePoint[1].y + 3,
@@ -118,9 +118,9 @@ local drawFunc = {
 }
 
 function Channel:draw()
-  lg.setFont(fonts.robotosmall)
+  lg.setFont(fonts.latosmall)
   Channel.textbox:draw()
-  local fontHeight = fonts.robotosmall:getHeight()
+  local fontHeight = fonts.latosmall:getHeight()
   local m = 0
   local i = #self.lines - self.offset
   lg.translate(lobby.fixturePoint[1].x, lobby.fixturePoint[1].y)
@@ -129,7 +129,7 @@ function Channel:draw()
   while i > 0 and h - 4*fontHeight > m do
     local drawType = self.lines[i].user and (self.lines[i].ex and "ex" or self.lines[i].mention and "mention" or "user") or "system"
     local text = "[" .. self.lines[i].time .. "] " .. drawFunc[drawType](self.lines[i].user) .. self.lines[i].msg
-    local _, wt = fonts.robotosmall:getWrap(text, w)
+    local _, wt = fonts.latosmall:getWrap(text, w)
     local j = #wt
     local align = self.lines[i].user and "left" or "center"
     while j > 0 and h - 4*fontHeight > m do
@@ -145,10 +145,10 @@ function Channel:draw()
 end
 
 function BattleChannel:draw()
-  lg.setFont(fonts.robotosmall)
+  lg.setFont(fonts.latosmall)
   local battle = Battle:getActiveBattle()
   Channel.textbox:draw()
-  local fontHeight = fonts.robotosmall:getHeight()
+  local fontHeight = fonts.latosmall:getHeight()
   local m = 0
   local i = #self.infolines - self.infoboxoffset
   lg.translate(lobby.fixturePoint[1].x, lobby.fixturePoint[1].y)
@@ -161,7 +161,7 @@ function BattleChannel:draw()
   lg.printf(battle.founder, w + 10, fontHeight, ow - 10, "center")
   while i > 0 and h - 4*fontHeight > m do
     local text = self.infolines[i].msg
-    local _, wt = fonts.robotosmall:getWrap(text, ow - 10)
+    local _, wt = fonts.latosmall:getWrap(text, ow - 10)
     local j = #wt
     local align = "left"
     while j > 0 and h - 4*fontHeight > m do
@@ -177,7 +177,7 @@ function BattleChannel:draw()
   while i > 0 and h - 4*fontHeight > m do
     local drawType = self.lines[i].user and (self.lines[i].ex and "ex" or self.lines[i].mention and "mention" or "user") or "system"
     local text = "[" .. self.lines[i].time .. "] " .. drawFunc[drawType](self.lines[i].user) .. self.lines[i].msg
-    local _, wt = fonts.robotosmall:getWrap(text, w - 10)
+    local _, wt = fonts.latosmall:getWrap(text, w - 10)
     local j = #wt
     local align = self.lines[i].user and "left" or "center"
     while j > 0 and h - 4*fontHeight > m do
@@ -193,9 +193,9 @@ function BattleChannel:draw()
 end
 
 function ServerChannel:draw()
-  lg.setFont(fonts.robotosmall)
+  lg.setFont(fonts.latosmall)
   Channel.textbox:draw()
-  local fontHeight = fonts.robotosmall:getHeight()
+  local fontHeight = fonts.latosmall:getHeight()
   local m = 0
   local i = #self.lines - self.offset
   lg.translate(lobby.fixturePoint[1].x, lobby.fixturePoint[1].y)
@@ -203,7 +203,7 @@ function ServerChannel:draw()
   local w = lobby.fixturePoint[2].x - lobby.fixturePoint[1].x - 20
   while i > 0 and h - 4*fontHeight > m do
     local text = "[" .. self.lines[i].time .. "] " .. self.lines[i].msg
-    local _, wt = fonts.robotosmall:getWrap(text, w)
+    local _, wt = fonts.latosmall:getWrap(text, w)
     local j = #wt
     local align = self.lines[i].to and "left" or self.lines[i].from and "right" or "center"
     while j > 0 and h - 4*fontHeight > m do
@@ -217,11 +217,11 @@ function ServerChannel:draw()
 end
 
 --[[function Channel:drawUsers(x, y, w, h)
-  local fontHeight = fonts.robotosmall:getHeight( )
+  local fontHeight = fonts.latosmall:getHeight( )
   local m  = 0
   for k, v in pairs(self.users) do
     if y < m then return end
-    local w, wt = fonts.robotosmall:getWrap(k, lobby.leftWindowWidth)
+    local w, wt = fonts.latosmall:getWrap(k, lobby.leftWindowWidth)
     m = m + #wt*fontHeight
     lg.printf(k, x + 5, y + h - m - 21, lobby.leftWindowWidth, "left")
   end

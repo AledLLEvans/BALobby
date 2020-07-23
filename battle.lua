@@ -101,8 +101,8 @@ function Battle:draw()
     lg.printf(self.gameName, lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8 + 20 + 3*fontHeight, 1024/8, "left")
   end
   local y = 50 + self.userListScrollOffset
-  fontHeight = fonts.robotosmall:getHeight()
-  lg.setFont(fonts.robotosmall)
+  fontHeight = fonts.latosmall:getHeight()
+  lg.setFont(fonts.latosmall)
   lg.translate(lobby.fixturePoint[1].x + 25, 0 )
   local teamNo = 1
   for i, user in pairs(self.playersByTeam) do
@@ -144,7 +144,7 @@ function Battle:draw()
       end
       lg.draw(user.flag, 23, 43 + y)
       lg.draw(user.insignia, 41, 40 + y, 0, 1/4)
-      local w = fonts.robotosmall:getWidth(username)
+      local w = fonts.latosmall:getWidth(username)
       lg.print(username, 60, 40 + y)
       y = y + fontHeight
       if y > lobby.fixturePoint[1].y then
