@@ -93,6 +93,7 @@ function login.enter()
   end
 end
 
+
 local progress_channel = love.thread.getChannel("progress_login")
 function login.startEngineDownload()
   local url = "https://springrts.com/dl/buildbot/default/master/103.0/win64/spring_103.0_win64-minimal-portable.7z"
