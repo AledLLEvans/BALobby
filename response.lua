@@ -328,6 +328,7 @@ function CLIENTBATTLESTATUS.respond(words, sentances)
     end
   end
   battle.playersByTeam = teams
+  lobby.refreshPlayerButtons()
 end
 function CLIENTIPPORT.respond(words, sentances)
 end
@@ -360,6 +361,7 @@ function CLIENTSTATUS.respond(words, sentances)
   user.access = statusTable[5]
   user.isBot = statusTable[6] == 1
   user.isHuman = not user.isBot
+  
   user.icon = user.isBot and "monitor" or user.ingame and "gamepad" or user.away and "nothome" or false
 end
 function COMPFLAGS.respond(words, sentances)
@@ -477,6 +479,7 @@ function LOGININFOEND.respond(words, sentances)
   lobby.send("JOIN en" .. "\n")
   lobby.send("JOIN newbies" .. "\n")
   lobby.refreshBattleList()
+  lobby.loginInfoEnd = true
 end
 function MOTD.respond(words, sentances)
   table.insert(lobby.serverChannel.lines, {from = true, msg = string.gsub(sentances[1], "%u+ ", "", 1) .. "\n"})
@@ -550,15 +553,20 @@ function SAID.respond(words, sentances, data)
   local user = words[2]
   local text = string.gsub(sentances[1], "%S+", "", 3) .. "\n"
   local mention = mentioned(text, Channel.s[chan])
-  table.insert(Channel.s[chan].lines, {mention = mention, user = user, msg = text})
+  table.insert(Channel.s[chan].lines, {time = os.date("%X"), mention = mention, user = user, msg = text})
   love.filesystem.write( "chatlogs/" .. chan .. ".txt", user .. ": " .. text )
 end
 function SAIDBATTLE.respond(words, sentances)
   local user = words[1]
   local text = string.gsub(sentances[1], "%S+", "", 2) .. "\n"
-  local chan = Battle:getActiveBattle():getChannel()
+  local battle = Battle:getActiveBattle()
+  local founder = battle.founder
+  local chan = battle:getChannel()
   local mention = mentioned(text, chan)
-  table.insert(chan.lines, {mention = mention, user = user, msg = text})
+  if user == founder then
+    user = "ingame"
+  end
+  table.insert(chan.lines, {time = os.date("%X"), mention = mention, user = user, msg = text})
 end
 function SAIDBATTLEEX.respond(words, sentances)
   local user = words[1]
@@ -567,9 +575,9 @@ function SAIDBATTLEEX.respond(words, sentances)
   local founder = battle.founder
   local mention = mentioned(text, battle:getChannel())
   if user == founder then
-    table.insert(battle:getChannel().infolines, {ex = true, user = user, msg = text})
+    table.insert(battle:getChannel().infolines, {time = os.date("%X"), ex = true, user = user, msg = text})
   else
-    table.insert(battle:getChannel().lines, {mention = mention, ex = true, user = user, msg = text})
+    table.insert(battle:getChannel().lines, {time = os.date("%X"), mention = mention, ex = true, user = user, msg = text})
   end
 end
 function SAIDEX.respond(words, sentances)
@@ -577,7 +585,7 @@ function SAIDEX.respond(words, sentances)
   local user = words[2]
   local text = string.gsub(sentances[1], "%S+", "", 3) .. "\n"
   local mention = mentioned(text, Channel.s[chan])
-  table.insert(Channel.s[chan].lines, {mention = mention, ex = true, user = user, msg = text})
+  table.insert(Channel.s[chan].lines, {time = os.date("%X"), mention = mention, ex = true, user = user, msg = text})
   love.filesystem.write( "chatlogs/" .. chan .. ".txt", user .. ": " .. text )
 end
 function SAIDFROM.respond(words, sentances)
@@ -590,7 +598,7 @@ function SAIDPRIVATE.respond(words, sentances)
     Channel:refreshTabs()
   end
   mentioned(lobby.username, Channel.s[user])
-  table.insert(Channel.s[user].lines, {user = user, msg = text})
+  table.insert(Channel.s[user].lines, {time = os.date("%X"), user = user, msg = text})
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
 end
 function SAIDPRIVATEEX.respond(words, sentances)
@@ -600,19 +608,19 @@ function SAIDPRIVATEEX.respond(words, sentances)
     Channel.s[user] = Channel:new({title = user, user = true})
   end
   mentioned(lobby.username, Channel.s[user])
-  table.insert(Channel.s[user].lines, {ex = true, user = user, msg = text})
+  table.insert(Channel.s[user].lines, {time = os.date("%X"), ex = true, user = user, msg = text})
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
 end
 function SAYPRIVATE.respond(words, sentances)
   local user = words[1]
   local text = string.gsub(sentances[1], "%S+", "", 2) .. "\n"
-  table.insert(Channel.s[user].lines, {user = lobby.username, msg = text})
+  table.insert(Channel.s[user].lines, {time = os.date("%X"), user = lobby.username, msg = text})
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
 end
 function SAYPRIVATEEX.respond(words, sentances)
   local user = words[1]
   local text = string.gsub(sentances[1], "%S+", "", 2) .. "\n"
-  table.insert(Channel.s[user].lines, {ex = true, user = lobby.username, msg = text})
+  table.insert(Channel.s[user].lines, {time = os.date("%X"), ex = true, user = lobby.username, msg = text})
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
 end
 function SERVERMSG.respond(words, sentances)

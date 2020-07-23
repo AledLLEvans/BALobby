@@ -1,35 +1,44 @@
 require("resources")
+require("user")
 require("textbox")
-require("button")
 require("download")
+require("menu")
 require("lobby")
 require("login")
-require("user")
 require("battle")
 require("channel")
-
-WIDTH = 256
-HEIGHT = 200
-
-local MAX_FRAMETIME = 1/20
-local MIN_FRAMETIME = 1/60
 
 STATE_LAUNCHPAD, STATE_LOGIN, STATE_LOBBY = 0,1,2
 
 gamestates = {[0]=launchpad, [1]=login, [2]=lobby}
+
+local lfs = love.filesystem
 local nfs = require "nativefs"
 local lg = love.graphics
+
+local function checkOS()
+  local os = love.system.getOS( )
+  if os == "Windows" then
+    lobby.springFilePath = lfs.getUserDirectory() .. 'Documents\\My Games\\Spring\\'
+    lobby.engineFolder = lobby.springFilePath .. "engine\\"
+    lobby.exeFilePath = lobby.engineFolder .. "103.0\\spring.exe"
+    lobby.gameFolder = lobby.springFilePath .. "games\\"
+    lobby.mapFolder = lobby.springFilePath .. "maps\\"
+  elseif os == "Linux" then
+  elseif os == "OS X" then
+    
+  else
+    error("Operating System not recognised")
+  end
+end
+
 function love.load()
-  love.filesystem.setIdentity("BALobby")
-  if not love.filesystem.getInfo("chatlogs") then
-    love.filesystem.createDirectory("chatlogs")
+  print(love.graphics.getLineWidth())
+  checkOS()
+  if not lfs.getInfo("chatlogs") then
+    lfs.createDirectory("chatlogs")
   end
   lg.setFont(fonts.robotosmall)
-  lobby.springFilePath = [[C:\Users\]] .. os.getenv("USERNAME") .. '\\Documents\\My Games\\Spring\\'
-  lobby.exeFilePath = love.filesystem.getUserDirectory() .. 'Documents\\My Games\\Spring\\engine\\blobby\\103.0\\spring.exe'
-  lobby.engineFolder = lobby.springFilePath .. "engine\\"
-  lobby.gameFolder = lobby.springFilePath .. "games\\"
-  lobby.mapFolder = lobby.springFilePath .. "maps\\"
   if nfs.getInfo( lobby.exeFilePath ) then
     lobby.gotEngine = true
   end
@@ -37,7 +46,7 @@ function love.load()
 end
 
 function love.threaderror(thread, err)
-  error(err)
+  print(thread,err)
 end
 
 function love.resize( w, h )
@@ -98,6 +107,6 @@ end
 
 function love.quit()
   if tcp and tcp:getpeername() then
-    tcp:send("EXIT")
+    tcp:send("EXIT" .. "\n")
   end
 end

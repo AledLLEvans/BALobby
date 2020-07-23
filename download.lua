@@ -1,30 +1,32 @@
 Download = {}
 Download.mt =  {__index = Download}
 
-Download.s = {}
+Download.s = 1
 
 function Download:new(o)
   o = o or {}
 	setmetatable(o, Download.mt)
   
-  o.id = #Download.s + 1
-  
+  o.id = Download.s
+  Download.s = Download.s + 1
+
   o.thread = love.thread.newThread("downloader.lua")
   o.channel = love.thread.getChannel("progress_" .. o.id)
   
-  o.downloading = true
+  o.downloading = false
   o.finished = false
   o.downloaded = 0
   o.file_size = 0
   o.filename = ""
-  
-  self.s[o.id] = o
+
 	return o
 end
 
 function Download:push(url, filename, filepath)
+  self.downloading = true
   self.filename = filename
   self.thread:start(url, filename, filepath, self.id)
+  print(url, filename, filepath, self.id)
 end
 
 function Download:update(dt)

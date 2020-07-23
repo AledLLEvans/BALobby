@@ -46,9 +46,9 @@ function lobby.writeScript()
 end
 
 function lobby.enter()
+  lobby.canvas = lg.newCanvas()
   lobby.timeSinceLastPong = 0
   cursor[1] = love.mouse.getCursor( )
-  Button:releaseAll()
   state = STATE_LOBBY
   
   lobby.fixturePoint = {
@@ -56,7 +56,7 @@ function lobby.enter()
     {x = 650, y = 2*lobby.height/3}
   }
   
-  Channel.textbox:setPos(lobby.fixturePoint[1].x, lobby.height - 20):setDimensions(lobby.fixturePoint[2].x - lobby.fixturePoint[1].x, 20)
+  Channel.textbox:setPosition(lobby.fixturePoint[1].x, lobby.height - 20):setDimensions(lobby.fixturePoint[2].x - lobby.fixturePoint[1].x, 20)
   
   Channel:refreshTabs()
   
@@ -119,36 +119,43 @@ function lobby.mousemoved( x, y, dx, dy, istouch )
       chantab.y = chantab.y + dy
     end
   end
+  lobby.render()
 end
 
-function lobby.mousereleased(x,y,b)
+lobby.clickables = {}
+function lobby.mousereleased(x,y,b) 
   if lobby.dragLeftX or lobby.dragRightX or lobby.dragY then
     Channel:refreshTabs()
-    Channel.textbox:setPos(lobby.fixturePoint[1].x, lobby.height - 20):setDimensions(lobby.fixturePoint[2].x - lobby.fixturePoint[1].x, 20)
+    Channel.textbox:setPosition(lobby.fixturePoint[1].x, lobby.height - 20):setDimensions(lobby.fixturePoint[2].x - lobby.fixturePoint[1].x, 20)
     lobby.refreshBattleList()
     lobby.dragLeftX, lobby.dragRightX, lobby.dragY = false, false, false
     return
   end
-  if not b == 1 then return end
-  Channel:getTextbox():click(x,y)
-  for i, k in pairs(Button.actives) do
-    k:click(x,y)
-  end
-  for i, k in pairs(Channel.tabs) do
-    k:click(x,y)
-  end
-  for i, k in pairs(BattleTab.s) do
-    if lobby.clickedBattleID == i then
+  if b == 1 then
+    Channel:getTextbox():click(x,y)
+    for i, k in pairs(Channel.tabs) do
       k:click(x,y)
     end
+    for i, k in pairs(BattleTab.s) do
+      if lobby.clickedBattleID == i then
+        k:click(x,y)
+      end
+    end
+    lobby.clickedBattleID = 0
+    if Battle:getActiveBattle() then
+      Battle:getActiveBattle().buttons.spectate:click(x,y)
+      Battle:getActiveBattle().buttons.ready:click(x,y)
+    end
+    for v, _ in pairs(lobby.clickables) do
+      v:click(x,y)
+    end
+  elseif b == 2 then
+    for i, k in pairs(PlayerButton.s) do
+      k:click(x + 60, y + 10)
+    end
   end
-  lobby.clickedBattleID = 0
-  if Battle:getActiveBattle() then
-    Battle:getActiveBattle().buttons.spectate:click(x,y)
-    Battle:getActiveBattle().buttons.ready:click(x,y)
-  end
+  lobby.render()
 end
-  
   
 function lobby.wheelmoved(x, y)
   local msx, msy = love.mouse.getPosition()
@@ -159,6 +166,7 @@ function lobby.wheelmoved(x, y)
       Channel.active.offset = math.max(0, Channel.active.offset - 1)
     end
   end
+  lobby.render()
 end
   
 lobby.reeltimer = 0
@@ -168,7 +176,15 @@ function lobby.update( dt )
   if not lobby.connected then
     return
   end
-
+  if login.downloading then
+    login.updateDownload(dt)
+  end
+  if login.unpacking then
+    login.updateUnpack(dt)
+  end
+  if lobby.loginInfoEnd and not love.window.hasFocus() then
+    love.timer.sleep(1)
+  end
   Channel:getTextbox():update(dt)
   lobby.timer = lobby.timer + dt
   lobby.reeltimer = lobby.reeltimer + dt
@@ -179,9 +195,6 @@ function lobby.update( dt )
   --for Map downloading
   local battle = Battle:getActiveBattle()
   if battle then battle:update(dt) end
-  for i, k in pairs(Download.s) do
-    k:update(dt)
-  end
 end
 
 function lobby.receiveData(dt)
@@ -193,12 +206,12 @@ function lobby.receiveData(dt)
   if lobby.timeSinceLastPong > 120 then
     lobby.connected = false
     local txt = "Disconnected from server, last PONG over two minutes ago."
-    table.insert(lobby.serverChannel.lines, {msg = txt})
+    table.insert(lobby.serverChannel.lines, {time = os.date("%X"), msg = txt})
     Channel:broadcast(txt)
   end
-  data = tcp:receive()
+  local data = tcp:receive()
   if data then
-    table.insert(lobby.serverChannel.lines, {from = true, msg = data})
+    table.insert(lobby.serverChannel.lines, {time = os.date("%X"), from = true, msg = data})
     love.filesystem.append( "log.txt", data .. "\n" )
     local cmd = string.match(data, "^%u+")
     local words = {}
@@ -216,6 +229,7 @@ function lobby.receiveData(dt)
     if responses[cmd] then
       responses[cmd].respond(words, sentances, data)
     end
+    lobby.render()
   end
 end
 
@@ -235,19 +249,29 @@ function lobby.resize( w, h )
     }
   }
   Channel:refreshTabs()
-  Channel.textbox:setPos(lobby.fixturePoint[1].x, lobby.height - 20):setDimensions(lobby.fixturePoint[2].x - lobby.fixturePoint[1].x, 20)
+  Channel.textbox:setPosition(lobby.fixturePoint[1].x, lobby.height - 20):setDimensions(lobby.fixturePoint[2].x - lobby.fixturePoint[1].x, 20)
   lobby.refreshBattleList()
   if Battle:getActiveBattle() then
-    Battle:getActiveBattle().buttons.spectate:setPos(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50)
-    Battle:getActiveBattle().buttons.ready:setPos(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50)
+    Battle:getActiveBattle().buttons.spectate:setPosition(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50)
+    Battle:getActiveBattle().buttons.ready:setPosition(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50)
   end
+  lobby.refreshPlayerButtons()
+  lobby.canvas = lg.newCanvas(lobby.width, lobby.height)
+  lobby.render()
 end
 
 function lobby.textinput (text)
   if Channel:getTextbox():isActive() then
     Channel:getTextbox():addText(text)
   end
+  lobby.render()
 end
+
+local launchCode = [[
+  local exec = ...
+  os.execute(exec)
+  love.window.restore( )
+]]
 
 local keypress = {
   ["c"] = function()
@@ -263,7 +287,11 @@ local keypress = {
   ["0"] = function()
     lobby.writeScript()
     local exec = "\"" .. lobby.exeFilePath .. "\"" .. " script.txt"
-    os.execute(exec)
+    if not lobby.springThread then
+      lobby.springThread = love.thread.newThread( launchCode )
+    end
+    love.window.minimize( )
+    lobby.springThread:start( exec )
   end,
   ["up"] = function()
     if lobby.channelMessageHistoryID then
@@ -333,6 +361,45 @@ local keypress = {
 
 function lobby.keypressed(k, uni)
   if keypress[k] then keypress[k]() end
+  lobby.render()
+end
+
+function lobby.refreshPlayerButtons()
+  local i = 0
+  local m = 0
+  local x = lobby.fixturePoint[2].x
+  local fontHeight = fonts.latosmall:getHeight()
+  local list = User.s
+  local channel = Channel:getActive()
+  
+  if channel then 
+    if channel.title == "server" then
+      list = User.s
+    elseif string.find(channel.title, "Battle_%d+") then
+      list = Battle:getActiveBattle():getUsers()
+    else
+      list = channel.users
+    end
+  end
+  PlayerButton.s = {}
+  for username, user in pairs(list) do
+    --[[if lobby.fixturePoint[1].y + m + fontHeight > lobby.height then
+      if x > lobby.fixturePoint[1].x then return end
+      x = x + 100
+      m = 0
+    end]]
+    local pButton = PlayerButton:new(username)
+    local w, wt = fonts.latosmall:getWrap(username, lobby.width - lobby.fixturePoint[2].x)
+    m = m + #wt*fontHeight
+    if m > lobby.height then return end
+    pButton:setPosition(x, m)
+    pButton:setDimensions(w, fontHeight)
+    pButton.flag = user.flag
+    pButton.icon = user.icon
+    pButton.insignia = user.insignia
+    i = i + 1
+    table.insert(PlayerButton.s, pButton)
+  end
 end
 
 function lobby.sortBattleIDsByPlayerCount()
@@ -409,7 +476,7 @@ function lobby.createBattleTabs(BattleIDsByPlayerCount)
   local x = 0
   while y < lobby.height and x + 170 < lobby.fixturePoint[1].x and i < #BattleIDsByPlayerCount do
     local BattleTab = BattleTab:new(BattleIDsByPlayerCount[i])
-    BattleTab:setPos(x + 10, y+70)
+    BattleTab:setPosition(x + 10, y+70)
     BattleTab:setDimensions(160, 80)
     i = i + 1
     y = y + 90
@@ -459,7 +526,7 @@ function lobby.window.battleList()
   lg.setFont(fonts.notable)
   local w = fonts.notable:getWidth("BATTLES")
   if w + 10 < lobby.fixturePoint[1].x then lg.print("BATTLES", 10, 10) end
-  lg.setFont(fonts.robotosmall)
+  lg.setFont(fonts.latosmall)
   for i, k in pairs(BattleTab.s) do
     k:draw()
   end
@@ -469,7 +536,7 @@ function lobby.window.users()
   local i = 0
   local m = 0
   local x = lobby.fixturePoint[2].x
-  local fontHeight = fonts.robotosmall:getHeight()
+  local fontHeight = fonts.latosmall:getHeight()
   local list = User.s
   local channel = Channel:getActive()
   
@@ -494,7 +561,7 @@ function lobby.window.users()
       x = x + 100
       m = 0
     end]]
-    local _, wt = fonts.robotosmall:getWrap(username, lobby.width - lobby.fixturePoint[2].x)
+    local _, wt = fonts.latosmall:getWrap(username, lobby.width - lobby.fixturePoint[2].x)
     m = m + #wt*fontHeight
     if m > lobby.height then return end
     lg.draw(user.flag, x + 6, 12 + m)
@@ -505,29 +572,40 @@ function lobby.window.users()
   end
 end
 
---lobby.state = ""
-function lobby.draw()
-  --lg.draw(img["balanced+annihilation+big+loadscreen-min"], 0, 0)
-      
-  lg.line(lobby.fixturePoint[1].x, 0, lobby.fixturePoint[1].x, lobby.height)
-  lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.height)
-  lg.line(lobby.fixturePoint[1].x, lobby.fixturePoint[1].y, lobby.fixturePoint[2].x, lobby.fixturePoint[1].y)
-  --lg.rectangle("line", 1, 1, lobby.fixturePoint[1].x-1, lobby.fixturePoint[1].y-1)
-  --lg.rectangle("line", 1, lobby.fixturePoint[1].y+1, lobby.fixturePoint[1].x-1, lobby.height-lobby.fixturePoint[1].y-1)
-  --lg.rectangle("line", lobby.fixturePoint[1].x+1, 1, lobby.width-lobby.fixturePoint[1].x-1, lobby.fixturePoint[1].y-1)
-  --lg.rectangle("line", lobby.fixturePoint[1].x+1, lobby.fixturePoint[1].y+1, lobby.width-lobby.fixturePoint[1].x-1, lobby.height-lobby.fixturePoint[1].y-1)
-  
-  if Battle:getActiveBattle() then Battle:getActiveBattle():draw() end
-  lobby.window.chat()
-  lobby.window.battleList()
-  lobby.window.users()
-  
-  for i, k in pairs(Button.actives) do
-    k:draw()
-  end
-  if login.dl_status or login.unpackerCount > 0 then
-    if not settings.engine_downloaded or not settings.engine_unpacked then
-      login.drawDownloadBars()
+function lobby.render()
+    lg.setCanvas(lobby.canvas)
+    lg.clear()
+    --lg.draw(img["balanced+annihilation+big+loadscreen-min"], 0, 0)
+        
+    lg.line(lobby.fixturePoint[1].x, 0, lobby.fixturePoint[1].x, lobby.height)
+    lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.height)
+    lg.line(lobby.fixturePoint[1].x, lobby.fixturePoint[1].y, lobby.fixturePoint[2].x, lobby.fixturePoint[1].y)
+    --lg.rectangle("line", 1, 1, lobby.fixturePoint[1].x-1, lobby.fixturePoint[1].y-1)
+    --lg.rectangle("line", 1, lobby.fixturePoint[1].y+1, lobby.fixturePoint[1].x-1, lobby.height-lobby.fixturePoint[1].y-1)
+    --lg.rectangle("line", lobby.fixturePoint[1].x+1, 1, lobby.width-lobby.fixturePoint[1].x-1, lobby.fixturePoint[1].y-1)
+    --lg.rectangle("line", lobby.fixturePoint[1].x+1, lobby.fixturePoint[1].y+1, lobby.width-lobby.fixturePoint[1].x-1, lobby.height-lobby.fixturePoint[1].y-1)
+
+    if Battle:getActiveBattle() then Battle:getActiveBattle():draw() end
+    lobby.window.chat()
+    lobby.window.battleList()
+    --lobby.window.users()
+    
+    for _, button in pairs(PlayerButton.s) do
+      button:draw()
     end
-  end
+    
+    if lobby.cursorDropdown then
+      lobby.cursorDropdown:draw()
+    end
+    
+    if login.dl_status or login.unpackerCount > 0 then
+      if not settings.engine_downloaded or not settings.engine_unpacked then
+        login.drawDownloadBars()
+      end
+    end
+  lg.setCanvas()
+end
+
+function lobby.draw()
+  lg.draw(lobby.canvas)
 end

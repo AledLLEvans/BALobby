@@ -26,11 +26,10 @@ function login.enter()
   tcp:connect(address, port)
   tcp:settimeout(0)
   function lobby.send(msg)
-    table.insert(lobby.serverChannel.lines, {to = true, msg = msg})
+    table.insert(lobby.serverChannel.lines, {time = os.date("%X"), to = true, msg = msg})
     return tcp:send(msg)
   end
   
-  Button:releaseAll()
   lobby.width = 800
   lobby.height = 600
   login.width = 800
@@ -50,10 +49,21 @@ function login.enter()
     w = 100, h = 20, name = 'Password'})
   
   login.mode = "login"
+  local loginButton = Button:new()
+  loginButton:setPosition(lobby.width/2 - 80, loginBox.y - 115)
+  loginButton:setDimensions(80, 30)
+  loginButton:setText("Login")
+  loginButton:setFunction(function() login.mode = "login" end)
+  
+  local registerButton = Button:new()
+  registerButton:setPosition(lobby.width/2, loginBox.y - 115)
+  registerButton:setDimensions(80, 30)
+  registerButton:setText("Register")
+  registerButton:setFunction(function() login.mode = "register" end)
   
   login.buttons = {
-    login = Button:new(lobby.width/2 - 80, loginBox.y - 115, 80, 30, "Login", function() login.mode = "login" end),
-    register = Button:new(lobby.width/2, loginBox.y - 115, 80, 30, "Register", function() login.mode = "register" end)
+    login = loginButton,
+    register = registerButton
   }
   
   state = STATE_LOGIN
@@ -234,7 +244,7 @@ function login.update( dt )
     table.insert(login.log, {to = true, msg = "PING"})
     lobby.timer = 0
   end
-  data = tcp:receive()
+  local data = tcp:receive()
   if data then
     love.filesystem.append( "log.txt", data .. "\n" )
     local cmd = string.match(data, "^%u+")
@@ -270,10 +280,10 @@ function login.resize( w, h )
   lobby.height = h
   loginBox.x = w/2
   loginBox.y = h/2
-  login.nameBox:setPos(w/2 - 244/2 + 60, h/2 - 152/2 + 40)
-  login.passBox:setPos(w/2 - 244/2 + 60, h/2 - 152/2 + 40 + 40)
-  login.buttons.login:setPos(lobby.width/2 - 80, loginBox.y - 115)
-  login.buttons.register:setPos(lobby.width/2, loginBox.y - 115)
+  login.nameBox:setPosition(w/2 - 244/2 + 60, h/2 - 152/2 + 40)
+  login.passBox:setPosition(w/2 - 244/2 + 60, h/2 - 152/2 + 40 + 40)
+  login.buttons.login:setPosition(lobby.width/2 - 80, loginBox.y - 115)
+  login.buttons.register:setPosition(lobby.width/2, loginBox.y - 115)
 end
 
 function login.textinput (text)
@@ -331,8 +341,8 @@ function login.mousereleased (x, y, b)
   if not b == 1 then return end
   login.nameBox:click(x,y)
   login.passBox:click(x,y)
-  for i, k in pairs(login.buttons) do
-    k:click(x,y)
+  for _, k in pairs(login.buttons) do
+    k:click(x, y)
   end
 end
 

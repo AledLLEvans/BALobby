@@ -1,61 +1,105 @@
-Button = {}
-Button.mt =  {__index = Button}
 local lg = love.graphics
+local utf8 = require("utf8")
+local base64 = require("base64")
+local md5 = require("md5")
 
-Button.actives = {}
+Window = {}
+Window.mt = {__index = Window}
 
-function Button:new(x,y,w,h,text,func)
+function Window:new(o)
+  o = o or {}
+  o.x = 0
+  o.y = 0
+  o.w = 10
+  o.h = 10
+  setmetatable(o, Window.mt)
+  return o
+end
+
+function Window:setPosition(x, y)
+  self.x = x or self.x
+  self.y = y or self.y
+end
+
+function Window:getPosition()
+  return self.x, self.y
+end
+
+function Window:setDimensions(w, h)
+  self.w = w or self.w
+  self.h = h or self.h
+end
+
+function Window:getDimensions()
+  return self.w, self.h
+end
+
+Button = Window:new()
+Button.mt =  {__index = Button}
+
+function Button:new()
   local o = {}
   setmetatable(o, Button.mt)
-  o.type = "default"
-  o.x = x or 0
-  o.y = y or 0
-  o.w = w or 160
-  o.h = h or 100
-  o.text = text or ""
-  o.visible = false
+  o.text = ""
+  o.clickSound = "click"
   
-  o.func = func or function() end
+  o.func = function() end
   
   return o
 end
 
-function Button:setPosition(x, y)
-  self.x, self.y = x, y
-end
-
-function Button:setDimensions(w,h)
-  self.w, self.h = w, h
-end
-
-function Button:setText(t)
-  self.text = t
-end
-
-function Button:activate()
-  self.visible = true
-  table.insert(self.actives, self)
+function Button:setText(text)
+  self.text = text
 end
 
 function Button:draw()
-  lg.rectangle("line", self.x, self.y, self.w, self.h)
-  lg.printf(self.text, self.x, self.y + self.h/2 - fonts.robotosmall:getHeight()/2, self.w, "center")
-end
-
-function Button:releaseAll()
-  self.actives = {}
+  local x, y = x or self.x, y or self.y
+  lg.rectangle("line", x, y, self.w, self.h)
+  lg.printf(self.text, x, y + self.h/2 - fonts.robotosmall:getHeight()/2, self.w, "center")
 end
 
 function Button:click(x,y)
+  print(x,y,self.x,self.y)
   if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
-    sound["click"]:stop()
-    sound["click"]:play()
+    sound[self.clickSound]:stop()
+    sound[self.clickSound]:play()
     self.func()
   end
 end
 
 function Button:setFunction(func)
   self.func = func
+end
+
+PlayerButton = Button:new()
+PlayerButton.mt = {__index = PlayerButton}
+PlayerButton.s = {}
+function PlayerButton:new(username)
+  local o = {}
+  setmetatable(o, PlayerButton.mt)
+  o.username = username
+  o.func = function()
+    print("button right clicked")
+    local PMbutton = Button:new()
+    PMbutton:setText("Message")
+    lobby.cursorDropdown = Dropdown:new()
+    lobby.cursorDropdown:setPosition(love.mouse.getPosition())
+    lobby.cursorDropdown:addButton(PMbutton)
+    lobby.clickables[lobby.cursorDropdown] = true
+  end
+
+  return o
+end
+
+function PlayerButton:draw()
+  lg.rectangle("line", self.x + 60, self.y + 10, self.w, self.h)
+  lg.draw(self.flag, self.x + 6, 12 + self.y)
+  lg.draw(self.insignia, self.x + 25, 10 + self.y, 0, 1/5, 1/4)
+  if self.icon then lg.draw(img[self.icon], self.x + 40, 10 + self.y, 0, 1/4) end
+  lg.printf(self.username, self.x + 60, 10 + self.y, lobby.width - lobby.fixturePoint[2].x - 20)
+  if self.dropdown then
+    self.dropdown:draw()
+  end
 end
 
 ChannelTab = Button:new()
@@ -106,7 +150,7 @@ BattleTab = Button:new()
 BattleTab.mt = {__index = BattleTab}
 BattleTab.s = {}
 function BattleTab:new(id)
-  local new = Button:new(id)
+  local new = Button:new()
   setmetatable(new, BattleTab.mt)
   
   new.visible = true
@@ -166,4 +210,34 @@ function BattleButton:new(x,y,w,h,text,func)
   new.visible = true
   table.insert(self.s, new)
   return new
+end
+
+Dropdown = Window:new()
+Dropdown.mt = {__index = Dropdown}
+function Dropdown:new()
+  local o = {}
+  o.buttons = {}
+  setmetatable(o, Dropdown.mt)
+  return o
+end
+
+function Dropdown:addButton(button, part)
+  part = part or 1
+  local y = 4*part + 10*#self.buttons
+  button:setPosition(self.x, y)
+  button:setDimensions(100, 10)
+  table.insert(self.buttons, button)
+end
+
+function Dropdown:click(x, y)
+  for _, button in pairs(self.buttons) do
+    button:click(x, y)
+  end
+end
+
+function Dropdown:draw()
+  for i, k in pairs(self.buttons) do
+    k:draw()
+  end
+  lg.rectangle("line", self.x, self.y, self.w, self.h)
 end

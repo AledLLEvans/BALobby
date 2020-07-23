@@ -8,6 +8,9 @@ springrts.com
 built with Love2D frawework
 https://love2d.org/
 
+for 'compilation' on windows/mac/linux see
+https://love2d.org/wiki/Game_Distribution
+
 With BALobby you can:
 - register an account and login to springfightclub.com:8200
 - chat with others connected to the server privately or in the public channels
@@ -16,3 +19,4 @@ With BALobby you can:
 
 Known 'bugs':
 - server will disconnect if you idle at login screen
+
