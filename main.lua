@@ -33,10 +33,6 @@ local function checkOS()
 end
 
 function love.load()
-<<<<<<< HEAD
-  print(love.graphics.getLineWidth())
-=======
->>>>>>> c32064d62e44d68cc8640c1988130c1eb11f6c78
   checkOS()
   if not lfs.getInfo("chatlogs") then
     lfs.createDirectory("chatlogs")

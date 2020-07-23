@@ -59,10 +59,6 @@ function Button:draw()
 end
 
 function Button:click(x,y)
-<<<<<<< HEAD
-  print(x,y,self.x,self.y)
-=======
->>>>>>> c32064d62e44d68cc8640c1988130c1eb11f6c78
   if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
     sound[self.clickSound]:stop()
     sound[self.clickSound]:play()
@@ -74,7 +70,6 @@ function Button:setFunction(func)
   self.func = func
 end
 
-<<<<<<< HEAD
 PlayerButton = Button:new()
 PlayerButton.mt = {__index = PlayerButton}
 PlayerButton.s = {}
@@ -83,7 +78,6 @@ function PlayerButton:new(username)
   setmetatable(o, PlayerButton.mt)
   o.username = username
   o.func = function()
-    print("button right clicked")
     local PMbutton = Button:new()
     PMbutton:setText("Message")
     lobby.cursorDropdown = Dropdown:new()
@@ -106,8 +100,6 @@ function PlayerButton:draw()
   end
 end
 
-=======
->>>>>>> c32064d62e44d68cc8640c1988130c1eb11f6c78
 ChannelTab = Button:new()
 ChannelTab.mt =  {__index = ChannelTab}
 ChannelTab.s = {}
@@ -218,26 +210,17 @@ function BattleButton:new(x,y,w,h,text,func)
   return new
 end
 
-<<<<<<< HEAD
 Dropdown = Window:new()
 Dropdown.mt = {__index = Dropdown}
 function Dropdown:new()
   local o = {}
   o.buttons = {}
-=======
-Dropdown = {}
-Dropdown.mt = {__index = Dropdown}
-function Dropdown:new()
-  local o = {}
-  o.parts = {}
->>>>>>> c32064d62e44d68cc8640c1988130c1eb11f6c78
   setmetatable(o, Dropdown.mt)
   return o
 end
 
 function Dropdown:addButton(button, part)
   part = part or 1
-<<<<<<< HEAD
   local y = 4*part + 10*#self.buttons
   button:setPosition(self.x, y)
   button:setDimensions(100, 10)
@@ -255,32 +238,4 @@ function Dropdown:draw()
     k:draw()
   end
   lg.rectangle("line", self.x, self.y, self.w, self.h)
-=======
-  self.parts[part] = self.parts[part] or {}
-  table.insert(self.parts[part], button)
-end
-
-function Dropdown:draw()
-  lg.setLineWidth(0.2)
-  lg.rectangle("line", self.x, self.y, self.w, self.h)
-  lg.setLineWidth(1)
-  local part = 1
-  local b = 1
-  local button = self.parts[part][b]
-  local y = self.y
-  while button do
-    button:draw(self.x, y)
-    local _, h = button:getDimensions()
-    y = y + h
-    b = b + 1
-    button = self.parts[part][b]
-    if not button then
-      lg.line(self.x + 5, self.y + 2, self.x + self.w - 5, self.y + 2)
-      y = y + 4
-      part = part + 1
-      b = 1
-      button = self.parts[part][b]
-    end
-  end
->>>>>>> c32064d62e44d68cc8640c1988130c1eb11f6c78
 end

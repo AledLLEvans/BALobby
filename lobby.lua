@@ -131,19 +131,9 @@ function lobby.mousereleased(x,y,b)
     lobby.dragLeftX, lobby.dragRightX, lobby.dragY = false, false, false
     return
   end
-<<<<<<< HEAD
   if b == 1 then
     Channel:getTextbox():click(x,y)
     for i, k in pairs(Channel.tabs) do
-=======
-  if not b == 1 then return end
-  Channel:getTextbox():click(x,y)
-  for i, k in pairs(Channel.tabs) do
-    k:click(x,y)
-  end
-  for i, k in pairs(BattleTab.s) do
-    if lobby.clickedBattleID == i then
->>>>>>> c32064d62e44d68cc8640c1988130c1eb11f6c78
       k:click(x,y)
     end
     for i, k in pairs(BattleTab.s) do
@@ -164,14 +154,11 @@ function lobby.mousereleased(x,y,b)
       k:click(x + 60, y + 10)
     end
   end
-<<<<<<< HEAD
-=======
   lobby.clickedBattleID = 0
   if Battle:getActiveBattle() then
     Battle:getActiveBattle().buttons.spectate:click(x,y)
     Battle:getActiveBattle().buttons.ready:click(x,y)
   end
->>>>>>> c32064d62e44d68cc8640c1988130c1eb11f6c78
   lobby.render()
 end
   
@@ -273,10 +260,7 @@ function lobby.resize( w, h )
     Battle:getActiveBattle().buttons.spectate:setPosition(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50)
     Battle:getActiveBattle().buttons.ready:setPosition(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50)
   end
-<<<<<<< HEAD
   lobby.refreshPlayerButtons()
-=======
->>>>>>> c32064d62e44d68cc8640c1988130c1eb11f6c78
   lobby.canvas = lg.newCanvas(lobby.width, lobby.height)
   lobby.render()
 end
@@ -291,10 +275,7 @@ end
 local launchCode = [[
   local exec = ...
   os.execute(exec)
-<<<<<<< HEAD
   love.window.restore( )
-=======
->>>>>>> c32064d62e44d68cc8640c1988130c1eb11f6c78
 ]]
 
 local keypress = {
@@ -314,10 +295,7 @@ local keypress = {
     if not lobby.springThread then
       lobby.springThread = love.thread.newThread( launchCode )
     end
-<<<<<<< HEAD
     love.window.minimize( )
-=======
->>>>>>> c32064d62e44d68cc8640c1988130c1eb11f6c78
     lobby.springThread:start( exec )
   end,
   ["up"] = function()
@@ -389,7 +367,6 @@ local keypress = {
 function lobby.keypressed(k, uni)
   if keypress[k] then keypress[k]() end
   lobby.render()
-<<<<<<< HEAD
 end
 
 function lobby.refreshPlayerButtons()
@@ -428,8 +405,6 @@ function lobby.refreshPlayerButtons()
     i = i + 1
     table.insert(PlayerButton.s, pButton)
   end
-=======
->>>>>>> c32064d62e44d68cc8640c1988130c1eb11f6c78
 end
 
 function lobby.sortBattleIDsByPlayerCount()
@@ -618,7 +593,6 @@ function lobby.render()
     if Battle:getActiveBattle() then Battle:getActiveBattle():draw() end
     lobby.window.chat()
     lobby.window.battleList()
-<<<<<<< HEAD
     --lobby.window.users()
     
     for _, button in pairs(PlayerButton.s) do
@@ -634,15 +608,6 @@ function lobby.render()
         login.drawDownloadBars()
       end
     end
-=======
-    lobby.window.users()
-
-    if login.dl_status or login.unpackerCount > 0 then
-      if not settings.engine_downloaded or not settings.engine_unpacked then
-        login.drawDownloadBars()
-      end
-    end
->>>>>>> c32064d62e44d68cc8640c1988130c1eb11f6c78
   lg.setCanvas()
 end
 
