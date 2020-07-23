@@ -99,9 +99,9 @@ function love.textinput(text)
 end
 
 function love.wheelmoved(x, y)
-	if gamestates[state].wheelmoved then
-		gamestates[state].wheelmoved(x,y)
-	end
+  if gamestates[state].wheelmoved then
+    gamestates[state].wheelmoved(x,y)
+  end
 end
 
 function love.quit()
