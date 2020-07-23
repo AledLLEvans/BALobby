@@ -37,7 +37,7 @@ end
 Button = Window:new()
 Button.mt =  {__index = Button}
 
-function Button:new(x,y,w,h)
+function Button:new()
   local o = {}
   setmetatable(o, Button.mt)
   o.text = ""
@@ -118,7 +118,7 @@ BattleTab = Button:new()
 BattleTab.mt = {__index = BattleTab}
 BattleTab.s = {}
 function BattleTab:new(id)
-  local new = Button:new(id)
+  local new = Button:new()
   setmetatable(new, BattleTab.mt)
   
   new.visible = true
@@ -179,7 +179,6 @@ function BattleButton:new(x,y,w,h,text,func)
   table.insert(self.s, new)
   return new
 end
-
 
 Dropdown = {}
 Dropdown.mt = {__index = Dropdown}

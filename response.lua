@@ -478,6 +478,7 @@ function LOGININFOEND.respond(words, sentances)
   lobby.send("JOIN en" .. "\n")
   lobby.send("JOIN newbies" .. "\n")
   lobby.refreshBattleList()
+  lobby.loginInfoEnd = true
 end
 function MOTD.respond(words, sentances)
   table.insert(lobby.serverChannel.lines, {from = true, msg = string.gsub(sentances[1], "%u+ ", "", 1) .. "\n"})

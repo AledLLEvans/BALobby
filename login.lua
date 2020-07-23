@@ -354,12 +354,12 @@ function login.drawLoginBox()
   login.nameBox:draw()
   login.passBox:draw()
   lg.setColor(0,0,0)
-  --[[lg.rectangle("fill",
+  lg.rectangle("fill",
     login.buttons[login.mode].x,
     login.buttons[login.mode].y,
     login.buttons[login.mode].w,
     login.buttons[login.mode].h
-  )]]
+  )
   lg.setColor(1,1,1)
   for _, k in pairs(login.buttons) do
     k:draw()

@@ -10,6 +10,8 @@ function love.conf(t)
   t.window.minheight = 400
 
   t.window.resizable = true
+  
+  --t.window.vsync = 2
 
   t.modules.audio = true
   t.modules.data = true
