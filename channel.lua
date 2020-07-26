@@ -99,6 +99,7 @@ function Channel:refreshTabs()
           self.active = channel
           channel.newMessage = false
           lobby.channelMessageHistoryID = false
+          lobby.render()
         end
       )
       i = i + 1

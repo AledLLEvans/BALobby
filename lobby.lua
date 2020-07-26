@@ -45,6 +45,15 @@ function lobby.writeScript()
 	txt:close()
 end
 
+function lobby.declareColors()
+  lg.setBackgroundColor(28/255, 28/255, 28/255)
+  lobby.color = {}
+  lobby.color.bb = {33/255, 33/255, 33/255}
+  lobby.color.bt = {112/255, 112/255, 112/255}
+  lobby.color.bargreen = {28/255, 252/255, 139/255}
+end
+lobby.declareColors()
+
 function lobby.enter()
   lobby.canvas = lg.newCanvas()
   lobby.timeSinceLastPong = 0
@@ -127,7 +136,7 @@ function lobby.mousereleased(x,y,b)
   if lobby.dragLeftX or lobby.dragRightX or lobby.dragY then
     Channel:refreshTabs()
     Channel.textbox:setPosition(lobby.fixturePoint[1].x, lobby.height - 20):setDimensions(lobby.fixturePoint[2].x - lobby.fixturePoint[1].x, 20)
-    lobby.refreshBattleList()
+    lobby.refreshBattleTabs()
     lobby.dragLeftX, lobby.dragRightX, lobby.dragY = false, false, false
     return
   end
@@ -142,10 +151,6 @@ function lobby.mousereleased(x,y,b)
       end
     end
     lobby.clickedBattleID = 0
-    if Battle:getActiveBattle() then
-      Battle:getActiveBattle().buttons.spectate:click(x,y)
-      Battle:getActiveBattle().buttons.ready:click(x,y)
-    end
     for v, _ in pairs(lobby.clickables) do
       v:click(x,y)
     end
@@ -155,15 +160,22 @@ function lobby.mousereleased(x,y,b)
     end
   end
   lobby.clickedBattleID = 0
-  if Battle:getActiveBattle() then
-    Battle:getActiveBattle().buttons.spectate:click(x,y)
-    Battle:getActiveBattle().buttons.ready:click(x,y)
-  end
   lobby.render()
 end
-  
+
+lobby.battleTabOffset = 0
 function lobby.wheelmoved(x, y)
   local msx, msy = love.mouse.getPosition()
+  if lobby.state == "landing" then
+    if msx < lobby.fixturePoint[2].x and msy < lobby.fixturePoint[1].y then
+      if y > 0 then
+        lobby.battleTabOffset = math.min(lobby.battleTabRows * 90, lobby.battleTabOffset + 10)
+      elseif y < 0 then
+        lobby.battleTabOffset = math.max(0, lobby.battleTabOffset - 10)
+      end
+      lobby.refreshBattleTabs()
+    end
+  end
   if msx > lobby.fixturePoint[1].x and msy > lobby.fixturePoint[1].y then
     if y > 0 then
       Channel.active.offset = math.min(#Channel.active.lines, Channel.active.offset + 1)
@@ -171,6 +183,7 @@ function lobby.wheelmoved(x, y)
       Channel.active.offset = math.max(0, Channel.active.offset - 1)
     end
   end
+  
   lobby.render()
 end
   
@@ -255,7 +268,7 @@ function lobby.resize( w, h )
   }
   Channel:refreshTabs()
   Channel.textbox:setPosition(lobby.fixturePoint[1].x, lobby.height - 20):setDimensions(lobby.fixturePoint[2].x - lobby.fixturePoint[1].x, 20)
-  lobby.refreshBattleList()
+  lobby.refreshBattleTabs()
   if Battle:getActiveBattle() then
     Battle:getActiveBattle().buttons.spectate:setPosition(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50)
     Battle:getActiveBattle().buttons.ready:setPosition(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50)
@@ -350,6 +363,7 @@ local keypress = {
   end,
   ["escape"] = function()
     Battle:getActiveBattle().display = false
+    --lobby.state = "landing"
     lobby.send("LEAVEBATTLE" .. "\n")
   end,
   ["left"] = function()
@@ -431,14 +445,7 @@ function lobby.sortBattleIDsByPlayerCount()
   return battleIDsByPlayerCount
 end
 
-function lobby.refreshBattleList()
-  local BattleIDsByPlayerCount = lobby.sortBattleIDsByPlayerCount()
-  for rank = 1, #BattleIDsByPlayerCount do
-    Battle.s[BattleIDsByPlayerCount[rank]].rankByPlayerCount = rank
-  end
-  BattleTab.s = {}
-  lobby.createBattleTabs(BattleIDsByPlayerCount)
-end
+
 
 function lobby.setSynced(b)
   User.s[lobby.username].synced = b
@@ -475,21 +482,40 @@ function lobby.sendMyBattleStatus()
   lobby.send("MYBATTLESTATUS " .. newstatus .. " " .. color .. "\n")
 end
 
+function lobby.refreshBattleTabs()
+  local BattleIDsByPlayerCount = lobby.sortBattleIDsByPlayerCount()
+  for rank = 1, #BattleIDsByPlayerCount do
+    Battle.s[BattleIDsByPlayerCount[rank]].rankByPlayerCount = rank
+  end
+  BattleTab.s = {}
+  lobby.createBattleTabs(BattleIDsByPlayerCount)
+end
+
+lobby.battleTabRows = 1
 function lobby.createBattleTabs(BattleIDsByPlayerCount)
   local i = 1
-  local y = 0
+  local y = lobby.battleTabOffset
   local x = 0
-  while y < lobby.height and x + 170 < lobby.fixturePoint[1].x and i < #BattleIDsByPlayerCount do
+  local ymax = lobby.height - y
+  local xmax = lobby.fixturePoint[1].x
+  if lobby.state == "landing" then
+    ymax = lobby.fixturePoint[1].y - y
+    xmax = lobby.fixturePoint[2].x
+  end
+  local c = 0
+  while y < lobby.height and x + 250 < xmax and i < #BattleIDsByPlayerCount do
     local BattleTab = BattleTab:new(BattleIDsByPlayerCount[i])
     BattleTab:setPosition(x + 10, y+70)
-    BattleTab:setDimensions(160, 80)
+    BattleTab:setDimensions(240, 80)
     i = i + 1
     y = y + 90
-    if y + 90 + 90 > lobby.height then
+    if y + 90 + 90 > ymax then
       y = 0
-      x = x + 170
+      x = x + 250
+      c = c + 1
     end
   end
+  lobby.battleTabRows = c
 end
 
 function lobby.refreshPlayerReel()
@@ -577,37 +603,77 @@ function lobby.window.users()
   end
 end
 
-function lobby.render()
-    lg.setCanvas(lobby.canvas)
-    lg.clear()
-    --lg.draw(img["balanced+annihilation+big+loadscreen-min"], 0, 0)
-        
-    lg.line(lobby.fixturePoint[1].x, 0, lobby.fixturePoint[1].x, lobby.height)
-    lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.height)
-    lg.line(lobby.fixturePoint[1].x, lobby.fixturePoint[1].y, lobby.fixturePoint[2].x, lobby.fixturePoint[1].y)
-    --lg.rectangle("line", 1, 1, lobby.fixturePoint[1].x-1, lobby.fixturePoint[1].y-1)
-    --lg.rectangle("line", 1, lobby.fixturePoint[1].y+1, lobby.fixturePoint[1].x-1, lobby.height-lobby.fixturePoint[1].y-1)
-    --lg.rectangle("line", lobby.fixturePoint[1].x+1, 1, lobby.width-lobby.fixturePoint[1].x-1, lobby.fixturePoint[1].y-1)
-    --lg.rectangle("line", lobby.fixturePoint[1].x+1, lobby.fixturePoint[1].y+1, lobby.width-lobby.fixturePoint[1].x-1, lobby.height-lobby.fixturePoint[1].y-1)
+lobby.state = "landing"
 
-    if Battle:getActiveBattle() then Battle:getActiveBattle():draw() end
-    lobby.window.chat()
-    lobby.window.battleList()
-    --lobby.window.users()
-    
-    for _, button in pairs(PlayerButton.s) do
-      button:draw()
+lobby.renderFunction = {
+  ["landing"] = function() 
+    lg.setColor(lobby.color.bb)
+    lg.rectangle("fill",
+    0,
+    lobby.fixturePoint[1].y,
+    lobby.fixturePoint[2].x,
+    lobby.height - lobby.fixturePoint[1].y
+    )
+    lg.setColor(1,1,1)
+    lg.line(lobby.fixturePoint[2].x - 20, 80, lobby.fixturePoint[2].x - 20, lobby.fixturePoint[2].y - 80)
+    lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.height)
+    lg.line(0, lobby.fixturePoint[1].y, lobby.fixturePoint[2].x, lobby.fixturePoint[1].y)
+    lg.setColor(lobby.color.bargreen)
+    local length = (lobby.fixturePoint[2].y - 160)/lobby.battleTabRows
+    lg.line(lobby.fixturePoint[2].x - 20,
+            80 + lobby.battleTabOffset,
+            lobby.fixturePoint[2].x - 20,
+            80 + lobby.battleTabOffset + length)
+    lg.setColor(1,1,1)
+  end,
+  
+  ["battle"] = function() 
+    lg.setColor(lobby.color.bb)
+    lg.rectangle("fill",
+    lobby.fixturePoint[1].x,
+    lobby.fixturePoint[1].y,
+    lobby.width - lobby.fixturePoint[1].x,
+    lobby.height - lobby.fixturePoint[1].y
+    )
+    lg.setColor(1,1,1)
+    lg.line(lobby.fixturePoint[1].x, 0, lobby.fixturePoint[1].x, lobby.height)
+    lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.fixturePoint[2].y)
+    lg.line(lobby.fixturePoint[1].x, lobby.fixturePoint[1].y, lobby.width, lobby.fixturePoint[1].y)
+  end,
+  
+  ["options"] = function() end
+  }
+
+function lobby.render()
+  lg.setCanvas(lobby.canvas)
+  lg.clear()
+  --lg.draw(img["balanced+annihilation+big+loadscreen-min"], 0, 0)
+  
+  lobby.renderFunction[lobby.state]()
+
+  --lg.rectangle("line", 1, 1, lobby.fixturePoint[1].x-1, lobby.fixturePoint[1].y-1)
+  --lg.rectangle("line", 1, lobby.fixturePoint[1].y+1, lobby.fixturePoint[1].x-1, lobby.height-lobby.fixturePoint[1].y-1)
+  --lg.rectangle("line", lobby.fixturePoint[1].x+1, 1, lobby.width-lobby.fixturePoint[1].x-1, lobby.fixturePoint[1].y-1)
+  --lg.rectangle("line", lobby.fixturePoint[1].x+1, lobby.fixturePoint[1].y+1, lobby.width-lobby.fixturePoint[1].x-1, lobby.height-lobby.fixturePoint[1].y-1)
+
+  if Battle:getActiveBattle() then Battle:getActiveBattle():draw() end
+  lobby.window.chat()
+  lobby.window.battleList()
+  --lobby.window.users()
+  
+  for _, button in pairs(PlayerButton.s) do
+    button:draw()
+  end
+  
+  if lobby.cursorDropdown then
+    lobby.cursorDropdown:draw()
+  end
+  
+  if login.dl_status or login.unpackerCount > 0 then
+    if not settings.engine_downloaded or not settings.engine_unpacked then
+      login.drawDownloadBars()
     end
-    
-    if lobby.cursorDropdown then
-      lobby.cursorDropdown:draw()
-    end
-    
-    if login.dl_status or login.unpackerCount > 0 then
-      if not settings.engine_downloaded or not settings.engine_unpacked then
-        login.drawDownloadBars()
-      end
-    end
+  end
   lg.setCanvas()
 end
 

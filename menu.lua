@@ -12,8 +12,13 @@ function Window:new(o)
   o.y = 0
   o.w = 10
   o.h = 10
+  o.padding = 0
   setmetatable(o, Window.mt)
   return o
+end
+
+function Window:setPadding(p)
+  self.padding = p
 end
 
 function Window:setPosition(x, y)
@@ -176,7 +181,7 @@ function BattleTab:draw()
   if User.s[battle.founder].ingame then
     lg.setColor(0,0.8,0.1,0.9)
   else
-    lg.setColor(1,1,1,0.75)
+    lg.setColor(lobby.color.bt)
   end
   lg.rectangle("fill", x, y, w, h)
   lg.setColor(0,0,0)
@@ -200,13 +205,11 @@ end
 
 BattleButton = Button:new()
 BattleButton.mt = {__index = BattleButton}
-BattleButton.s = {}
-function BattleButton:new(x,y,w,h,text,func)
-  local new = Button:new(x,y,w,h,text,func)
+function BattleButton:new()
+  local new = Button:new()
   setmetatable(new, BattleButton.mt)
   
-  new.visible = true
-  table.insert(self.s, new)
+  lobby.clickables[new] = true
   return new
 end
 

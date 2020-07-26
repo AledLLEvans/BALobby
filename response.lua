@@ -219,7 +219,8 @@ end
 function BATTLECLOSED.respond(words, sentances)
   local id = words[1]
   Battle.s[id] = nil
-  lobby.refreshBattleList()
+  Battle.count = Battle.count - 1
+  lobby.refreshBattleTabs()
 end
 function BATTLEOPENED.respond(words, sentances)
   local battle = {}
@@ -254,7 +255,7 @@ function BATTLEOPENED.respond(words, sentances)
   battle.userListScrollOffset = 0
   
   Battle:new(battle)
-  lobby.refreshBattleList()
+  lobby.refreshBattleTabs()
 end
 function BRIDGEDCLIENTFROM.respond(words, sentances)
 end
@@ -412,18 +413,25 @@ function JOINBATTLE.respond(words, sentances)
   if battle:mapHandler() and battle:modHandler() then
     lobby.setSynced(true)
   end
+  local specButton = BattleButton:new()
+  specButton:setPosition(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50)
+  specButton:setDimensions(90, 40)
+  specButton:setText("Spectate")
+  specButton:setFunction(function() lobby.setSpectator(not User.s[lobby.username].spectator) end)
+  local readyButton = BattleButton:new()
+  readyButton:setPosition(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50)
+  readyButton:setDimensions(90, 40)
+  readyButton:setText("Ready")
+  readyButton:setFunction(function() if not User.s[lobby.username].spectator then lobby.setReady(not User.s[lobby.username].ready) end end)
   battle.buttons = {
-  spectate = BattleButton:new(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50, 90, 40,
-    "Spectate",
-    function() lobby.setSpectator(not User.s[lobby.username].spectator) end),
-  ready = BattleButton:new(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50, 90, 40,
-    "Ready",
-    function() if not User.s[lobby.username].spectator then lobby.setReady(not User.s[lobby.username].ready) end end),
+  spectate = specButton,
+  ready = readyButton
     }
   Channel:refreshTabs()
   Channel.active = Channel.s["Battle_" .. id]
   battle.display = true
-  lobby.refreshBattleList()
+  lobby.refreshBattleTabs()
+  lobby.state = "battle"
 end
 function JOINBATTLEFAILED.respond(words, sentances)
   Channel:broadcast(" REQUEST TO JOIN BATTLE FAILED, REASON: " .. string.gsub(sentances[1], "%S+ ", "", 1))
@@ -444,7 +452,7 @@ function JOINEDBATTLE.respond(words, sentances)
   Battle.s[battleid].users[user] = User.s[user]
   Battle.s[battleid].userCount = Battle.s[battleid].userCount + 1
   Battle.s[battleid].scriptPassword = scriptPassword
-  lobby.refreshBattleList()
+  lobby.refreshBattleTabs()
 end
 function JOINEDFROM.respond(words, sentances)
 end
@@ -470,7 +478,7 @@ function LEFTBATTLE.respond(words, sentances)
   Battle.s[battleid].users[user] = nil
   Battle.s[battleid].userCount = Battle.s[battleid].userCount - 1
   User.s[user].battleid = nil
-  lobby.refreshBattleList()
+  lobby.refreshBattleTabs()
 end
 function LEFTFROM.respond(words, sentances)
 end
@@ -478,7 +486,7 @@ function LOGININFOEND.respond(words, sentances)
   lobby.send("JOIN main" .. "\n")
   lobby.send("JOIN en" .. "\n")
   lobby.send("JOIN newbies" .. "\n")
-  lobby.refreshBattleList()
+  lobby.refreshBattleTabs()
   lobby.loginInfoEnd = true
 end
 function MOTD.respond(words, sentances)
@@ -654,7 +662,7 @@ function UPDATEBATTLEINFO.respond(words, sentances)
   Battle.s[id].mapName = mapName
   --Battle.s[id]:mapHandler()
   Battle.s[id]:getMinimap()
-  lobby.refreshBattleList()
+  lobby.refreshBattleTabs()
 end
 function UPDATEBOT.respond(words, sentances)
 end

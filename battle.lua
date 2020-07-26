@@ -6,10 +6,13 @@ local nfs = require("nativefs")
 
 Battle.s = {}
 
+Battle.count = 0
+
 function Battle:new(battle)
   setmetatable(battle, Battle.mt)
   battle.playersByTeam = {}
   self.s[battle.id] = battle
+  self.count = self.count + 1
 end
 
 function Battle:getChannel()
@@ -26,10 +29,6 @@ end
 
 function Battle:getUsers()
   return self.users
-end
-
-function Battle:setUp(x, y, w, h)
-  self.channel:setUp(x, y, w, h)
 end
 
 function Battle:update(dt)
@@ -62,7 +61,7 @@ function Battle:update(dt)
       --self.mapDownload:release()
       self.mapDownload = nil
       if (not self.modDownload) or self.modDownload.finished then lobby.setSynced(true) end
-      lobby.refreshBattleList()
+      lobby.refreshBattleTabs()
       return
     end
     if self.mapDownload.error then
