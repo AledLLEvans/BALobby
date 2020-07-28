@@ -145,6 +145,11 @@ function Textbox:moveRight()
   self.displaytextbar = addText(self.displaytext, self.charoffset, "|")
 end
 
+function Textbox:toEnd()
+  for i = 1, #self.text do
+    self:moveRight()
+  end
+end
 
 function Textbox:addText(t)
   self.charoffset = self.charoffset + 1

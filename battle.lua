@@ -8,6 +8,30 @@ Battle.s = {}
 
 Battle.count = 0
 
+function Battle.enter()
+  lobby.state = "battle"
+  lobby.fixturePoint[1].x = 20
+  Battle.sideButton = Button:new()
+  Battle.sideButton:setPosition(1,1)
+  Battle.sideButton:setDimensions(20-2,lobby.height - 2)
+  Battle.sideButton:onClick(function() Battle.enterWithList() end)
+  lobby.clickables[Battle.sideButton] = true
+  Channel.refresh()
+  lobby.render()
+end
+
+function Battle.enterWithList()
+  lobby.state = "battleWithList"
+  lobby.fixturePoint[1].x = 260
+  Battle.sideButton = Button:new()
+  Battle.sideButton:setPosition(261,1)
+  Battle.sideButton:setDimensions(20-2,lobby.height - 2)
+  Battle.sideButton:onClick(function() Battle.enter() end)
+  lobby.clickables[Battle.sideButton] = true
+  Channel.refresh()
+  lobby.render()
+end
+
 function Battle:new(battle)
   setmetatable(battle, Battle.mt)
   battle.playersByTeam = {}
@@ -29,6 +53,41 @@ end
 
 function Battle:getUsers()
   return self.users
+end
+
+function lobby.setSynced(b)
+  User.s[lobby.username].synced = b
+  lobby.sendMyBattleStatus()
+end
+
+function lobby.setSpectator(b)
+  User.s[lobby.username].spectator = b
+  User.s[lobby.username].ready = false
+  lobby.sendMyBattleStatus()
+end
+
+function lobby.setReady(b)
+  User.s[lobby.username].ready = b
+  lobby.sendMyBattleStatus()
+end
+
+function lobby.setColor(r, g, b, a) --needs completing
+  if type(r) == "table" then r = r[1] g = r[2] b = r[3] a = r[4] end
+  --User.s[lobby.username].color = r * 255
+  lobby.sendMyBattleStatus()
+end
+
+function lobby.sendMyBattleStatus()
+  local user = User.s[lobby.username]
+  --local status = user.battleStatus
+  local b = {
+    user.ready and 1 or 0,
+    user.spectator and 0 or 1,
+    user.synced and 1 or 0
+  }
+  local newstatus = b[1] * 2 + b[2] * 2 ^ 10 + 2 ^ (23 - b[3])
+  local color = user.color
+  lobby.send("MYBATTLESTATUS " .. newstatus .. " " .. color .. "\n")
 end
 
 function Battle:update(dt)
@@ -157,6 +216,7 @@ function Battle:draw()
     end
   end
   lg.origin()
+  Battle.sideButton:draw()
 end
 
 local function hasMap(mapName)

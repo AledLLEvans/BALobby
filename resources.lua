@@ -12,7 +12,9 @@ local IMAGE_FILES = {
   "gamepad",
   "nothome",
   "monitor",
-  "popup_box"
+  "popup_box",
+  "Menu",
+  "MenuExpanded"
 }
 
 local flag_codes ={
@@ -290,6 +292,9 @@ fonts.notable = lg.newFont("data/fonts/Notable/Notable-Regular.ttf", 30)
 fonts.roboto = lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 20)
 fonts.robotosmall = lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 12)
 fonts.latosmall = lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 12)
+fonts.latoitalic = lg.newFont("data/fonts/Lato/Lato-Italic.ttf", 12)
+fonts.latobold = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 12)
+fonts.latobolditalic = lg.newFont("data/fonts/Lato/Lato-BoldItalic.ttf", 12)
   
 sound = {}
 sound.ring = love.audio.newSource("data/sounds/doorbell-old-tring.ogg", "static")

@@ -75,12 +75,16 @@ function Button:setFunction(func)
   self.func = func
 end
 
-PlayerButton = Button:new()
-PlayerButton.mt = {__index = PlayerButton}
-PlayerButton.s = {}
-function PlayerButton:new(username)
+function Button:onClick(func)
+  self.func = func
+end
+
+UserButton = Button:new()
+UserButton.mt = {__index = UserButton}
+UserButton.s = {}
+function UserButton:new(username)
   local o = {}
-  setmetatable(o, PlayerButton.mt)
+  setmetatable(o, UserButton.mt)
   o.username = username
   o.func = function()
     local PMbutton = Button:new()
@@ -94,7 +98,7 @@ function PlayerButton:new(username)
   return o
 end
 
-function PlayerButton:draw()
+function UserButton:draw()
   lg.rectangle("line", self.x + 60, self.y + 10, self.w, self.h)
   lg.draw(self.flag, self.x + 6, 12 + self.y)
   lg.draw(self.insignia, self.x + 25, 10 + self.y, 0, 1/5, 1/4)
@@ -133,19 +137,28 @@ function ChannelTab:draw()
   if channel == "Battle" then
     channel = Battle:getActiveBattle():getChannel().title
   end
+  local text = "#" .. self.text
   if Channel:getActive() and (channel == Channel:getActive().title) then
-    h = 3
-    lg.rectangle("fill", self.x, self.y, self.w, self.h + h)
-    lg.setColor(0,0,0)
-    lg.printf(self.text, self.x, self.y + self.h/2 + h - fonts.robotosmall:getHeight()/2, self.w, "center")
+    lg.setColor(lobby.color.bb)
+    lg.rectangle("fill", self.x, self.y-1, self.w, self.h + h+1)
+    lg.setColor(1,1,1)
+    lg.setFont(fonts.latobold)
+    lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latobold:getHeight()/2, self.w, "center")
   elseif Channel.s[channel].newMessage then
-    h = 3
-    lg.rectangle("line", self.x, self.y, self.w, self.h + h)
-    lg.printf(self.text, self.x, self.y + self.h/2 + h - fonts.robotosmall:getHeight()/2, self.w, "center")
+    --h = 3
+    lg.setColor(lobby.color.bg)
+    lg.setFont(fonts.latobold)
+    lg.rectangle("fill", self.x, self.y, self.w, self.h + h)
+    lg.setColor(lobby.color.bt)
+    lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latobold:getHeight()/2, self.w, "center")
   else
-    lg.rectangle("line", self.x, self.y, self.w, self.h + h)
-    lg.printf(self.text, self.x, self.y + self.h/2 + h - fonts.robotosmall:getHeight()/2, self.w, "center")
+    lg.setFont(fonts.latoitalic)
+    lg.setColor(lobby.color.bg)
+    lg.rectangle("fill", self.x, self.y, self.w, self.h + h)
+    lg.setColor(lobby.color.bt)
+    lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latoitalic:getHeight()/2, self.w, "center")
   end
+  lg.setFont(fonts.robotosmall)
   lg.setColor(1,1,1)
 end
 

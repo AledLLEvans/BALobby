@@ -329,7 +329,7 @@ function CLIENTBATTLESTATUS.respond(words, sentances)
     end
   end
   battle.playersByTeam = teams
-  lobby.refreshPlayerButtons()
+  lobby.refreshUserButtons()
 end
 function CLIENTIPPORT.respond(words, sentances)
 end
@@ -431,7 +431,7 @@ function JOINBATTLE.respond(words, sentances)
   Channel.active = Channel.s["Battle_" .. id]
   battle.display = true
   lobby.refreshBattleTabs()
-  lobby.state = "battle"
+  Battle.enter()
 end
 function JOINBATTLEFAILED.respond(words, sentances)
   Channel:broadcast(" REQUEST TO JOIN BATTLE FAILED, REASON: " .. string.gsub(sentances[1], "%S+ ", "", 1))

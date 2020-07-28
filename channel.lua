@@ -5,6 +5,10 @@ local lg = love.graphics
 Channel.s = {}
 Channel.tabs = {}
 Channel.textbox = Textbox:new()
+Channel.x = 0
+Channel.y = 0
+Channel.w = 10
+Channel.h = 10
 
 function Channel:new(o, bool)
   setmetatable(o, Channel.mt)
@@ -74,6 +78,31 @@ function Channel:addMessage(msg)
   table.insert(self.lines, {user = "Battle", msg = msg})
 end
 
+local channel_dimensions = {
+  ["landing"] = function() return {x = 1,
+      y = lobby.fixturePoint[1].y,
+      w = lobby.fixturePoint[2].x - 2 - 10,
+      h = lobby.height - lobby.fixturePoint[2].y - 1} end,
+  ["battle"] = function() return {x = lobby.fixturePoint[1].x + 1,
+      y = lobby.fixturePoint[1].y,
+      w = lobby.width - lobby.fixturePoint[1].x,
+      h = lobby.height - lobby.fixturePoint[2].y - 20} end,
+  ["battleWithList"] = function() return {x = lobby.fixturePoint[1].x + 1,
+      y = lobby.fixturePoint[1].y,
+      w = lobby.width - lobby.fixturePoint[1].x,
+      h = lobby.height - 20} end,
+  ["options"] = function() return {x = 1} end,
+}
+
+function Channel.refresh()
+  Channel.x = channel_dimensions[lobby.state]().x
+  Channel.y = channel_dimensions[lobby.state]().y
+  Channel.w = channel_dimensions[lobby.state]().w
+  Channel.h = channel_dimensions[lobby.state]().h
+  Channel.textbox:setPosition(Channel.x + 1, Channel.y + Channel.h - 21):setDimensions(Channel.w, 20)
+  Channel:refreshTabs()
+end
+
 function Channel:refreshTabs()
   local i = 1
   local totalWidth = 0
@@ -84,21 +113,21 @@ function Channel:refreshTabs()
       if string.find(chanName, "Battle") then
         showChanName = "Battle"
       end
-      local textWidth = fonts.latosmall:getWidth(chanName)
-      self.tabs[chanName] = ChannelTab:new(
-        totalWidth + lobby.fixturePoint[1].x + 4,
-        lobby.fixturePoint[1].y + 3,
+      local textWidth = fonts.latosmall:getWidth("#" .. chanName)
+      self.tabs[chanName] = ChannelTab:new(self.x + totalWidth + 4,
+        self.y + 3,
         3 + textWidth,
         20,
         showChanName,
         function()
-          lobby.refreshPlayerButtons()
           if Channel:getActive() then
             Channel:getActive().newMessage = false
           end
           self.active = channel
           channel.newMessage = false
           lobby.channelMessageHistoryID = false
+          lobby.userListOffset = 0
+          lobby.refreshUserButtons()
           lobby.render()
         end
       )
@@ -125,9 +154,9 @@ function Channel:draw()
   local fontHeight = fonts.latosmall:getHeight()
   local m = 0
   local i = #self.lines - self.offset
-  lg.translate(lobby.fixturePoint[1].x, lobby.fixturePoint[1].y)
-  local h = lobby.height - lobby.fixturePoint[1].y - 1
-  local w = lobby.fixturePoint[2].x - lobby.fixturePoint[1].x - 20
+  lg.translate(self.x, self.y)
+  local h = self.h
+  local w = self.w - 20
   while i > 0 and h - 4*fontHeight > m do
     local drawType = self.lines[i].user and (self.lines[i].ex and "ex" or self.lines[i].mention and "mention" or "user") or "system"
     local text = "[" .. self.lines[i].time .. "] " .. drawFunc[drawType](self.lines[i].user) .. self.lines[i].msg
@@ -153,9 +182,9 @@ function BattleChannel:draw()
   local fontHeight = fonts.latosmall:getHeight()
   local m = 0
   local i = #self.infolines - self.infoboxoffset
-  lg.translate(lobby.fixturePoint[1].x, lobby.fixturePoint[1].y)
-  local h = lobby.height - lobby.fixturePoint[1].y - 1
-  local tw = lobby.fixturePoint[2].x - lobby.fixturePoint[1].x - 20
+    lg.translate(self.x, self.y)
+  local h = self.h
+  local tw = self.w - 40
   local w = 2*tw/3
   local ow = tw/3
   lg.line(w, 0, w, h - 21)
@@ -200,9 +229,9 @@ function ServerChannel:draw()
   local fontHeight = fonts.latosmall:getHeight()
   local m = 0
   local i = #self.lines - self.offset
-  lg.translate(lobby.fixturePoint[1].x, lobby.fixturePoint[1].y)
-  local h = lobby.height - lobby.fixturePoint[1].y - 1
-  local w = lobby.fixturePoint[2].x - lobby.fixturePoint[1].x - 20
+  lg.translate(self.x, self.y)
+  local h = self.h
+  local w = self.w - 20
   while i > 0 and h - 4*fontHeight > m do
     local text = "[" .. self.lines[i].time .. "] " .. self.lines[i].msg
     local _, wt = fonts.latosmall:getWrap(text, w)
@@ -217,14 +246,3 @@ function ServerChannel:draw()
   end
   lg.origin()
 end
-
---[[function Channel:drawUsers(x, y, w, h)
-  local fontHeight = fonts.latosmall:getHeight( )
-  local m  = 0
-  for k, v in pairs(self.users) do
-    if y < m then return end
-    local w, wt = fonts.latosmall:getWrap(k, lobby.leftWindowWidth)
-    m = m + #wt*fontHeight
-    lg.printf(k, x + 5, y + h - m - 21, lobby.leftWindowWidth, "left")
-  end
-end]]
