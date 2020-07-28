@@ -13,3 +13,14 @@ function User:new(o)
   self.s[new.name] = new
 	return new
 end
+
+function User:openChannel()
+  if self.channel then return self.channel end
+  self.channel = Channel:new({title = self.name, user = true, display = true})
+  self.channel.users = {[self.name] = self, [lobby.username] = User.s[lobby.username]}
+  Channel.s[self.name] = self.channel
+  Channel.active = self.channel
+  Channel:refreshTabs()
+  lobby.render()
+  return self.channel
+end

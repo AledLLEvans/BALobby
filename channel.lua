@@ -79,19 +79,24 @@ function Channel:addMessage(msg)
 end
 
 local channel_dimensions = {
-  ["landing"] = function() return {x = 1,
+  ["landing"] = function() return {
+      x = 1,
       y = lobby.fixturePoint[1].y,
       w = lobby.fixturePoint[2].x - 2 - 10,
       h = lobby.height - lobby.fixturePoint[2].y - 1} end,
-  ["battle"] = function() return {x = lobby.fixturePoint[1].x + 1,
+  ["battle"] = function() return {
+      x = lobby.fixturePoint[1].x + 1,
       y = lobby.fixturePoint[1].y,
-      w = lobby.width - lobby.fixturePoint[1].x,
-      h = lobby.height - lobby.fixturePoint[2].y - 20} end,
-  ["battleWithList"] = function() return {x = lobby.fixturePoint[1].x + 1,
+      w = lobby.width - lobby.fixturePoint[1].x - 2 - 20,
+      h = lobby.height - lobby.fixturePoint[2].y - 1} end,
+  ["battleWithList"] = function() return {
+      x = lobby.fixturePoint[1].x + 1,
       y = lobby.fixturePoint[1].y,
-      w = lobby.width - lobby.fixturePoint[1].x,
-      h = lobby.height - 20} end,
-  ["options"] = function() return {x = 1} end,
+      w = lobby.width - lobby.fixturePoint[1].x - 2 - 20,
+      h = lobby.height - lobby.fixturePoint[2].y - 1} end,
+  ["options"] = function() return {
+      x = 1
+    } end,
 }
 
 function Channel.refresh()
@@ -106,6 +111,9 @@ end
 function Channel:refreshTabs()
   local i = 1
   local totalWidth = 0
+  for i, k in pairs(self.tabs) do
+    lobby.clickables[k] = nil
+  end
   self.tabs = {}
   for chanName, channel in pairs(self.s) do
     if channel.display then
@@ -129,8 +137,8 @@ function Channel:refreshTabs()
           lobby.userListOffset = 0
           lobby.refreshUserButtons()
           lobby.render()
-        end
-      )
+        end)
+      lobby.clickables[self.tabs[chanName]] = true
       i = i + 1
       totalWidth = totalWidth + textWidth + 6
     end
@@ -182,9 +190,9 @@ function BattleChannel:draw()
   local fontHeight = fonts.latosmall:getHeight()
   local m = 0
   local i = #self.infolines - self.infoboxoffset
-    lg.translate(self.x, self.y)
+  lg.translate(self.x, self.y)
   local h = self.h
-  local tw = self.w - 40
+  local tw = self.w
   local w = 2*tw/3
   local ow = tw/3
   lg.line(w, 0, w, h - 21)
@@ -197,7 +205,7 @@ function BattleChannel:draw()
     local align = "left"
     while j > 0 and h - 4*fontHeight > m do
       m = m + fontHeight
-      lg.printf(wt[j], w + 10, h - m - 21, ow - 10, align)
+      lg.printf(wt[j], w + 5, h - m - 21, ow - 10, align)
       j = j - 1
     end
     i = i - 1
@@ -213,7 +221,7 @@ function BattleChannel:draw()
     local align = self.lines[i].user and "left" or "center"
     while j > 0 and h - 4*fontHeight > m do
       m = m + fontHeight
-      lg.printf(wt[j], 10, h - m - 21, w - 10, align)
+      lg.printf(wt[j], 5, h - m - 21, w - 10, align)
       j = j - 1
     end
     lg.setColor(1,1,1)

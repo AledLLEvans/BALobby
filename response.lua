@@ -176,18 +176,18 @@ local responses = {
   ["UPDATEBOT"] = UPDATEBOT,
 }
 
-function ACCEPTED.respond(words, sentances)
-  lobby.enter()
+function ACCEPTED.respond(words, sentences)
   lobby.username = login.nameBox.text
   login.nameBox.active = false
   login.passBox.active = false
-  lobby.connected = true 
+  lobby.connected = true
+  lobby.enter()
 end
-function ADDBOT.respond(words, sentances)
+function ADDBOT.respond(words, sentences)
 end
-function ADDSTARTRECT.respond(words, sentances)
+function ADDSTARTRECT.respond(words, sentences)
 end
-function ADDUSER.respond(words, sentances)
+function ADDUSER.respond(words, sentences)
   local user = {}
   user.name = words[1]
   user.country = words[2]
@@ -208,21 +208,21 @@ function ADDUSER.respond(words, sentances)
   end
   User:new(user)
 end
-function AGREEMENT.respond(words, sentances)
-  table.insert(login.log, {from = true, msg = sentances[1] })
+function AGREEMENT.respond(words, sentences)
+  table.insert(login.log, {from = true, msg = sentences[1] })
 end
-function AGREEMENTEND.respond(words, sentances)
+function AGREEMENTEND.respond(words, sentences)
   lobby.send("CONFIRMAGREEMENT" .. "\n")
   lobby.send(lobby.loginString)
   table.insert(login.log, {from = true, msg = reason })
 end
-function BATTLECLOSED.respond(words, sentances)
+function BATTLECLOSED.respond(words, sentences)
   local id = words[1]
   Battle.s[id] = nil
   Battle.count = Battle.count - 1
   lobby.refreshBattleTabs()
 end
-function BATTLEOPENED.respond(words, sentances)
+function BATTLEOPENED.respond(words, sentences)
   local battle = {}
   battle.id = words[1]
   battle.type = words[2]
@@ -235,15 +235,15 @@ function BATTLEOPENED.respond(words, sentances)
   battle.rank = words[9]
   battle.mapHash = words[10]
   
-  battle.engineName = sentances[2]
-  battle.engineVersion = sentances[2]
+  battle.engineName = sentences[2]
+  battle.engineVersion = sentences[2]
   
   battle.mapName = words[11]
   for i = 12, #words do
     battle.mapName = battle.mapName .. " " .. words[i]
   end
-  battle.title = string.gsub(string.gsub(sentances[2], "%a+ ", "", 1), "%b() ", "", 1)
-  battle.gameName = sentances[#sentances] or "gameName"
+  battle.title = string.gsub(string.gsub(sentences[2], "%a+ ", "", 1), "%b() ", "", 1)
+  battle.gameName = sentences[#sentences] or "gameName"
   
   --battle.channel = words[16]
   battle.spectatorCount = 0
@@ -257,23 +257,23 @@ function BATTLEOPENED.respond(words, sentances)
   Battle:new(battle)
   lobby.refreshBattleTabs()
 end
-function BRIDGEDCLIENTFROM.respond(words, sentances)
+function BRIDGEDCLIENTFROM.respond(words, sentences)
 end
-function CHANGEEMAILACCEPTED.respond(words, sentances)
+function CHANGEEMAILACCEPTED.respond(words, sentences)
 end
-function CHANGEEMAILDENIED.respond(words, sentances)
+function CHANGEEMAILDENIED.respond(words, sentences)
 end
-function CHANGEEMAILREQUESTACCEPTED.respond(words, sentances)
+function CHANGEEMAILREQUESTACCEPTED.respond(words, sentences)
 end
-function CHANGEEMAILREQUESTDENIED.respond(words, sentances)
+function CHANGEEMAILREQUESTDENIED.respond(words, sentences)
 end
-function CHANNEL.respond(words, sentances)
+function CHANNEL.respond(words, sentences)
 end
-function CHANNELMESSAGE.respond(words, sentances)
+function CHANNELMESSAGE.respond(words, sentences)
 end
-function CHANNELTOPIC.respond(words, sentances)
+function CHANNELTOPIC.respond(words, sentences)
 end
-function CLIENTBATTLESTATUS.respond(words, sentances)
+function CLIENTBATTLESTATUS.respond(words, sentences)
   local username = words[1]
   local battleStatus = words[2]
   local teamColor = words[3]
@@ -331,17 +331,17 @@ function CLIENTBATTLESTATUS.respond(words, sentances)
   battle.playersByTeam = teams
   lobby.refreshUserButtons()
 end
-function CLIENTIPPORT.respond(words, sentances)
+function CLIENTIPPORT.respond(words, sentences)
 end
-function CLIENTS.respond(words, sentances)
+function CLIENTS.respond(words, sentences)
   local chan = words[1]
   for i = 2, #words do
     Channel.s[chan].users[words[i]] = User.s[words[i]]
   end
 end
-function CLIENTSFROM.respond(words, sentances)
+function CLIENTSFROM.respond(words, sentences)
 end
-function CLIENTSTATUS.respond(words, sentances)
+function CLIENTSTATUS.respond(words, sentences)
   local username = words[1]
   local status = words[2]
   local user = User.s[username]
@@ -365,41 +365,41 @@ function CLIENTSTATUS.respond(words, sentances)
   
   user.icon = user.isBot and "monitor" or user.ingame and "gamepad" or user.away and "nothome" or false
 end
-function COMPFLAGS.respond(words, sentances)
+function COMPFLAGS.respond(words, sentences)
 end
-function DENIED.respond(words, sentances)
+function DENIED.respond(words, sentences)
 end
-function DISABLEUNITS.respond(words, sentances)
+function DISABLEUNITS.respond(words, sentences)
 end
-function ENABLEALLUNITS.respond(words, sentances)
+function ENABLEALLUNITS.respond(words, sentences)
 end
-function ENABLEUNITS.respond(words, sentances)
+function ENABLEUNITS.respond(words, sentences)
 end
-function ENDOFCHANNELS.respond(words, sentances)
+function ENDOFCHANNELS.respond(words, sentences)
 end
-function FAILED.respond(words, sentances)
+function FAILED.respond(words, sentences)
 end
-function FORCEQUITBATTLE.respond(words, sentances)
+function FORCEQUITBATTLE.respond(words, sentences)
   Battle:getActiveBattle():getChannel():addMessage("You were kicked from the battle!")
   lw.showMessageBox("For your information", "You were kicked from the battle!", "info" )
 end
-function HOSTPORT.respond(words, sentances)
+function HOSTPORT.respond(words, sentences)
   local port = words[1]
   Battle:getActiveBattle().hostport = port
 end
-function IGNORE.respond(words, sentances)
+function IGNORE.respond(words, sentences)
 end
-function IGNORELIST.respond(words, sentances)
+function IGNORELIST.respond(words, sentences)
 end
-function IGNORELISTBEGIN.respond(words, sentances)
+function IGNORELISTBEGIN.respond(words, sentences)
 end
-function IGNORELISTEND.respond(words, sentances)
+function IGNORELISTEND.respond(words, sentences)
 end
-function JOIN.respond(words, sentances)
+function JOIN.respond(words, sentences)
   Channel:new({title = words[1]})
   Channel:refreshTabs()
 end
-function JOINBATTLE.respond(words, sentances)
+function JOINBATTLE.respond(words, sentences)
   local id = words[1]
   local hashCode = words[2]
   local channel = words[3]
@@ -413,19 +413,10 @@ function JOINBATTLE.respond(words, sentances)
   if battle:mapHandler() and battle:modHandler() then
     lobby.setSynced(true)
   end
-  local specButton = BattleButton:new()
-  specButton:setPosition(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50)
-  specButton:setDimensions(90, 40)
-  specButton:setText("Spectate")
-  specButton:setFunction(function() lobby.setSpectator(not User.s[lobby.username].spectator) end)
-  local readyButton = BattleButton:new()
-  readyButton:setPosition(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50)
-  readyButton:setDimensions(90, 40)
-  readyButton:setText("Ready")
-  readyButton:setFunction(function() if not User.s[lobby.username].spectator then lobby.setReady(not User.s[lobby.username].ready) end end)
   battle.buttons = {
-  spectate = specButton,
-  ready = readyButton
+    ["exit"] = BattleButton:new():setPosition(lobby.fixturePoint[2].x - 300, lobby.fixturePoint[2].y - 50):setDimensions(90, 40):setText("Exit"):onClick(function() Battle.exit() end),
+    ["spectate"] = BattleButton:new():setPosition(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50):setDimensions(90, 40):setText("Spectate"):onClick(function() lobby.setSpectator(not User.s[lobby.username].spectator) end),
+    ["ready"] = BattleButton:new():setPosition(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50):setDimensions(90, 40):setText("Ready"):onClick(function() if not User.s[lobby.username].spectator then lobby.setReady(not User.s[lobby.username].ready) end end)
     }
   Channel:refreshTabs()
   Channel.active = Channel.s["Battle_" .. id]
@@ -433,18 +424,18 @@ function JOINBATTLE.respond(words, sentances)
   lobby.refreshBattleTabs()
   Battle.enter()
 end
-function JOINBATTLEFAILED.respond(words, sentances)
-  Channel:broadcast(" REQUEST TO JOIN BATTLE FAILED, REASON: " .. string.gsub(sentances[1], "%S+ ", "", 1))
-  lw.showMessageBox("REQUEST TO JOIN BATTLE FAILED", "REASON: " .. string.gsub(sentances[1], "%S+ ", "", 1), "info" )
+function JOINBATTLEFAILED.respond(words, sentences)
+  Channel:broadcast(" REQUEST TO JOIN BATTLE FAILED, REASON: " .. string.gsub(sentences[1], "%S+ ", "", 1))
+  lw.showMessageBox("REQUEST TO JOIN BATTLE FAILED", "REASON: " .. string.gsub(sentences[1], "%S+ ", "", 1), "info" )
 end
-function JOINBATTLEREQUEST.respond(words, sentances)
+function JOINBATTLEREQUEST.respond(words, sentences)
 end
-function JOINED.respond(words, sentances)
+function JOINED.respond(words, sentences)
   local chan = words[1]
   local user = words[2]
   Channel.s[chan].users[user] = User.s[user]
 end
-function JOINEDBATTLE.respond(words, sentances)
+function JOINEDBATTLE.respond(words, sentences)
   local battleid = words[1]
   local user = words[2]
   local scriptPassword = words[3]
@@ -454,16 +445,16 @@ function JOINEDBATTLE.respond(words, sentances)
   Battle.s[battleid].scriptPassword = scriptPassword
   lobby.refreshBattleTabs()
 end
-function JOINEDFROM.respond(words, sentances)
+function JOINEDFROM.respond(words, sentences)
 end
-function JOINFAILED.respond(words, sentances)
+function JOINFAILED.respond(words, sentences)
   table.insert(Channel.s[words[1]].lines, {msg = "Failure to join channel, reason: " .. words[2]})
 end
-function JSON.respond(words, sentances)
+function JSON.respond(words, sentences)
 end
-function KICKFROMBATTLE.respond(words, sentances)
+function KICKFROMBATTLE.respond(words, sentences)
 end
-function LEFT.respond(words, sentances)
+function LEFT.respond(words, sentences)
   local chan = words[1]
   local user = words[2]
   Channel.s[chan].users[user] = nil
@@ -472,7 +463,7 @@ function LEFT.respond(words, sentances)
     Channel:refreshTabs()
   end
 end
-function LEFTBATTLE.respond(words, sentances)
+function LEFTBATTLE.respond(words, sentences)
   local battleid = words[1]
   local user = words[2]
   Battle.s[battleid].users[user] = nil
@@ -480,66 +471,66 @@ function LEFTBATTLE.respond(words, sentances)
   User.s[user].battleid = nil
   lobby.refreshBattleTabs()
 end
-function LEFTFROM.respond(words, sentances)
+function LEFTFROM.respond(words, sentences)
 end
-function LOGININFOEND.respond(words, sentances)
+function LOGININFOEND.respond(words, sentences)
   lobby.send("JOIN main" .. "\n")
   lobby.send("JOIN en" .. "\n")
   lobby.send("JOIN newbies" .. "\n")
   lobby.refreshBattleTabs()
   lobby.loginInfoEnd = true
 end
-function MOTD.respond(words, sentances)
-  table.insert(lobby.serverChannel.lines, {from = true, msg = string.gsub(sentances[1], "%u+ ", "", 1) .. "\n"})
+function MOTD.respond(words, sentences)
+  table.insert(lobby.serverChannel.lines, {from = true, msg = string.gsub(sentences[1], "%u+ ", "", 1) .. "\n"})
 end
-function OK.respond(words, sentances)
+function OK.respond(words, sentences)
 end
-function OPENBATTLE.respond(words, sentances)
+function OPENBATTLE.respond(words, sentences)
 end
-function OPENBATTLEFAILED.respond(words, sentances)
+function OPENBATTLEFAILED.respond(words, sentences)
 end
-function PONG.respond(words, sentances)
+function PONG.respond(words, sentences)
   lobby.timeSinceLastPong = 0
 end
-function REDIRECT.respond(words, sentances)
+function REDIRECT.respond(words, sentences)
 end
-function REGISTRATIONACCEPTED.respond(words, sentances)
-  local reason = sentances[1]
+function REGISTRATIONACCEPTED.respond(words, sentences)
+  local reason = sentences[1]
   table.insert(login.log, {from = true, msg = reason })
 end
-function REGISTRATIONDENIED.respond(words, sentances)
-  local reason = sentances[1]
+function REGISTRATIONDENIED.respond(words, sentences)
+  local reason = sentences[1]
   table.insert(login.log, {from = true, msg = reason })
 end
-function REMOVEBOT.respond(words, sentances)
+function REMOVEBOT.respond(words, sentences)
 end
-function REMOVESCRIPTTAGS.respond(words, sentances)
+function REMOVESCRIPTTAGS.respond(words, sentences)
 end
-function REMOVESTARTRECT.respond(words, sentances)
+function REMOVESTARTRECT.respond(words, sentences)
 end
-function REMOVEUSER.respond(words, sentances)
+function REMOVEUSER.respond(words, sentences)
   local user = words[1]
   User.s[user] = nil
   for name, chan in pairs(Channel.s) do
     chan.users[user] = nil
   end
 end
-function REQUESTBATTLESTATUS.respond(words, sentances)
+function REQUESTBATTLESTATUS.respond(words, sentences)
   lobby.sendMyBattleStatus()
 end
-function RESENDVERIFICATIONACCEPTED.respond(words, sentances)
+function RESENDVERIFICATIONACCEPTED.respond(words, sentences)
 end
-function RESENDVERIFICATIONDENIED.respond(words, sentances)
+function RESENDVERIFICATIONDENIED.respond(words, sentences)
 end
-function RESETPASSWORDACCEPTED.respond(words, sentances)
+function RESETPASSWORDACCEPTED.respond(words, sentences)
 end
-function RESETPASSWORDDENIED.respond(words, sentances)
+function RESETPASSWORDDENIED.respond(words, sentences)
 end
-function RESETPASSWORDREQUESTACCEPTED.respond(words, sentances)
+function RESETPASSWORDREQUESTACCEPTED.respond(words, sentences)
 end
-function RESETPASSWORDREQUESTDENIED.respond(words, sentances)
+function RESETPASSWORDREQUESTDENIED.respond(words, sentences)
 end
-function RING.respond(words, sentances)
+function RING.respond(words, sentences)
   sound["ring"]:play()
 end
 local function mentioned(text, channel)
@@ -556,17 +547,17 @@ local function mentioned(text, channel)
   end
   return false
 end
-function SAID.respond(words, sentances, data)
+function SAID.respond(words, sentences, data)
   local chan = words[1]
   local user = words[2]
-  local text = string.gsub(sentances[1], "%S+", "", 3) .. "\n"
+  local text = string.gsub(sentences[1], "%S+", "", 3) .. "\n"
   local mention = mentioned(text, Channel.s[chan])
   table.insert(Channel.s[chan].lines, {time = os.date("%X"), mention = mention, user = user, msg = text})
   love.filesystem.write( "chatlogs/" .. chan .. ".txt", user .. ": " .. text )
 end
-function SAIDBATTLE.respond(words, sentances)
+function SAIDBATTLE.respond(words, sentences)
   local user = words[1]
-  local text = string.gsub(sentances[1], "%S+", "", 2) .. "\n"
+  local text = string.gsub(sentences[1], "%S+", "", 2) .. "\n"
   local battle = Battle:getActiveBattle()
   local founder = battle.founder
   local chan = battle:getChannel()
@@ -576,9 +567,9 @@ function SAIDBATTLE.respond(words, sentances)
   end
   table.insert(chan.lines, {time = os.date("%X"), mention = mention, user = user, msg = text})
 end
-function SAIDBATTLEEX.respond(words, sentances)
+function SAIDBATTLEEX.respond(words, sentences)
   local user = words[1]
-  local text = string.gsub(sentances[1], "%S+", "", 2) .. "\n"
+  local text = string.gsub(sentences[1], "%S+", "", 2) .. "\n"
   local battle = Battle:getActiveBattle()
   local founder = battle.founder
   local mention = mentioned(text, battle:getChannel())
@@ -588,74 +579,73 @@ function SAIDBATTLEEX.respond(words, sentances)
     table.insert(battle:getChannel().lines, {time = os.date("%X"), mention = mention, ex = true, user = user, msg = text})
   end
 end
-function SAIDEX.respond(words, sentances)
+function SAIDEX.respond(words, sentences)
   local chan = words[1]
   local user = words[2]
-  local text = string.gsub(sentances[1], "%S+", "", 3) .. "\n"
+  local text = string.gsub(sentences[1], "%S+", "", 3) .. "\n"
   local mention = mentioned(text, Channel.s[chan])
   table.insert(Channel.s[chan].lines, {time = os.date("%X"), mention = mention, ex = true, user = user, msg = text})
   love.filesystem.write( "chatlogs/" .. chan .. ".txt", user .. ": " .. text )
 end
-function SAIDFROM.respond(words, sentances)
+function SAIDFROM.respond(words, sentences)
 end
-function SAIDPRIVATE.respond(words, sentances)
+function SAIDPRIVATE.respond(words, sentences)
   local user = words[1]
-  local text = string.gsub(sentances[1], "%S+", "", 2) .. "\n"
+  local text = string.gsub(sentences[1], "%S+", "", 2) .. "\n"
   if not Channel.s[user] then
-    Channel.s[user] = Channel:new({title = user, user = true, display = true})
-    Channel:refreshTabs()
+    User.s[user]:openChannel()
   end
   mentioned(lobby.username, Channel.s[user])
   table.insert(Channel.s[user].lines, {time = os.date("%X"), user = user, msg = text})
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
 end
-function SAIDPRIVATEEX.respond(words, sentances)
+function SAIDPRIVATEEX.respond(words, sentences)
   local user = words[1]
-  local text = string.gsub(sentances[1], "%S+", "", 2) .. "\n"
+  local text = string.gsub(sentences[1], "%S+", "", 2) .. "\n"
   if not Channel.s[user] then
-    Channel.s[user] = Channel:new({title = user, user = true})
+    User.s[user]:openChannel()
   end
   mentioned(lobby.username, Channel.s[user])
   table.insert(Channel.s[user].lines, {time = os.date("%X"), ex = true, user = user, msg = text})
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
 end
-function SAYPRIVATE.respond(words, sentances)
+function SAYPRIVATE.respond(words, sentences)
   local user = words[1]
-  local text = string.gsub(sentances[1], "%S+", "", 2) .. "\n"
+  local text = string.gsub(sentences[1], "%S+", "", 2) .. "\n"
   table.insert(Channel.s[user].lines, {time = os.date("%X"), user = lobby.username, msg = text})
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
 end
-function SAYPRIVATEEX.respond(words, sentances)
+function SAYPRIVATEEX.respond(words, sentences)
   local user = words[1]
-  local text = string.gsub(sentances[1], "%S+", "", 2) .. "\n"
+  local text = string.gsub(sentences[1], "%S+", "", 2) .. "\n"
   table.insert(Channel.s[user].lines, {time = os.date("%X"), ex = true, user = lobby.username, msg = text})
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
 end
-function SERVERMSG.respond(words, sentances)
+function SERVERMSG.respond(words, sentences)
 end
-function SERVERMSGBOX.respond(words, sentances)
+function SERVERMSGBOX.respond(words, sentences)
 end
-function SETSCRIPTTAGS.respond(words, sentances)
+function SETSCRIPTTAGS.respond(words, sentences)
 end
-function TASSERVER.respond(words, sentances)
+function TASSERVER.respond(words, sentences)
   if not login.TLS then
     lobby.send("STLS" .. "\n")
     login.TLS = true
   end
 end
-function UDPSOURCEPORT.respond(words, sentances)
+function UDPSOURCEPORT.respond(words, sentences)
 end
-function UNBRIDGEDCLIENTFROM.respond(words, sentances)
+function UNBRIDGEDCLIENTFROM.respond(words, sentences)
 end
-function UNIGNORE.respond(words, sentances)
+function UNIGNORE.respond(words, sentences)
 end
-function UPDATEBATTLEINFO.respond(words, sentances)
+function UPDATEBATTLEINFO.respond(words, sentences)
   local id = words[1]
   if not Battle.s[id] then return end
   local spectatorCount = words[2] or 0
   local locked = words[3]
   local mapHash = words[4]
-  local mapName = string.gsub(string.gsub(sentances[1], "%a+ ", "", 1), "-*%d+ ", "", 4)
+  local mapName = string.gsub(string.gsub(sentences[1], "%a+ ", "", 1), "-*%d+ ", "", 4)
   Battle.s[id].locked = locked
   Battle.s[id].mapHash = mapHash
   Battle.s[id].spectatorCount = spectatorCount
@@ -664,7 +654,7 @@ function UPDATEBATTLEINFO.respond(words, sentances)
   Battle.s[id]:getMinimap()
   lobby.refreshBattleTabs()
 end
-function UPDATEBOT.respond(words, sentances)
+function UPDATEBOT.respond(words, sentences)
 end
 
 return responses

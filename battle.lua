@@ -8,13 +8,28 @@ Battle.s = {}
 
 Battle.count = 0
 
+function Battle.exit()
+  Channel.active = Channel.s[next(Channel.s, Battle:getActive():getChannel().title)]
+  Battle:getActive().display = false
+  Battle:getActive():getChannel().display = false
+  lobby.send("LEAVEBATTLE" .. "\n")
+  lobby.state = "landing"
+  lobby.refreshUserButtons()
+  Channel.refresh()
+  lobby.render()
+end
+
 function Battle.enter()
   lobby.state = "battle"
   lobby.fixturePoint[1].x = 20
-  Battle.sideButton = Button:new()
-  Battle.sideButton:setPosition(1,1)
-  Battle.sideButton:setDimensions(20-2,lobby.height - 2)
-  Battle.sideButton:onClick(function() Battle.enterWithList() end)
+  Battle.sideButton = Button:new():setPosition(1, lobby.height/2 - 20):setDimensions(20-2, 40):onClick(function() Battle.enterWithList() end)
+  function Battle.sideButton:draw()
+    lg.rectangle("line", self.x, self.y, self.w, self.h)
+    lg.polygon("line",
+              5, self.y + self.h/2 - 8,
+              5, self.y + self.h/2 + 8,
+              15, self.y + self.h/2)
+  end
   lobby.clickables[Battle.sideButton] = true
   Channel.refresh()
   lobby.render()
@@ -23,11 +38,16 @@ end
 function Battle.enterWithList()
   lobby.state = "battleWithList"
   lobby.fixturePoint[1].x = 260
-  Battle.sideButton = Button:new()
-  Battle.sideButton:setPosition(261,1)
-  Battle.sideButton:setDimensions(20-2,lobby.height - 2)
-  Battle.sideButton:onClick(function() Battle.enter() end)
+  Battle.sideButton = Button:new():setPosition(261, lobby.height/2 - 20):setDimensions(20-2, 40):onClick(function() Battle.enter() end)
+  function Battle.sideButton:draw()
+    lg.rectangle("line", self.x, self.y, self.w, self.h)
+    lg.polygon("line",
+              self.x + 15, self.y + self.h/2 - 8,
+              self.x + 15, self.y + self.h/2 + 8,
+              self.x + 5, self.y + self.h/2)
+  end
   lobby.clickables[Battle.sideButton] = true
+  lobby.refreshBattleTabs()
   Channel.refresh()
   lobby.render()
 end
@@ -44,6 +64,10 @@ function Battle:getChannel()
 end
 
 function Battle:getActiveBattle()
+  return self.active
+end
+
+function Battle:getActive()
   return self.active
 end
 
@@ -138,11 +162,12 @@ function Battle:update(dt)
 end
   
 function Battle:draw()
-  self.buttons.spectate:draw()
-  self.buttons.ready:draw()
+  for _, button in pairs(self.buttons) do
+    button:draw()
+  end
   lg.setFont(fonts.roboto)
   local fontHeight = fonts.roboto:getHeight()
-  lg.print(self.title, lobby.fixturePoint[1].x + 10, 10)
+  lg.print(self.title, lobby.fixturePoint[1].x + 50, 10)
   lg.printf(self.mapName, lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8 + 20 + fontHeight, 1024/8, "left")
   if self.minimap then
     lg.draw(self.minimap, lobby.fixturePoint[2].x - 10 - 1024/8, 20 + fontHeight, 0, 1/8, 1/8)
