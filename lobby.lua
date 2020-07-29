@@ -125,7 +125,7 @@ function lobby.mousemoved( x, y, dx, dy, istouch )
   if not lobby.dragLeftX and not lobby.dragRightX and not lobby.dragY then return end
   local leftMin = 20
   local leftMax = lobby.fixturePoint[2].x - 500
-  local rightMin = lobby.state == "landing" and 260 or 260
+  local rightMin = lobby.width - 200
   local rightMax = lobby.width - 140
   local Ymin = 90*3 + 70 + 40
   local Ymax = lobby.height - 100
@@ -163,6 +163,11 @@ lobby.clickables = {}
 function lobby.mousereleased(x,y,b) 
   if lobby.dragLeftX or lobby.dragRightX or lobby.dragY then
     lobby.dragLeftX, lobby.dragRightX, lobby.dragY = false, false, false
+    if Battle:getActiveBattle() then
+      Battle:getActiveBattle().buttons.spectate:setPosition(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50)
+      Battle:getActiveBattle().buttons.ready:setPosition(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50)
+      Battle:getActiveBattle().buttons.exit:setPosition(lobby.fixturePoint[2].x - 300, lobby.fixturePoint[2].y - 50)
+    end
     Channel.refresh()
     lobby.refreshBattleTabs()
     return
@@ -181,6 +186,9 @@ function lobby.mousereleased(x,y,b)
     end
     Channel:getTextbox():click(x, y)
     lobby.clickedBattleID = 0
+    for h in pairs(Hyperlink.s) do
+      h:click(x,y)
+    end
   elseif b == 2 then
 
   end
@@ -324,7 +332,7 @@ function lobby.resize( w, h )
       y = lobby.fixturePoint[1].y * lobby.height/lobby.oldheight
     },
     {
-      x = math.max(260, math.min(lobby.width - 140, lobby.fixturePoint[2].x * lobby.width/lobby.oldwidth)),
+      x = math.max(lobby.width - 200, math.min(lobby.width - 140, lobby.fixturePoint[2].x * lobby.width/lobby.oldwidth)),
       y = lobby.fixturePoint[2].y * lobby.height/lobby.oldheight
     }
   }
@@ -652,6 +660,15 @@ function lobby.render()
   lg.setCanvas(lobby.canvas)
   lg.clear()
   
+  Hyperlink.s = {}
+  
+  if Channel:getActive() then
+    lg.setFont(fonts.latosmall)
+    lg.print("Users in channel #" .. Channel:getActive():getName(),
+      lobby.fixturePoint[2].x + 10,
+      10)
+  end
+  
   lobby.renderFunction[lobby.state]()
 
   if Channel:getActive() then
@@ -662,10 +679,8 @@ function lobby.render()
     k:draw()
   end
   
-  if Channel:getActive() then
-    lg.print("Users in channel #" .. Channel:getActive():getName(),
-      lobby.fixturePoint[2].x + 10,
-      10)
+  for h in pairs(Hyperlink.s) do
+    h:draw()
   end
 
   lobby.optionsButton:draw()

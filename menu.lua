@@ -85,6 +85,37 @@ function Button:onClick(func)
   return self
 end
 
+Hyperlink = Button:new()
+Hyperlink.mt =  {__index = Hyperlink}
+Hyperlink.s = {}
+
+function Hyperlink:new()
+  local o = {}
+  setmetatable(o, Hyperlink.mt)
+  o.text = ""
+  o.color = {6/255, 69/255, 173/255}
+  
+  Hyperlink.s[o] = true
+  return o
+end
+
+function Hyperlink:click(x, y)
+  if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
+    local success = love.system.openURL(self.text)
+    if success then self.color = {11/255, 0/255, 128/255} end
+    return success
+  end
+  return false
+end
+
+function Hyperlink:draw()
+  lg.setFont(fonts.latosmall)
+  lg.setColor(self.color)
+  lg.line(self.x, self.y + self.h, self.x + self.w, self.y + self.h)
+  lg.print(self.text, self.x, self.y)
+  lg.setColor(1,1,1)
+end
+
 ChannelTab = Button:new()
 ChannelTab.mt =  {__index = ChannelTab}
 ChannelTab.s = {}

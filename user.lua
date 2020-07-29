@@ -21,5 +21,6 @@ function User:openChannel()
   Channel.s[self.name] = self.channel
   Channel.active = self.channel
   Channel:refreshTabs()
+  self.channel:getTextbox().active = true
   return self.channel
 end

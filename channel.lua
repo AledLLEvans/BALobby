@@ -87,12 +87,12 @@ local channel_dimensions = {
   ["battle"] = function() return {
       x = lobby.fixturePoint[1].x,
       y = lobby.fixturePoint[1].y,
-      w = lobby.width - lobby.fixturePoint[1].x - 20,
+      w = lobby.width - lobby.fixturePoint[1].x,
       h = lobby.height - lobby.fixturePoint[2].y - 1} end,
   ["battleWithList"] = function() return {
       x = lobby.fixturePoint[1].x,
       y = lobby.fixturePoint[1].y,
-      w = lobby.width - lobby.fixturePoint[1].x - 20,
+      w = lobby.width - lobby.fixturePoint[1].x,
       h = lobby.height - lobby.fixturePoint[2].y - 1} end,
   ["options"] = function() return {
       x = 0
@@ -104,7 +104,7 @@ function Channel.refresh()
   Channel.y = channel_dimensions[lobby.state]().y
   Channel.w = channel_dimensions[lobby.state]().w
   Channel.h = channel_dimensions[lobby.state]().h
-  Channel.textbox:setPosition(Channel.x + 1, Channel.y + Channel.h - 21):setDimensions(Channel.w, 20)
+  Channel.textbox:setPosition(Channel.x + 1, Channel.y + Channel.h - 21):setDimensions(Channel.w - 2, 20)
   Channel:refreshTabs()
 end
 
@@ -172,6 +172,10 @@ function Channel:draw()
     local align = self.lines[i].user and "left" or "center"
     while j > 0 and h - 4*fontHeight > m do
       m = m + fontHeight
+      for link in wt[j]:gmatch("http[s]*://%S+") do
+        local si, sj = string.find(wt[j], link)
+        Hyperlink:new():setPosition(self.x + 10 + fonts.latosmall:getWidth(string.sub(wt[j], 1, si-1)), self.y + h - m - 21):setDimensions(fonts.latosmall:getWidth(link), fontHeight):setText(link)
+      end
       lg.printf(wt[j], 10, h - m - 21, w, align)
       j = j - 1
     end
@@ -204,6 +208,11 @@ function BattleChannel:draw()
     local align = "left"
     while j > 0 and h - 4*fontHeight > m do
       m = m + fontHeight
+      for link in wt[j]:gmatch("http[s]*://%S+") do
+        local si = string.find(wt[j], link)
+        while not si do si = string.find(wt[j]:sub(1, #wt[j]-1), link) end
+        Hyperlink:new():setPosition(self.x + w + 5 + fonts.latosmall:getWidth(wt[j]:sub(1, si-1)), self.y + h - m - 21):setDimensions(fonts.latosmall:getWidth(link), fontHeight):setText(link)
+      end
       lg.printf(wt[j], w + 5, h - m - 21, ow - 10, align)
       j = j - 1
     end
@@ -220,6 +229,10 @@ function BattleChannel:draw()
     local align = self.lines[i].user and "left" or "center"
     while j > 0 and h - 4*fontHeight > m do
       m = m + fontHeight
+      for link in wt[j]:gmatch("http[s]*://%S+") do
+        local si, sj = string.find(wt[j], link)
+        Hyperlink:new():setPosition(self.x + 5 + fonts.latosmall:getWidth(string.sub(wt[j], 1, si-1)), self.y + h - m - 21):setDimensions(fonts.latosmall:getWidth(link), fontHeight):setText(link)
+      end
       lg.printf(wt[j], 5, h - m - 21, w - 10, align)
       j = j - 1
     end

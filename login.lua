@@ -39,32 +39,41 @@ function login.enter()
     y = lobby.height/2
   }
   
-  login.nameBox = Textbox:new({
-    x = lobby.width/2-244/2+60,
-    y = lobby.height/2-152/2+40,
-    w = 100, h = 20, name = 'Username'})
-  login.passBox = TextboxPrivate:new({
-    x = lobby.width/2-244/2+60,
-    y = lobby.height/2-152/2+40 + 40,
-    w = 100, h = 20, name = 'Password'})
+  login.nameBox = Textbox:new({name = 'Username'})
+  login.nameBox:setDimensions(220, 30)
+  login.nameBox:setFont(fonts.latomedium)
+  login.nameBox.colors.outline = {50/255, 50/255, 50/255, 255/255}
   
-  login.mode = "login"
-  local loginButton = Button:new()
-  loginButton:setPosition(lobby.width/2 - 80, loginBox.y - 115)
-  loginButton:setDimensions(80, 30)
-  loginButton:setText("Login")
-  loginButton:setFunction(function() login.mode = "login" end)
+  login.passBox = TextboxPrivate:new({name = 'Password'})
+  login.passBox:setDimensions(220, 30)
+  login.passBox:setFont(fonts.latomedium)
+  login.passBox.colors.outline = {50/255, 50/255, 50/255, 255/255}
   
-  local registerButton = Button:new()
-  registerButton:setPosition(lobby.width/2, loginBox.y - 115)
-  registerButton:setDimensions(80, 30)
-  registerButton:setText("Register")
-  registerButton:setFunction(function() login.mode = "register" end)
+  login.buttons = {}
   
-  login.buttons = {
-    login = loginButton,
-    register = registerButton
-  }
+  login.buttons.login = Button:new()
+  login.buttons.login:setDimensions(70, 30)
+  login.buttons.login:setText("Sign In")
+  login.buttons.login:setFunction(function() login.connectToServer() end)
+  function login.buttons.login:draw()
+    lg.setColor(lobby.color.bb)
+    lg.rectangle("fill", self.x, self.y, self.w, self.h, 2)
+    lg.setColor(1,1,1)
+    lg.printf(self.text, self.x, self.y + self.h/2 - fonts.robotosmall:getHeight()/2, self.w, "center")
+  end
+  
+  login.buttons.register = Button:new()
+  login.buttons.register:setDimensions(100, 30)
+  login.buttons.register:setText("Create Account")
+  login.buttons.register:setFunction(function() login.registerAccount() end)
+  function login.buttons.register:draw()
+    lg.setColor(lobby.color.bb)
+    lg.rectangle("fill", self.x, self.y, self.w, self.h, 2)
+    lg.setColor(1,1,1)
+    lg.printf(self.text, self.x, self.y + self.h/2 - fonts.robotosmall:getHeight()/2, self.w, "center")
+  end
+  
+  login.resize( login.width, login.height )
   
   state = STATE_LOGIN
   love.keyboard.setKeyRepeat(true)
@@ -281,10 +290,10 @@ function login.resize( w, h )
   lobby.height = h
   loginBox.x = w/2
   loginBox.y = h/2
-  login.nameBox:setPosition(w/2 - 244/2 + 60, h/2 - 152/2 + 40)
-  login.passBox:setPosition(w/2 - 244/2 + 60, h/2 - 152/2 + 40 + 40)
-  login.buttons.login:setPosition(lobby.width/2 - 80, loginBox.y - 115)
-  login.buttons.register:setPosition(lobby.width/2, loginBox.y - 115)
+  login.nameBox:setPosition(lobby.width/2 - 90, lobby.height/2 - 90)
+  login.passBox:setPosition(lobby.width/2 - 90, lobby.height/2 - 30)
+  login.buttons.login:setPosition(lobby.width/2, loginBox.y + 25)
+  login.buttons.register:setPosition(lobby.width/2 + 80, loginBox.y + 25)
 end
 
 function login.textinput (text)
@@ -310,11 +319,11 @@ local keypress = {
   ["return"] = function()
     if login.delay > 0 then return end
     login.delay = 0.5
-    if login.mode == "login" then
+    --if login.mode == "login" then
       login.connectToServer()
-    elseif login.mode == "register" then
-      login.registerAccount()
-    end
+    --elseif login.mode == "register" then
+      --login.registerAccount()
+    --end
   end,
   ["tab"] = function() 
     login.nameBox:toggle()
@@ -348,18 +357,11 @@ function login.mousereleased (x, y, b)
 end
 
 function login.drawLoginBox()
-  lg.draw(img["popup_box"], loginBox.x-8, loginBox.y-35, 0, 1.2, 1.2, 240/2, 200/2)
-  lg.draw(img["loginBox"], loginBox.x-8, loginBox.y-8, 0, 1, 1, 244/2, 152/2)
-  lg.print("Press Enter to continue", loginBox.x-90, loginBox.y-145)
+  lg.setColor({28/255, 28/255, 28/255, 0.6})
+  lg.rectangle("fill", loginBox.x - 8 - 120, loginBox.y - 35 - 100, 1.6*200, 200, 5)
+  lg.setColor(lobby.color.bt)
   login.nameBox:draw()
   login.passBox:draw()
-  lg.setColor(0,0,0)
-  lg.rectangle("fill",
-    login.buttons[login.mode].x,
-    login.buttons[login.mode].y,
-    login.buttons[login.mode].w,
-    login.buttons[login.mode].h
-  )
   lg.setColor(1,1,1)
   for _, k in pairs(login.buttons) do
     k:draw()

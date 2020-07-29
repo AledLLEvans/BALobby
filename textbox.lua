@@ -13,8 +13,9 @@ function Textbox:new(box)
   box.w = box.w or 0
   box.h = box.h or 0
   box.colors = {
-    background = {112, 112, 112, 255},
-    text = { 40, 40, 40, 255 }
+    background = {50/255, 50/255, 50/255, 255/255},
+    outline = {112/255, 112/255, 112/255, 255/255},
+    text = { 1, 1, 1, 1 }
   }
   box.text = ""
   box.displaytext = ""
@@ -23,9 +24,9 @@ function Textbox:new(box)
   box.timer = 0
   box.line = false
   box.charoffset = 0
+  box.font = fonts.latosmall
   
   setmetatable(box, Textbox.mt)
-  --table.insert(Textbox.actives, box)
   
   return box
 end
@@ -86,6 +87,7 @@ function TextboxPrivate:click(x,y)
   elseif self.active then
     self.active = false
   end
+  self:toEnd()
 end
 
 function Textbox:backspace()
@@ -133,6 +135,11 @@ end
 function Textbox:setText(t)
   self.text = t
   self:display()
+end
+
+function Textbox:setFont(f)
+  self.font = f
+  return self
 end
 
 function Textbox:moveLeft()
@@ -184,28 +191,33 @@ function Textbox:click(x,y)
   elseif self.active then
     self.active = false
   end
+  self:toEnd()
 end
 
 function Textbox:draw()
-  lg.setFont(fonts.latosmall)
-  love.graphics.setColor(lobby.color.bt)
-  love.graphics.rectangle('line',
-      self.x, self.y,
-      self.w, self.h)
+  lg.setColor(self.colors.background)
+  lg.rectangle('fill',
+            self.x, self.y,
+            self.w, self.h)
+  lg.setColor(self.colors.outline)
+  lg.rectangle('line',
+            self.x, self.y,
+            self.w, self.h)
+  lg.setFont(self.font)
   local text = self.displaytext
   if self.line and self:isActive() then text = self.displaytextbar end
-  love.graphics.setColor(unpack(self.colors.text))
-  love.graphics.printf(text,
-      self.x + 1, self.y,
-      self.w, 'left')
+  lg.setColor(self.colors.text)
+  lg.printf(text,
+            self.x + 1, self.y,
+            self.w, 'left')
+  lg.setColor(1,1,1)
   if self.name ~= "" then
-    love.graphics.setColor(unpack(self.colors.text))
-    love.graphics.printf(self.name,
-        self.x, self.y - 20,
-        self.w, 'left')
-    end
-  love.graphics.setColor(1,1,1)
-  lg.setFont(fonts.robotosmall)
+    lg.setFont(fonts.latoitalic)
+    lg.setColor(self.colors.text)
+    lg.printf(self.name,
+              self.x, self.y - 20,
+              self.w, 'left')
+  end
 end
 
 function Textbox:clearText()
