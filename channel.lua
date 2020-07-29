@@ -173,7 +173,8 @@ function Channel:draw()
     while j > 0 and h - 4*fontHeight > m do
       m = m + fontHeight
       for link in wt[j]:gmatch("http[s]*://%S+") do
-        local si, sj = string.find(wt[j], link)
+        local si = string.find(wt[j], link)
+        if not si then break end
         Hyperlink:new():setPosition(self.x + 10 + fonts.latosmall:getWidth(string.sub(wt[j], 1, si-1)), self.y + h - m - 21):setDimensions(fonts.latosmall:getWidth(link), fontHeight):setText(link)
       end
       lg.printf(wt[j], 10, h - m - 21, w, align)
@@ -210,8 +211,8 @@ function BattleChannel:draw()
       m = m + fontHeight
       for link in wt[j]:gmatch("http[s]*://%S+") do
         local si = string.find(wt[j], link)
-        while not si do si = string.find(wt[j]:sub(1, #wt[j]-1), link) end
-        Hyperlink:new():setPosition(self.x + w + 5 + fonts.latosmall:getWidth(wt[j]:sub(1, si-1)), self.y + h - m - 21):setDimensions(fonts.latosmall:getWidth(link), fontHeight):setText(link)
+        if not si then break end
+        Hyperlink:new():setPosition(self.x + w + 5 + fonts.latosmall:getWidth(string.sub(wt[j], 1, si-1)), self.y + h - m - 21):setDimensions(fonts.latosmall:getWidth(link), fontHeight):setText(link)
       end
       lg.printf(wt[j], w + 5, h - m - 21, ow - 10, align)
       j = j - 1
@@ -230,7 +231,8 @@ function BattleChannel:draw()
     while j > 0 and h - 4*fontHeight > m do
       m = m + fontHeight
       for link in wt[j]:gmatch("http[s]*://%S+") do
-        local si, sj = string.find(wt[j], link)
+        local si = string.find(wt[j], link)
+        if not si then break end
         Hyperlink:new():setPosition(self.x + 5 + fonts.latosmall:getWidth(string.sub(wt[j], 1, si-1)), self.y + h - m - 21):setDimensions(fonts.latosmall:getWidth(link), fontHeight):setText(link)
       end
       lg.printf(wt[j], 5, h - m - 21, w - 10, align)
