@@ -75,27 +75,27 @@ function Channel:getTextbox()
 end
 
 function Channel:addMessage(msg)
-  table.insert(self.lines, {user = "Battle", msg = msg})
+  table.insert(self.lines, {time = os.date("%X"), user = "Battle", msg = msg})
 end
 
 local channel_dimensions = {
   ["landing"] = function() return {
-      x = 1,
+      x = 0,
       y = lobby.fixturePoint[1].y,
-      w = lobby.fixturePoint[2].x - 2 - 10,
+      w = lobby.fixturePoint[2].x - 10,
       h = lobby.height - lobby.fixturePoint[2].y - 1} end,
   ["battle"] = function() return {
-      x = lobby.fixturePoint[1].x + 1,
+      x = lobby.fixturePoint[1].x,
       y = lobby.fixturePoint[1].y,
-      w = lobby.width - lobby.fixturePoint[1].x - 2 - 20,
+      w = lobby.width - lobby.fixturePoint[1].x - 20,
       h = lobby.height - lobby.fixturePoint[2].y - 1} end,
   ["battleWithList"] = function() return {
-      x = lobby.fixturePoint[1].x + 1,
+      x = lobby.fixturePoint[1].x,
       y = lobby.fixturePoint[1].y,
-      w = lobby.width - lobby.fixturePoint[1].x - 2 - 20,
+      w = lobby.width - lobby.fixturePoint[1].x - 20,
       h = lobby.height - lobby.fixturePoint[2].y - 1} end,
   ["options"] = function() return {
-      x = 1
+      x = 0
     } end,
 }
 
@@ -136,13 +136,13 @@ function Channel:refreshTabs()
           lobby.channelMessageHistoryID = false
           lobby.userListOffset = 0
           lobby.refreshUserButtons()
-          lobby.render()
         end)
       lobby.clickables[self.tabs[chanName]] = true
       i = i + 1
       totalWidth = totalWidth + textWidth + 6
     end
   end
+  lobby.render()
 end
 
 function Channel:getText()
@@ -158,7 +158,6 @@ local drawFunc = {
 
 function Channel:draw()
   lg.setFont(fonts.latosmall)
-  Channel.textbox:draw()
   local fontHeight = fonts.latosmall:getHeight()
   local m = 0
   local i = #self.lines - self.offset
@@ -186,7 +185,6 @@ end
 function BattleChannel:draw()
   lg.setFont(fonts.latosmall)
   local battle = Battle:getActiveBattle()
-  Channel.textbox:draw()
   local fontHeight = fonts.latosmall:getHeight()
   local m = 0
   local i = #self.infolines - self.infoboxoffset
@@ -195,6 +193,7 @@ function BattleChannel:draw()
   local tw = self.w
   local w = 2*tw/3
   local ow = tw/3
+  lg.setColor(lobby.color.bt)
   lg.line(w, 0, w, h - 21)
   lg.setColor(1,1,0)
   lg.printf(battle.founder, w + 10, fontHeight, ow - 10, "center")
@@ -233,7 +232,6 @@ end
 
 function ServerChannel:draw()
   lg.setFont(fonts.latosmall)
-  Channel.textbox:draw()
   local fontHeight = fonts.latosmall:getHeight()
   local m = 0
   local i = #self.lines - self.offset

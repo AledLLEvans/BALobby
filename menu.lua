@@ -166,24 +166,42 @@ function BattleTab:draw()
   local x = self.x
   local w = self.w
   local h = self.h
-  local fontHeight = fonts.robotosmall:getHeight()
+  lg.setFont(fonts.latosmall)
+  local fontHeight = fonts.latosmall:getHeight()
   if User.s[battle.founder].ingame then
     lg.setColor(0,0.8,0.1,0.9)
   else
-    lg.setColor(lobby.color.bt)
+    lg.setColor(lobby.color.bb)
   end
   lg.rectangle("fill", x, y, w, h)
-  lg.setColor(0,0,0)
-  lg.rectangle("line", x, y, w, h)
-  --lg.printf(battle.engineName, x-5, y+5, w, "center")
-  --lg.printf(battle.gameName, x-5, y +10, w, "center")
-  lg.printf(battle.title, x+60, y+5, w-60, "left")
-  local _, wt = fonts.robotosmall:getWrap(battle.title,w-60)
-  lg.printf(battle.mapName, x+5, y + h - fontHeight - 2, w-5, "left")
-  lg.printf(battle.userCount - battle.spectatorCount + 1 .. "/" .. battle.maxPlayers .. " +" .. battle.spectatorCount, x+60, y+5+fontHeight*#wt + 1, w, "left")
+  -- TITLE
+  lg.setColor(1,1,1)
+  lg.printf(battle.title, x+85, y+5, w-85, "left")
+  -- PLAYER/SPEC COUNTS
+  local left = battle.userCount - battle.spectatorCount + 1
+  local str1 =  left .. "/" .. battle.maxPlayers
+  local str2 = battle.spectatorCount - 1
+  local width = fonts.latoboldbig:getWidth(str1)
+  local height = fonts.latoboldbig:getHeight(str1)
+  lg.setFont(fonts.latoboldbig)
+  if left == 0 then lg.setColor(1,1,1) else lg.setColor(lobby.color.bargreen) end
+  lg.print(str1, x + w - width - 2, y + h/2)
+  lg.setColor(lobby.color.bt)
+  lg.print(str2, x + w - width - 2, y + h/2 + height)
+  -- MAP NAME
+  lg.setFont(fonts.latolightitalic)
+  local mapName = battle.mapName
+  local _, wt = fonts.latolightitalic:getWrap(mapName .. "..", w - 85 - width - 2)
+  if #wt > 1 then
+    lg.print(wt[1], x+85, y + h - fontHeight - 2)
+  else
+    lg.print(mapName, x+85, y + h - fontHeight - 2)
+  end
+  -- IMAGES
+  lg.setFont(fonts.latosmall)
   lg.setColor(1,1,1)
   if battle.minimap then
-    lg.draw(battle.minimap, x + 4, y + 12, 0, 50/1024, 50/1024)
+    lg.draw(battle.minimap, x, y, 0, 80/1024, 80/1024)
   else
     lg.draw(img["nomap"], x + 4, y + 15)
   end
@@ -264,7 +282,7 @@ function Dropdown:addButton(button, part)
   self.buttons[button] = true
   self.button_count = self.button_count + 1
   self.parts = math.max(1, part)
-  self:setDimensions(100, 21*#self.buttons + 4*(self.parts-1))
+  self:setDimensions(100, 21*self.button_count + 4*(self.parts-1))
 end
 
 function Dropdown:click(x, y)

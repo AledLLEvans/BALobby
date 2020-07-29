@@ -16,12 +16,11 @@ function Battle.exit()
   lobby.state = "landing"
   lobby.refreshUserButtons()
   Channel.refresh()
-  lobby.render()
 end
 
 function Battle.enter()
   lobby.state = "battle"
-  lobby.fixturePoint[1].x = 20
+  lobby.fixturePoint[1].x = 0
   Battle.sideButton = Button:new():setPosition(1, lobby.height/2 - 20):setDimensions(20-2, 40):onClick(function() Battle.enterWithList() end)
   function Battle.sideButton:draw()
     lg.rectangle("line", self.x, self.y, self.w, self.h)
@@ -31,8 +30,8 @@ function Battle.enter()
               15, self.y + self.h/2)
   end
   lobby.clickables[Battle.sideButton] = true
+  lobby.refreshBattleTabs()
   Channel.refresh()
-  lobby.render()
 end
 
 function Battle.enterWithList()
@@ -49,7 +48,6 @@ function Battle.enterWithList()
   lobby.clickables[Battle.sideButton] = true
   lobby.refreshBattleTabs()
   Channel.refresh()
-  lobby.render()
 end
 
 function Battle:new(battle)
@@ -162,13 +160,14 @@ function Battle:update(dt)
 end
   
 function Battle:draw()
+  lg.setFont(fonts.latoitalic)
   for _, button in pairs(self.buttons) do
     button:draw()
   end
   lg.setFont(fonts.roboto)
   local fontHeight = fonts.roboto:getHeight()
   lg.print(self.title, lobby.fixturePoint[1].x + 50, 10)
-  lg.printf(self.mapName, lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8 + 20 + fontHeight, 1024/8, "left")
+  lg.print(self.mapName, lobby.fixturePoint[2].x - 10 - fonts.roboto:getWidth(self.mapName), 10)
   if self.minimap then
     lg.draw(self.minimap, lobby.fixturePoint[2].x - 10 - 1024/8, 20 + fontHeight, 0, 1/8, 1/8)
   elseif self.mapDownload and not self.mapDownload.finished then

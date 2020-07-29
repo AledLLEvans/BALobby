@@ -13,7 +13,7 @@ function Textbox:new(box)
   box.w = box.w or 0
   box.h = box.h or 0
   box.colors = {
-    background = { 255, 255, 255, 255 },
+    background = {112, 112, 112, 255},
     text = { 40, 40, 40, 255 }
   }
   box.text = ""
@@ -187,8 +187,8 @@ function Textbox:click(x,y)
 end
 
 function Textbox:draw()
-  lg.setFont(fonts.robotosmall)
-  love.graphics.setColor(unpack(self.colors.background))
+  lg.setFont(fonts.latosmall)
+  love.graphics.setColor(lobby.color.bt)
   love.graphics.rectangle('line',
       self.x, self.y,
       self.w, self.h)
@@ -205,6 +205,7 @@ function Textbox:draw()
         self.w, 'left')
     end
   love.graphics.setColor(1,1,1)
+  lg.setFont(fonts.robotosmall)
 end
 
 function Textbox:clearText()

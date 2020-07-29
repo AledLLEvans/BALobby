@@ -396,7 +396,15 @@ end
 function IGNORELISTEND.respond(words, sentences)
 end
 function JOIN.respond(words, sentences)
-  Channel:new({title = words[1]})
+  local chan = words[1]
+  Channel:new({title = chan})
+  if chan == "main" then
+    Channel.active = Channel.s[chan]
+    for i = 1, #lobby.MOTD do
+      table.insert(Channel.s[chan].lines, lobby.MOTD[i])
+    end
+  end
+  lobby.refreshUserButtons()
   Channel:refreshTabs()
 end
 function JOINBATTLE.respond(words, sentences)
@@ -479,9 +487,10 @@ function LOGININFOEND.respond(words, sentences)
   lobby.send("JOIN newbies" .. "\n")
   lobby.refreshBattleTabs()
   lobby.loginInfoEnd = true
+  lobby.refreshBattleTabs()
 end
 function MOTD.respond(words, sentences)
-  table.insert(lobby.serverChannel.lines, {from = true, msg = string.gsub(sentences[1], "%u+ ", "", 1) .. "\n"})
+  table.insert(lobby.MOTD, {time = os.date("%X"), user = "", ex = true, msg = " " .. string.gsub(sentences[1], "%u+ ", "", 1) .. " **" .. "\n"})
 end
 function OK.respond(words, sentences)
 end

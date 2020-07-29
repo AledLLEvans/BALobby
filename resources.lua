@@ -293,7 +293,9 @@ fonts.roboto = lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 20)
 fonts.robotosmall = lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 12)
 fonts.latosmall = lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 12)
 fonts.latoitalic = lg.newFont("data/fonts/Lato/Lato-Italic.ttf", 12)
+fonts.latolightitalic = lg.newFont("data/fonts/Lato/Lato-LightItalic.ttf", 12)
 fonts.latobold = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 12)
+fonts.latoboldbig = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 16)
 fonts.latobolditalic = lg.newFont("data/fonts/Lato/Lato-BoldItalic.ttf", 12)
   
 sound = {}

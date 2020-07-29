@@ -84,7 +84,8 @@ function login.enter()
   if not lobby.gotEngine then
     if settings.engine_downloaded then
       if settings.engine_unpacked then
-        error("check engine installation or delete settings.lua in appdata")
+        love.window.showMessageBox("Cant find engine.", "Check engine installation or delete settings.lua in appdata, you may have trouble launching the game", "error" )
+        return
       end
       login.startEngineUnpack()
     else
@@ -92,7 +93,6 @@ function login.enter()
     end
   end
 end
-
 
 local progress_channel = love.thread.getChannel("progress_login")
 function login.startEngineDownload()

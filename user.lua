@@ -21,6 +21,5 @@ function User:openChannel()
   Channel.s[self.name] = self.channel
   Channel.active = self.channel
   Channel:refreshTabs()
-  lobby.render()
   return self.channel
 end

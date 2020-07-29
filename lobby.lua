@@ -52,14 +52,15 @@ function lobby.declareColors()
   lobby.color.bb = {33/255, 33/255, 33/255}
   lobby.color.bt = {112/255, 112/255, 112/255}
   lobby.color.bargreen = {28/255, 252/255, 139/255}
-  lg.setBackgroundColor(lobby.color.bg)
 end
 lobby.declareColors()
 
+lobby.MOTD = {}
 function lobby.enter()
+  lg.setBackgroundColor(lobby.color.bg)
   lobby.fixturePoint = {
-    {x = 250, y = 2*lobby.height/3},
-    {x = 640, y = 2*lobby.height/3}
+    {x = 0, y = 2*lobby.height/3},
+    {x = 660, y = 2*lobby.height/3}
   }  
   lobby.optionsButton = Button:new():setPosition(0, 0):setDimensions(36,36):onClick(function() lobby.optionsExpanded = not lobby.optionsExpanded end)
   function lobby.optionsButton:draw()
@@ -102,6 +103,7 @@ function lobby.mousepressed(x,y,b)
       lobby.clickedBattleID = i
     end
   end
+  
 end
 
 function lobby.pickCursor(x,y)
@@ -123,8 +125,8 @@ function lobby.mousemoved( x, y, dx, dy, istouch )
   if not lobby.dragLeftX and not lobby.dragRightX and not lobby.dragY then return end
   local leftMin = 20
   local leftMax = lobby.fixturePoint[2].x - 500
-  local rightMin = lobby.fixturePoint[1].x + 500
-  local rightMax = lobby.width - 160
+  local rightMin = lobby.state == "landing" and 260 or 260
+  local rightMax = lobby.width - 140
   local Ymin = 90*3 + 70 + 40
   local Ymax = lobby.height - 100
   if lobby.dragLeftX then
@@ -155,7 +157,6 @@ function lobby.mousemoved( x, y, dx, dy, istouch )
   end
   lobby.refreshUserButtons()
   lobby.refreshBattleTabs()
-  lobby.render()
 end
 
 lobby.clickables = {}
@@ -164,15 +165,14 @@ function lobby.mousereleased(x,y,b)
     lobby.dragLeftX, lobby.dragRightX, lobby.dragY = false, false, false
     Channel.refresh()
     lobby.refreshBattleTabs()
-    lobby.render()
     return
   end
   if not lobby.loginInfoEnd then return end
   if b == 1 then
     for v in pairs(lobby.clickables) do
-      v:click(x,y)
+      if v:click(x,y) then break end
     end
-    if y < lobby.fixturePoint[1].y and lobby.state ~= "battle" then
+    if y < lobby.fixturePoint[1].y or lobby.state == "battleWithList" then
       for i, k in pairs(BattleTab.s) do
         if lobby.clickedBattleID == i then
           k:click(x, y)
@@ -324,22 +324,21 @@ function lobby.resize( w, h )
       y = lobby.fixturePoint[1].y * lobby.height/lobby.oldheight
     },
     {
-      x = math.min(lobby.width - 160, lobby.fixturePoint[2].x * lobby.width/lobby.oldwidth),
+      x = math.max(260, math.min(lobby.width - 140, lobby.fixturePoint[2].x * lobby.width/lobby.oldwidth)),
       y = lobby.fixturePoint[2].y * lobby.height/lobby.oldheight
     }
   }
-  if lobby.state == "battleWithList" then lobby.fixturePoint[1].x = 20 
-  elseif lobby.state == "battle" then lobby.fixturePoint[1].x = 260 end
-  Channel.refresh()
-  lobby.refreshBattleTabs()
+  lobby.canvas = lg.newCanvas(lobby.width, lobby.height)
+  if lobby.state == "battleWithList" then lobby.fixturePoint[1].x = 260 
+  elseif lobby.state == "battle" then lobby.fixturePoint[1].x = 0 end
   if Battle:getActiveBattle() then
     Battle:getActiveBattle().buttons.spectate:setPosition(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50)
     Battle:getActiveBattle().buttons.ready:setPosition(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50)
     Battle:getActiveBattle().buttons.exit:setPosition(lobby.fixturePoint[2].x - 300, lobby.fixturePoint[2].y - 50)
   end
+  Channel.refresh()
+  lobby.refreshBattleTabs()
   lobby.refreshUserButtons()
-  lobby.canvas = lg.newCanvas(lobby.width, lobby.height)
-  lobby.render()
 end
 
 function lobby.textinput (text)
@@ -392,6 +391,7 @@ local keypress = {
     lobby.channelMessageHistoryID = math.min(lobby.channelMessageHistoryID + 1, #Channel:getActive().sents)
     if Channel:getActive().sents[lobby.channelMessageHistoryID] then
       Channel:getActive():getTextbox():setText(Channel:getActive().sents[lobby.channelMessageHistoryID])
+      Channel:getActive():getTextbox():toEnd()
     end
   end,
   ["delete"] = function()
@@ -480,6 +480,7 @@ function lobby.refreshUserButtons()
     c = c + 1
   end
   lobby.userListOffsetMax = math.max(0, c * fontHeight - (ymax - y))
+  lobby.render()
 end
 
 function lobby.sortBattleIDsByPlayerCount()
@@ -519,6 +520,8 @@ lobby.battleTabDisplayRows = 1
 lobby.battleTabDisplayCols = 1
 lobby.exr = 1
 lobby.battleTabSubText = ""
+lobby.battleTabHeadText = "OPEN BATTLEROOMS"
+local headTexts = {"OPEN BATTLEROOMS", "BATTLEROOMS", "OPEN BATTLES", "BATTLES", ""}
 function lobby.createBattleTabs(BattleIDsByPlayerCount)
   local i = 1
   local y = 90-lobby.battleTabOffset
@@ -544,13 +547,21 @@ function lobby.createBattleTabs(BattleIDsByPlayerCount)
       y = y + 90
     end
   end
-  lobby.battleTabSubText = "Showing " .. #BattleIDsByPlayerCount .. " battles." 
+  do
+    local i = 0
+    repeat
+      i = i + 1
+      lobby.battleTabHeadText = headTexts[i]
+    until i == #headTexts or lobby.fixturePoint[2].x - 50 > fonts.notable:getWidth(headTexts[i])
+  end
+  lobby.battleTabSubText = "Showing " .. #BattleIDsByPlayerCount .. " battles."
   if not lobby.loginInfoEnd then
     lobby.battleTabSubText = lobby.battleTabSubText .. "(Loading .. )"
   end
   lobby.battleTabDisplayCols = math.floor((xmax-xmin)/250)
   lobby.battleTabDisplayRows = math.floor((ymax-ymin)/90) - 1
   lobby.exr = math.max(0, math.ceil(#BattleIDsByPlayerCount/lobby.battleTabDisplayCols) - lobby.battleTabDisplayRows)
+  lobby.render()
 end
 
 lobby.state = "landing"
@@ -562,8 +573,6 @@ lobby.renderFunction = {
     for i, k in pairs(BattleTab.s) do
       k:draw()
     end
-    lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.height)
-    lg.line(0, lobby.fixturePoint[1].y, lobby.fixturePoint[2].x, lobby.fixturePoint[1].y)
     lg.setColor(lobby.color.bb)
     lg.rectangle("fill",
                 0,
@@ -575,24 +584,26 @@ lobby.renderFunction = {
                 lobby.fixturePoint[1].y,
                 lobby.fixturePoint[2].x,
                 lobby.height - lobby.fixturePoint[1].y)
+    lg.setColor(lobby.color.bt)
+    lg.line(0, 90, lobby.fixturePoint[2].x, 90)
+    lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.height)
+    lg.line(0, lobby.fixturePoint[1].y, lobby.fixturePoint[2].x, lobby.fixturePoint[1].y)
     local offsetmax = (lobby.exr) * 90
     local barlength = (lobby.fixturePoint[2].y - 90 - 40)
     local length = barlength/lobby.exr
     local y = (barlength-length)*(lobby.battleTabOffset/offsetmax)
+    lg.line(lobby.fixturePoint[2].x - 5, 110, lobby.fixturePoint[2].x - 5, 110 + barlength)
+    lg.setColor(lobby.color.bargreen)
+    lg.line(lobby.fixturePoint[2].x - 5,
+            110 + y,
+            lobby.fixturePoint[2].x - 5,
+            110 + y + length)
     lg.setColor(1,1,1)
     lg.setFont(fonts.notable)
-    lg.print("OPEN BATTLEROOMS", 50, 10)
+    lg.print(lobby.battleTabHeadText, 50, 10)
     local h = fonts.notable:getHeight()
     lg.setFont(fonts.latosmall)
     lg.print(lobby.battleTabSubText, 50, 10 + h)
-    lg.line(lobby.fixturePoint[2].x - 20, 110, lobby.fixturePoint[2].x - 20, 110 + barlength)
-    lg.setColor(lobby.color.bargreen)
-    lg.line(lobby.fixturePoint[2].x - 20,
-            110 + y,
-            lobby.fixturePoint[2].x - 20,
-            110 + y + length)
-    lg.setColor(1,1,1)
-    lg.line(0, 90, lobby.fixturePoint[2].x, 90)
   end,
   
   ["battle"] = function() 
@@ -602,13 +613,11 @@ lobby.renderFunction = {
                 lobby.fixturePoint[1].y,
                 lobby.width - lobby.fixturePoint[1].x,
                 lobby.height - lobby.fixturePoint[1].y)
-    lg.setColor(1,1,1)
+    lg.setColor(lobby.color.bt)
     lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.fixturePoint[2].y)
-    lg.line(20, lobby.fixturePoint[1].y, lobby.width, lobby.fixturePoint[1].y)
+    lg.line(0, lobby.fixturePoint[1].y, lobby.width, lobby.fixturePoint[1].y)
+    lg.setColor(1,1,1)
     Battle:getActiveBattle():draw()
-    --lg.line(lobby.fixturePoint[1].x, 0, lobby.fixturePoint[1].x, lobby.height)
-    --lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.fixturePoint[2].y)
-    --lg.line(lobby.fixturePoint[1].x, lobby.fixturePoint[1].y, lobby.width, lobby.fixturePoint[1].y)
   end,
   
     ["battleWithList"] = function() 
@@ -626,17 +635,14 @@ lobby.renderFunction = {
                 0,
                 lobby.fixturePoint[1].x,
                 90)
+    lg.setColor(lobby.color.bt)
+    lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.fixturePoint[2].y)
+    lg.line(lobby.fixturePoint[1].x, lobby.fixturePoint[1].y, lobby.width, lobby.fixturePoint[1].y)
     lg.setColor(1,1,1)
     lg.setFont(fonts.notable)
     lg.print("BATTLES", 10, 50)
-    lg.setFont(fonts.latosmall)
-    lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.fixturePoint[2].y)
-    lg.line(lobby.fixturePoint[1].x, lobby.fixturePoint[1].y, lobby.width, lobby.fixturePoint[1].y)
+    lg.setFont(fonts.latoitalic)
     Battle:getActiveBattle():draw()
-
-    --lg.line(lobby.fixturePoint[1].x, 0, lobby.fixturePoint[1].x, lobby.height)
-    --lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.fixturePoint[2].y)
-    --lg.line(lobby.fixturePoint[1].x, lobby.fixturePoint[1].y, lobby.width, lobby.fixturePoint[1].y)
   end,
   
   ["options"] = function() end
@@ -681,5 +687,7 @@ function lobby.render()
 end
 
 function lobby.draw()
+  if not love.window.isVisible() then return end
   lg.draw(lobby.canvas)
+  Channel.textbox:draw()
 end
