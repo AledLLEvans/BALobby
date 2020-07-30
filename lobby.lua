@@ -46,18 +46,9 @@ function lobby.writeScript()
 	txt:close()
 end
 
-function lobby.declareColors()
-  lobby.color = {}
-  lobby.color.bg = {28/255, 28/255, 28/255}
-  lobby.color.bb = {33/255, 33/255, 33/255}
-  lobby.color.bt = {112/255, 112/255, 112/255}
-  lobby.color.bargreen = {28/255, 252/255, 139/255}
-end
-lobby.declareColors()
-
 lobby.MOTD = {}
 function lobby.enter()
-  lg.setBackgroundColor(lobby.color.bg)
+  lg.setBackgroundColor(colors.bg)
   lobby.fixturePoint = {
     {x = 0, y = 2*lobby.height/3},
     {x = 660, y = 2*lobby.height/3}
@@ -70,19 +61,22 @@ function lobby.enter()
       lg.draw(img["Menu"], self.x, self.y)
     end
   end
+  lobby.battleTabScrollBar = ScrollBar:new()
+  lobby.userListScrollBar = ScrollBar:new():setPosition(lobby.width - 5, 90):setLength(lobby.height - 180):setScrollBarLength(50)
+  
   lobby.clickables[lobby.optionsButton] = true
+  
+  lobby.serverChannel = Channel.s["server"]
+
+  Channel.active = lobby.serverChannel
   
   lobby.resize( lobby.width, lobby.height )
   lobby.timeSinceLastPong = 0
   cursor[1] = love.mouse.getCursor( )
   
-  Channel.textbox:setPosition(1, lobby.height - 21):setDimensions(lobby.fixturePoint[2].x - 2, 20)
+  --Channel.textbox:setPosition(1, lobby.height - 21):setDimensions(lobby.fixturePoint[2].x - 2, 20)
   
-  Channel:refreshTabs()
-  
-  lobby.serverChannel = Channel.s["server"]
 
-  --Channel.active = lobby.serverChannel
   
   state = STATE_LOBBY
 end
@@ -157,6 +151,9 @@ function lobby.mousemoved( x, y, dx, dy, istouch )
   end
   lobby.refreshUserButtons()
   lobby.refreshBattleTabs()
+  if Channel:getActive() then
+    Channel:getActive():render()
+  end
 end
 
 lobby.clickables = {}
@@ -199,35 +196,35 @@ function lobby.mousereleased(x,y,b)
   lobby.render()
 end
 
-lobby.battleTabOffset = 0
-lobby.userListOffset = 0
-lobby.userListOffsetMax = 0
 function lobby.wheelmoved(x, y)
   local msx, msy = love.mouse.getPosition()
   --if lobby.state == "landing" then
   if msx < lobby.fixturePoint[2].x and msy < lobby.fixturePoint[1].y then
     if y < 0 then
-      lobby.battleTabOffset = math.min((lobby.exr) * 90, lobby.battleTabOffset + 30)
+      lobby.battleTabScrollBar:setOffset(math.min(lobby.battleTabScrollBar:getOffsetMax(), lobby.battleTabScrollBar:getOffset() + 30))
     elseif y > 0 then
-      lobby.battleTabOffset = math.max(0, lobby.battleTabOffset - 30)
+      lobby.battleTabScrollBar:setOffset(math.max(0, lobby.battleTabScrollBar:getOffset() - 30))
     end
     lobby.refreshBattleTabs()
   end
   --end
   if msx > lobby.fixturePoint[2].x and msy < lobby.fixturePoint[2].y then
-    if y < 0 then
-      lobby.userListOffset = math.min(lobby.userListOffsetMax, lobby.userListOffset + 20)
-    elseif y > 0 then
-      lobby.userListOffset = math.max(0, lobby.userListOffset - 20)
+    local sb = lobby.userListScrollBar
+    if y > 0 then
+      sb:scrollUp()
+    elseif y < 0 then
+      sb:scrollDown()
     end
-    lobby.refreshUserButtons()
+    lobby.render()
   end
   if Channel.active then
-    if msx > lobby.fixturePoint[1].x and msy > lobby.fixturePoint[1].y then
+    if msx > Channel.x and msx < Channel.x + Channel.w and msy > Channel.y and msy < Channel.y + Channel.h then
+      local sb = Channel.active.scrollBar
+      if Channel.active.isBattle and msx > Channel.x + Channel.w*(2/3) then sb = Channel.active.infoBoxScrollBar end
       if y > 0 then
-        Channel.active.offset = math.min(#Channel.active.lines, Channel.active.offset + 1)
+        sb:scrollUp()
       elseif y < 0 then
-        Channel.active.offset = math.max(0, Channel.active.offset - 1)
+        sb:scrollDown()
       end
     end
   end
@@ -321,7 +318,6 @@ lobby.fixturePoint = {
 }]]
 
 function lobby.resize( w, h )
-  lobby.battleTabOffset = 0
   lobby.oldwidth = lobby.width
   lobby.oldheight = lobby.height
   lobby.width = w
@@ -337,12 +333,13 @@ function lobby.resize( w, h )
     }
   }
   lobby.canvas = lg.newCanvas(lobby.width, lobby.height)
+  
   if lobby.state == "battleWithList" then lobby.fixturePoint[1].x = 260 
   elseif lobby.state == "battle" then lobby.fixturePoint[1].x = 0 end
   if Battle:getActiveBattle() then
-    Battle:getActiveBattle().buttons.spectate:setPosition(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50)
+    Battle:getActiveBattle().buttons.spectate:setPosition(lobby.fixturePoint[2].x - 110, lobby.fixturePoint[2].y - 50)
     Battle:getActiveBattle().buttons.ready:setPosition(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50)
-    Battle:getActiveBattle().buttons.exit:setPosition(lobby.fixturePoint[2].x - 300, lobby.fixturePoint[2].y - 50)
+    Battle:getActiveBattle().buttons.exit:setPosition(lobby.fixturePoint[2].x - 290, lobby.fixturePoint[2].y - 50)
   end
   Channel.refresh()
   lobby.refreshBattleTabs()
@@ -353,7 +350,6 @@ function lobby.textinput (text)
   if Channel:getTextbox():isActive() then
     Channel:getTextbox():addText(text)
   end
-  lobby.render()
 end
 
 local launchCode = [[
@@ -454,7 +450,7 @@ function lobby.keypressed(k, uni)
 end
 
 function lobby.refreshUserButtons()
-  local m = 30 - lobby.userListOffset
+  local m = 30 - lobby.userListScrollBar:getOffset()
   local y = 30
   local ymax = lobby.state == "landing" and lobby.height or lobby.fixturePoint[2].y
   local x = lobby.fixturePoint[2].x
@@ -473,9 +469,8 @@ function lobby.refreshUserButtons()
   UserButton.s = {}
   local c = 0
   for username, user in pairs(list) do
-    local w, wt = fonts.latosmall:getWrap(username, lobby.width - lobby.fixturePoint[2].x)
-    m = m + #wt*fontHeight
-    if m > ymax + 4*fontHeight then return end
+    m = m + fontHeight
+    if m > ymax - y then return end
     if m > y then
       local UB = UserButton:new(username)
       UB:setPosition(x, m)
@@ -487,7 +482,13 @@ function lobby.refreshUserButtons()
     end
     c = c + 1
   end
-  lobby.userListOffsetMax = math.max(0, c * fontHeight - (ymax - y))
+  if lobby.state == "landing" then
+    lobby.userListScrollBar:setPosition(lobby.width - 5, 50):setLength(lobby.height - 100)
+  else
+    lobby.userListScrollBar:setPosition(lobby.width - 5, 50):setLength(lobby.fixturePoint[2].y - 100)
+  end
+  lobby.userListScrollBar:setOffset(0)
+  lobby.userListScrollBar:setOffsetMax(math.max(0, c - math.floor((ymax - y)/fontHeight)) * fontHeight)
   lobby.render()
 end
 
@@ -526,13 +527,12 @@ end
 
 lobby.battleTabDisplayRows = 1
 lobby.battleTabDisplayCols = 1
-lobby.exr = 1
 lobby.battleTabSubText = ""
 lobby.battleTabHeadText = "OPEN BATTLEROOMS"
 local headTexts = {"OPEN BATTLEROOMS", "BATTLEROOMS", "OPEN BATTLES", "BATTLES", ""}
 function lobby.createBattleTabs(BattleIDsByPlayerCount)
   local i = 1
-  local y = 90-lobby.battleTabOffset
+  local y = 90 - lobby.battleTabScrollBar:getOffset()
   local x = 0
   local xmin = 0
   local ymin = 10
@@ -568,7 +568,14 @@ function lobby.createBattleTabs(BattleIDsByPlayerCount)
   end
   lobby.battleTabDisplayCols = math.floor((xmax-xmin)/250)
   lobby.battleTabDisplayRows = math.floor((ymax-ymin)/90) - 1
-  lobby.exr = math.max(0, math.ceil(#BattleIDsByPlayerCount/lobby.battleTabDisplayCols) - lobby.battleTabDisplayRows)
+  local len = lobby.fixturePoint[2].y - 110 - 40
+  local sblen = math.max(0, math.ceil(#BattleIDsByPlayerCount/lobby.battleTabDisplayCols) - lobby.battleTabDisplayRows)
+  lobby.battleTabScrollBar
+  :setPosition(lobby.fixturePoint[2].x - 5, 110)
+  :setLength(len)
+  :setScrollBarLength(len/sblen)
+  :setOffsetMax(sblen * 90)
+  
   lobby.render()
 end
 
@@ -581,7 +588,8 @@ lobby.renderFunction = {
     for i, k in pairs(BattleTab.s) do
       k:draw()
     end
-    lg.setColor(lobby.color.bb)
+    --
+    lg.setColor(colors.bb)
     lg.rectangle("fill",
                 0,
                 0,
@@ -592,21 +600,14 @@ lobby.renderFunction = {
                 lobby.fixturePoint[1].y,
                 lobby.fixturePoint[2].x,
                 lobby.height - lobby.fixturePoint[1].y)
-    lg.setColor(lobby.color.bt)
+    lg.setColor(colors.bt)
     lg.line(0, 90, lobby.fixturePoint[2].x, 90)
     lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.height)
     lg.line(0, lobby.fixturePoint[1].y, lobby.fixturePoint[2].x, lobby.fixturePoint[1].y)
-    local offsetmax = (lobby.exr) * 90
-    local barlength = (lobby.fixturePoint[2].y - 90 - 40)
-    local length = barlength/lobby.exr
-    local y = (barlength-length)*(lobby.battleTabOffset/offsetmax)
-    lg.line(lobby.fixturePoint[2].x - 5, 110, lobby.fixturePoint[2].x - 5, 110 + barlength)
-    lg.setColor(lobby.color.bargreen)
-    lg.line(lobby.fixturePoint[2].x - 5,
-            110 + y,
-            lobby.fixturePoint[2].x - 5,
-            110 + y + length)
+    --
+    lobby.battleTabScrollBar:draw()
     lg.setColor(1,1,1)
+    --
     lg.setFont(fonts.notable)
     lg.print(lobby.battleTabHeadText, 50, 10)
     local h = fonts.notable:getHeight()
@@ -615,13 +616,13 @@ lobby.renderFunction = {
   end,
   
   ["battle"] = function() 
-    lg.setColor(lobby.color.bb)
+    lg.setColor(colors.bb)
     lg.rectangle("fill",
                 lobby.fixturePoint[1].x,
                 lobby.fixturePoint[1].y,
                 lobby.width - lobby.fixturePoint[1].x,
                 lobby.height - lobby.fixturePoint[1].y)
-    lg.setColor(lobby.color.bt)
+    lg.setColor(colors.bt)
     lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.fixturePoint[2].y)
     lg.line(0, lobby.fixturePoint[1].y, lobby.width, lobby.fixturePoint[1].y)
     lg.setColor(1,1,1)
@@ -632,7 +633,7 @@ lobby.renderFunction = {
     for i, k in pairs(BattleTab.s) do
       k:draw()
     end
-    lg.setColor(lobby.color.bb)
+    lg.setColor(colors.bb)
     lg.rectangle("fill",
                 lobby.fixturePoint[1].x,
                 lobby.fixturePoint[1].y,
@@ -643,7 +644,7 @@ lobby.renderFunction = {
                 0,
                 lobby.fixturePoint[1].x,
                 90)
-    lg.setColor(lobby.color.bt)
+    lg.setColor(colors.bt)
     lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.fixturePoint[2].y)
     lg.line(lobby.fixturePoint[1].x, lobby.fixturePoint[1].y, lobby.width, lobby.fixturePoint[1].y)
     lg.setColor(1,1,1)
@@ -665,14 +666,16 @@ function lobby.render()
   if Channel:getActive() then
     lg.setFont(fonts.latosmall)
     lg.print("Users in channel #" .. Channel:getActive():getName(),
-      lobby.fixturePoint[2].x + 10,
-      10)
+            lobby.fixturePoint[2].x + 10, 10)
   end
   
   lobby.renderFunction[lobby.state]()
-
+  
+  Channel.textbox:draw()
+  lobby.userListScrollBar:draw()
+  
   if Channel:getActive() then
-    Channel:getActive():draw()
+    Channel:getActive():render()
   end
   
   for i, k in pairs(Channel:getTabs()) do
@@ -704,5 +707,5 @@ end
 function lobby.draw()
   if not love.window.isVisible() then return end
   lg.draw(lobby.canvas)
-  Channel.textbox:draw()
+  Channel.textbox:renderText()
 end

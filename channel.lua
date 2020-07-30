@@ -13,7 +13,8 @@ Channel.h = 10
 function Channel:new(o, bool)
   setmetatable(o, Channel.mt)
   
-  o.offset = 0
+  o.font = fonts.latosmall
+  o.scrollBar = ScrollBar:new():setScrollBarLength(-20):setScrollSpeed(o.font:getHeight())
   o.lines = {}
   o.users = {} 
   o.sents = {}
@@ -30,8 +31,9 @@ BattleChannel.mt = {__index = BattleChannel}
 
 function BattleChannel:new(o)
   o = Channel:new(o)
-  o.infoboxoffset = 0
+  o.isBattle = true
   o.infolines = {}
+  o.infoBoxScrollBar = ScrollBar:new():setScrollBarLength(-20):setScrollSpeed(o.font:getHeight())
   setmetatable(o, BattleChannel.mt)
   return o
 end
@@ -80,19 +82,19 @@ end
 
 local channel_dimensions = {
   ["landing"] = function() return {
-      x = 0,
+      x = 5,
       y = lobby.fixturePoint[1].y,
       w = lobby.fixturePoint[2].x - 10,
       h = lobby.height - lobby.fixturePoint[2].y - 1} end,
   ["battle"] = function() return {
-      x = lobby.fixturePoint[1].x,
+      x = lobby.fixturePoint[1].x + 5,
       y = lobby.fixturePoint[1].y,
-      w = lobby.width - lobby.fixturePoint[1].x,
+      w = lobby.width - lobby.fixturePoint[1].x - 10,
       h = lobby.height - lobby.fixturePoint[2].y - 1} end,
   ["battleWithList"] = function() return {
-      x = lobby.fixturePoint[1].x,
+      x = lobby.fixturePoint[1].x + 5,
       y = lobby.fixturePoint[1].y,
-      w = lobby.width - lobby.fixturePoint[1].x,
+      w = lobby.width - lobby.fixturePoint[1].x - 10,
       h = lobby.height - lobby.fixturePoint[2].y - 1} end,
   ["options"] = function() return {
       x = 0
@@ -134,7 +136,6 @@ function Channel:refreshTabs()
           self.active = channel
           channel.newMessage = false
           lobby.channelMessageHistoryID = false
-          lobby.userListOffset = 0
           lobby.refreshUserButtons()
         end)
       lobby.clickables[self.tabs[chanName]] = true
@@ -152,118 +153,159 @@ end
 local drawFunc = {
   ["user"] = function(t) return  "<" .. t .. ">"  end,
   ["mention"] = function(t) lg.setColor(1,0,0) return  "<" .. t .. ">"  end,
+  ["ingame"] = function(t) lg.setColor(colorss.bt) return  "[" .. t .. "]"  end,
   ["ex"] = function(t) lg.setColor(1,1,0) return  "*" .. t .. "*"  end,
-  ["system"] = function() lg.setColor(1,0,0) return  "! SYSTEM !"  end
+  ["system"] = function() lg.setColor(1,0,0) return  "! SYSTEM : "  end
 }
 
-function Channel:draw()
-  lg.setFont(fonts.latosmall)
-  local fontHeight = fonts.latosmall:getHeight()
-  local m = 0
-  local i = #self.lines - self.offset
-  lg.translate(self.x, self.y)
-  local h = self.h
-  local w = self.w - 20
-  while i > 0 and h - 4*fontHeight > m do
-    local drawType = self.lines[i].user and (self.lines[i].ex and "ex" or self.lines[i].mention and "mention" or "user") or "system"
-    local text = "[" .. self.lines[i].time .. "] " .. drawFunc[drawType](self.lines[i].user) .. self.lines[i].msg
-    local _, wt = fonts.latosmall:getWrap(text, w)
-    local j = #wt
-    local align = self.lines[i].user and "left" or "center"
-    while j > 0 and h - 4*fontHeight > m do
-      m = m + fontHeight
-      for link in wt[j]:gmatch("http[s]*://%S+") do
-        local si = string.find(wt[j], link)
-        if not si then break end
-        Hyperlink:new():setPosition(self.x + 10 + fonts.latosmall:getWidth(string.sub(wt[j], 1, si-1)), self.y + h - m - 21):setDimensions(fonts.latosmall:getWidth(link), fontHeight):setText(link)
-      end
-      lg.printf(wt[j], 10, h - m - 21, w, align)
-      j = j - 1
+function Channel:render()
+  lg.setFont(self.font)
+  local fontHeight = self.font:getHeight()
+  self.scrollBar
+  :setPosition(Channel.x + Channel.w, Channel.y + Channel.h - 25)
+  :setLength(-Channel.h + 50)
+  :setOffsetMax(math.max(0, #self.lines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight)
+  self.scrollBar:draw()
+
+  lg.setColor(1,1,1)
+  local i = #self.lines 
+  local y = 20 - self.scrollBar:getOffset()
+  while i > 0 do
+    while y < 20 do
+      y = y + fontHeight
+      i = i - 1
     end
-    lg.setColor(1,1,1)
+    local line = self.lines[i]
+    local drawType = line.user and
+                    (line.ex and "ex"
+                    or line.mention and
+                    "mention" or "user")
+                    or "system"
+    local align = line.user and "left" or "center"
+    local text = "[" .. line.time .. "] " .. drawFunc[drawType](line.user) .. line.msg
+    local w, wt = self.font:getWrap(text, self.w - 5)
+    local j = #wt
+    repeat
+      lg.printf(wt[j], self.x + 10, self.y + self.h - y - 21, self.w - 5, align)
+      y = y + fontHeight
+      j = j - 1
+    until self.h < y + 21 + 20 or j == 0
+    if self.h < y + 21 + 20 then break end
     i = i - 1
+    lg.setColor(1,1,1)
   end
-  lg.origin()
-  lg.setColor(1, 1, 1)
 end
 
-function BattleChannel:draw()
-  lg.setFont(fonts.latosmall)
+function ServerChannel:render()
+  lg.setFont(self.font)
+  local fontHeight = self.font:getHeight()
+  self.scrollBar
+  :setPosition(Channel.x + Channel.w, Channel.y + Channel.h - 25)
+  :setLength(-Channel.h + 50)
+  :setOffsetMax(math.max(0, #self.lines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight)
+  self.scrollBar:draw()
+
+  lg.setColor(1,1,1)
+  local i = #self.lines 
+  local y = 20 - self.scrollBar:getOffset()
+  while i > 0 do
+    while y < 20 do
+      y = y + fontHeight
+      i = i - 1
+    end
+    local text = "[" .. self.lines[i].time .. "] " .. self.lines[i].msg
+    local align = self.lines[i].to and "left" or self.lines[i].from and "right" or "center"
+    local w, wt = self.font:getWrap(text, self.w - 10)
+    local j = #wt
+    repeat
+      lg.printf(wt[j], self.x + 5, self.y + self.h - y - 21, self.w - 10, align)
+      y = y + fontHeight
+      j = j - 1
+    until self.h < y + 21 + 20 or j == 0
+    if self.h < y + 21 + 20 then break end
+    i = i - 1
+    lg.setColor(1,1,1)
+  end
+end
+
+function BattleChannel:render()
   local battle = Battle:getActiveBattle()
-  local fontHeight = fonts.latosmall:getHeight()
-  local m = 0
-  local i = #self.infolines - self.infoboxoffset
-  lg.translate(self.x, self.y)
-  local h = self.h
+  lg.setFont(self.font)
+  local fontHeight = self.font:getHeight()
   local tw = self.w
   local w = 2*tw/3
   local ow = tw/3
-  lg.setColor(lobby.color.bt)
-  lg.line(w, 0, w, h - 21)
+  lg.setColor(1,1,1)
+  self.infoBoxScrollBar
+  :setPosition(Channel.x + Channel.w, Channel.y + Channel.h - 25)
+  :setLength(-Channel.h + 50)
+  :setOffsetMax(math.max(0, #self.infolines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight)
+  self.infoBoxScrollBar:draw()
+  lg.setColor(colors.bt)
+  lg.line(self.x + w, self.y, self.x + w, self.y + self.h - 21)
   lg.setColor(1,1,0)
-  lg.printf(battle.founder, w + 10, fontHeight, ow - 10, "center")
-  while i > 0 and h - 4*fontHeight > m do
+  lg.printf(battle.founder, self.x + w + 10, self.y + fontHeight, ow - 5, "center")  
+  local i = #self.infolines
+  local y = 20 - self.infoBoxScrollBar:getOffset()
+  while i > 0 do
+    while y < 20 do
+      y = y + fontHeight
+      i = i - 1
+    end
     local text = self.infolines[i].msg
-    local _, wt = fonts.latosmall:getWrap(text, ow - 10)
+    local _, wt = self.font:getWrap(text, ow - 5)
     local j = #wt
-    local align = "left"
-    while j > 0 and h - 4*fontHeight > m do
-      m = m + fontHeight
-      for link in wt[j]:gmatch("http[s]*://%S+") do
-        local si = string.find(wt[j], link)
-        if not si then break end
-        Hyperlink:new():setPosition(self.x + w + 5 + fonts.latosmall:getWidth(string.sub(wt[j], 1, si-1)), self.y + h - m - 21):setDimensions(fonts.latosmall:getWidth(link), fontHeight):setText(link)
-      end
-      lg.printf(wt[j], w + 5, h - m - 21, ow - 10, align)
+    repeat
+      lg.printf(wt[j], self.x + w + 10, self.y + self.h - y - 21, ow - 5, "left")
+      y = y + fontHeight
       j = j - 1
-    end
+    until self.h < y + 21 + 20 or j == 0
+    if self.h < y + 21 + 20 then break end
     i = i - 1
   end
-  i = #self.lines - self.offset
-  m = 0
-  lg.setColor(1, 1, 1)
-  while i > 0 and h - 4*fontHeight > m do
-    local drawType = self.lines[i].user and (self.lines[i].ex and "ex" or self.lines[i].mention and "mention" or "user") or "system"
-    local text = "[" .. self.lines[i].time .. "] " .. drawFunc[drawType](self.lines[i].user) .. self.lines[i].msg
-    local _, wt = fonts.latosmall:getWrap(text, w - 10)
-    local j = #wt
-    local align = self.lines[i].user and "left" or "center"
-    while j > 0 and h - 4*fontHeight > m do
-      m = m + fontHeight
-      for link in wt[j]:gmatch("http[s]*://%S+") do
-        local si = string.find(wt[j], link)
-        if not si then break end
-        Hyperlink:new():setPosition(self.x + 5 + fonts.latosmall:getWidth(string.sub(wt[j], 1, si-1)), self.y + h - m - 21):setDimensions(fonts.latosmall:getWidth(link), fontHeight):setText(link)
-      end
-      lg.printf(wt[j], 5, h - m - 21, w - 10, align)
-      j = j - 1
+  
+  lg.setColor(1,1,1)
+  self.scrollBar
+  :setPosition(Channel.x + w - 5, Channel.y + Channel.h - 25)
+  :setLength(-Channel.h + 50)
+  :setOffsetMax(math.max(0, #self.lines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight)
+  self.scrollBar:draw()
+  
+  lg.setColor(1,1,1)
+  i = #self.lines
+  y = 20 - self.scrollBar:getOffset() 
+  while i > 0 do
+    while y < 20 do
+      y = y + fontHeight
+      i = i - 1
     end
+    local line = self.lines[i]
+    local drawType = line.user and
+                    (line.ex and "ex"
+                    or line.ingame and "ingame"
+                    or line.mention and "mention"
+                    or "user")
+                    or "system"
+    local text = "[" .. line.time .. "] " .. drawFunc[drawType](line.user) .. line.msg
+    local align = line.user and "left" or "center"
+    local _, wt = self.font:getWrap(text, w - 10)
+    local j = #wt
+    repeat
+      lg.printf(wt[j], self.x + 10, self.y + self.h - y - 21, w - 10, align)
+      y = y + fontHeight
+      j = j - 1
+    until self.h < y + 21 + 20 or j == 0
+    if self.h < y + 21 + 20 then break end
+    i = i - 1
     lg.setColor(1,1,1)
-    i = i - 1
   end
-  lg.origin()
-  lg.setColor(1, 1, 1)
+  
 end
 
-function ServerChannel:draw()
-  lg.setFont(fonts.latosmall)
-  local fontHeight = fonts.latosmall:getHeight()
-  local m = 0
-  local i = #self.lines - self.offset
-  lg.translate(self.x, self.y)
-  local h = self.h
-  local w = self.w - 20
-  while i > 0 and h - 4*fontHeight > m do
-    local text = "[" .. self.lines[i].time .. "] " .. self.lines[i].msg
-    local _, wt = fonts.latosmall:getWrap(text, w)
-    local j = #wt
-    local align = self.lines[i].to and "left" or self.lines[i].from and "right" or "center"
-    while j > 0 and h - 4*fontHeight > m do
-      m = m + fontHeight
-      lg.printf(wt[j], 10, h - m - 21, w, align)
-      j = j - 1
-    end
-    i = i - 1
-  end
-  lg.origin()
-end
+--[[for link in wt[j]:gmatch("http[s]*://%S+") do
+  local si = string.find(wt[j], link)
+  if not si then break end
+  Hyperlink:new():setPosition(self.x + w + 5 + fonts.latosmall:getWidth(string.sub(wt[j], 1, si-1)), self.y + h - m - 21):setDimensions(fonts.latosmall:getWidth(link), fontHeight):setText(link)
+end]]
+
+

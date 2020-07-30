@@ -14,7 +14,7 @@ function Textbox:new(box)
   box.h = box.h or 0
   box.colors = {
     background = {50/255, 50/255, 50/255, 255/255},
-    outline = {112/255, 112/255, 112/255, 255/255},
+    outline = false, --{112/255, 112/255, 112/255, 255/255},
     text = { 1, 1, 1, 1 }
   }
   box.text = ""
@@ -194,22 +194,19 @@ function Textbox:click(x,y)
   self:toEnd()
 end
 
+
+
 function Textbox:draw()
   lg.setColor(self.colors.background)
   lg.rectangle('fill',
             self.x, self.y,
             self.w, self.h)
-  lg.setColor(self.colors.outline)
-  lg.rectangle('line',
-            self.x, self.y,
-            self.w, self.h)
-  lg.setFont(self.font)
-  local text = self.displaytext
-  if self.line and self:isActive() then text = self.displaytextbar end
-  lg.setColor(self.colors.text)
-  lg.printf(text,
-            self.x + 1, self.y,
-            self.w, 'left')
+  if self.colors.outline then 
+    lg.setColor(self.colors.outline)
+    lg.rectangle('line',
+              self.x, self.y,
+              self.w, self.h)
+  end
   lg.setColor(1,1,1)
   if self.name ~= "" then
     lg.setFont(fonts.latoitalic)
@@ -218,6 +215,17 @@ function Textbox:draw()
               self.x, self.y - 20,
               self.w, 'left')
   end
+end
+
+function Textbox:renderText()
+  lg.setFont(self.font)
+  local text = self.displaytext
+  if self.line and self:isActive() then text = self.displaytextbar end
+  lg.setColor(self.colors.text)
+  lg.printf(text,
+            self.x + 2, self.y,
+            self.w, 'left')
+  lg.setColor(1,1,1)
 end
 
 function Textbox:clearText()

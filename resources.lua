@@ -14,7 +14,9 @@ local IMAGE_FILES = {
   "monitor",
   "popup_box",
   "Menu",
-  "MenuExpanded"
+  "MenuExpanded",
+  "eye",
+  "players"
 }
 
 local flag_codes ={
@@ -287,13 +289,23 @@ end
 loadFlags()
 loadImages()
 
+colors = {}
+colors.w = {1, 1, 1}
+colors.bg = {28/255, 28/255, 28/255}
+colors.bb = {33/255, 33/255, 33/255}
+colors.bt = {112/255, 112/255, 112/255}
+colors.bargreen = {28/255, 252/255, 139/255}
+colors.orange = {1, 156/255, 67/255}
+
 fonts = {}
 fonts.notable = lg.newFont("data/fonts/Notable/Notable-Regular.ttf", 30)
 fonts.roboto = lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 20)
 fonts.robotosmall = lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 12)
+fonts.robotoitalic = lg.newFont("data/fonts/Roboto/Roboto-Italic.ttf", 20)
 fonts.latosmall = lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 12)
 fonts.latomedium = lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 18)
 fonts.latoitalic = lg.newFont("data/fonts/Lato/Lato-Italic.ttf", 12)
+fonts.latoitalicmedium = lg.newFont("data/fonts/Lato/Lato-Italic.ttf", 18)
 fonts.latolightitalic = lg.newFont("data/fonts/Lato/Lato-LightItalic.ttf", 12)
 fonts.latobold = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 12)
 fonts.latoboldbig = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 16)

@@ -42,35 +42,37 @@ function login.enter()
   login.nameBox = Textbox:new({name = 'Username'})
   login.nameBox:setDimensions(220, 30)
   login.nameBox:setFont(fonts.latomedium)
-  login.nameBox.colors.outline = {50/255, 50/255, 50/255, 255/255}
+  --login.nameBox.colors.outline = {50/255, 50/255, 50/255, 255/255}
   
   login.passBox = TextboxPrivate:new({name = 'Password'})
   login.passBox:setDimensions(220, 30)
   login.passBox:setFont(fonts.latomedium)
-  login.passBox.colors.outline = {50/255, 50/255, 50/255, 255/255}
+  --login.passBox.colors.outline = {50/255, 50/255, 50/255, 255/255}
   
   login.buttons = {}
   
   login.buttons.login = Button:new()
   login.buttons.login:setDimensions(70, 30)
   login.buttons.login:setText("Sign In")
+  login.buttons.login:setFont(fonts.latosmall)
   login.buttons.login:setFunction(function() login.connectToServer() end)
   function login.buttons.login:draw()
-    lg.setColor(lobby.color.bb)
+    lg.setColor(colors.bb)
     lg.rectangle("fill", self.x, self.y, self.w, self.h, 2)
     lg.setColor(1,1,1)
-    lg.printf(self.text, self.x, self.y + self.h/2 - fonts.robotosmall:getHeight()/2, self.w, "center")
+    lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
   end
   
   login.buttons.register = Button:new()
   login.buttons.register:setDimensions(100, 30)
   login.buttons.register:setText("Create Account")
+  login.buttons.register:setFont(fonts.latosmall)
   login.buttons.register:setFunction(function() login.registerAccount() end)
   function login.buttons.register:draw()
-    lg.setColor(lobby.color.bb)
+    lg.setColor(colors.bb)
     lg.rectangle("fill", self.x, self.y, self.w, self.h, 2)
     lg.setColor(1,1,1)
-    lg.printf(self.text, self.x, self.y + self.h/2 - fonts.robotosmall:getHeight()/2, self.w, "center")
+    lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
   end
   
   login.resize( login.width, login.height )
@@ -359,12 +361,30 @@ end
 function login.drawLoginBox()
   lg.setColor({28/255, 28/255, 28/255, 0.6})
   lg.rectangle("fill", loginBox.x - 8 - 120, loginBox.y - 35 - 100, 1.6*200, 200, 5)
-  lg.setColor(lobby.color.bt)
+  lg.setColor(colors.bt)
   login.nameBox:draw()
   login.passBox:draw()
+  login.nameBox:renderText()
+  login.passBox:renderText()
+  lg.setFont(fonts.latoitalic)
   lg.setColor(1,1,1)
   for _, k in pairs(login.buttons) do
     k:draw()
+  end
+end
+
+function login.draw()
+  lg.draw(login.video, 0, 0, 0, login.width/1920, login.height/1080)
+  login.drawLoginBox()
+  if not lobby.gotEngine then login.drawDownloadBars() end
+  local fontHeight = fonts.robotosmall:getHeight()
+  local i = #login.log
+  lg.rectangle("line", 8, 80, 160, login.height - 160)
+  while i > 0 and 80 + i*fontHeight < login.height - 160 do
+    local txt = login.log[i].msg
+    local _, wt = fonts.robotosmall:getWrap(txt, 156)
+    lg.printf(txt, 12, 70 + i*fontHeight, 156, "left")
+    i = i - #wt
   end
 end
 
@@ -390,20 +410,5 @@ function login.drawDownloadBars()
       lg.rectangle("fill", login.width/2, 50, (login.width/2-50)*frac, 20)
       lg.print(login.unpackerCount .. "/" .. login.fileCount, login.width/2 + 10, 20 + fontHeight)
     end
-  end
-end
-
-function login.draw()
-  lg.draw(login.video, 0, 0, 0, login.width/1920, login.height/1080)
-  login.drawLoginBox()
-  if not lobby.gotEngine then login.drawDownloadBars() end
-  local fontHeight = fonts.robotosmall:getHeight()
-  local i = #login.log
-  lg.rectangle("line", 8, 80, 160, login.height - 160)
-  while i > 0 and 80 + i*fontHeight < login.height - 160 do
-    local txt = login.log[i].msg
-    local _, wt = fonts.robotosmall:getWrap(txt, 156)
-    lg.printf(txt, 12, 70 + i*fontHeight, 156, "left")
-    i = i - #wt
   end
 end

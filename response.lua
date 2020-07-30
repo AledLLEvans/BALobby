@@ -320,7 +320,7 @@ function CLIENTBATTLESTATUS.respond(words, sentences)
   user.teamColorUnpacked[4] = bit.band(bit.rshift(teamColor,24), 0x000000ff)  ]]
 
   local teams = {}
-  local battle = Battle:getActiveBattle()
+  local battle = Battle:getActive()
   for i=1,16 do
     for username, user in pairs(battle.users) do
       if not user.isSpectator and i == user.allyTeamNo then
@@ -329,7 +329,21 @@ function CLIENTBATTLESTATUS.respond(words, sentences)
     end
   end
   battle.playersByTeam = teams
-  lobby.refreshUserButtons()
+  
+  if username == lobby.username then
+    if user.ready then 
+      battle.buttons.ready:setTextColor(colors.w)
+    else
+      battle.buttons.ready:setTextColor(colors.bt)
+    end
+    if user.isSpectator then
+      battle.buttons.spectate:setTextColor(colors.bt)
+    else
+      battle.buttons.spectate:setTextColor(colors.w)
+    end
+  end
+  
+  lobby.render()
 end
 function CLIENTIPPORT.respond(words, sentences)
 end
@@ -422,14 +436,23 @@ function JOINBATTLE.respond(words, sentences)
     lobby.setSynced(true)
   end
   battle.buttons = {
-    ["exit"] = BattleButton:new():setPosition(lobby.fixturePoint[2].x - 300, lobby.fixturePoint[2].y - 50):setDimensions(90, 40):setText("Exit"):onClick(function() Battle.exit() end),
-    ["spectate"] = BattleButton:new():setPosition(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50):setDimensions(90, 40):setText("Spectate"):onClick(function() lobby.setSpectator(not User.s[lobby.username].spectator) end),
-    ["ready"] = BattleButton:new():setPosition(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50):setDimensions(90, 40):setText("Ready"):onClick(function() if not User.s[lobby.username].spectator then lobby.setReady(not User.s[lobby.username].ready) end end)
-    }
-  Channel:refreshTabs()
+    ["exit"] = BattleButton:new()
+    :setPosition(lobby.fixturePoint[2].x - 290, lobby.fixturePoint[2].y - 50)
+    :setDimensions(90, 40)
+    :setText("Exit")
+    :onClick(function() Battle.exit() end),
+    ["spectate"] = BattleButton:new()
+    :setPosition(lobby.fixturePoint[2].x - 110, lobby.fixturePoint[2].y - 50)
+    :setDimensions(90, 40):setText("Spectate")
+    :onClick(function() lobby.setSpectator(not User.s[lobby.username].spectator) end),
+    ["ready"] = BattleButton:new()
+    :setPosition(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50)
+    :setDimensions(90, 40):setText("Ready")
+    :onClick(function() if not User.s[lobby.username].spectator then lobby.setReady(not User.s[lobby.username].ready) end end)
+  }
   Channel.active = Channel.s["Battle_" .. id]
   battle.display = true
-  lobby.refreshBattleTabs()
+  lobby.refreshUserButtons()
   Battle.enter()
 end
 function JOINBATTLEFAILED.respond(words, sentences)
@@ -560,8 +583,16 @@ function SAID.respond(words, sentences, data)
   local chan = words[1]
   local user = words[2]
   local text = string.gsub(sentences[1], "%S+", "", 3) .. "\n"
+  
   local mention = mentioned(text, Channel.s[chan])
-  table.insert(Channel.s[chan].lines, {time = os.date("%X"), mention = mention, user = user, msg = text})
+  for link in text:gmatch("http[s]*://%S+") do
+    local links = links or {}
+    local i, j = string.find(text, link)
+    table.insert(links, {link = link, i = i, j = j})
+  end
+  
+  table.insert(Channel.s[chan].lines, {time = os.date("%X"), links = links, mention = mention, user = user, msg = text})
+  lobby.render()
   love.filesystem.write( "chatlogs/" .. chan .. ".txt", user .. ": " .. text )
 end
 function SAIDBATTLE.respond(words, sentences)
@@ -571,10 +602,13 @@ function SAIDBATTLE.respond(words, sentences)
   local founder = battle.founder
   local chan = battle:getChannel()
   local mention = mentioned(text, chan)
+  local ingame = false
   if user == founder then
-    user = "ingame"
+    local ingame = true
+    user = "INGAME"
   end
-  table.insert(chan.lines, {time = os.date("%X"), mention = mention, user = user, msg = text})
+  table.insert(chan.lines, {time = os.date("%X"), ingame = ingame, mention = mention, user = user, msg = text})
+  lobby.render()
 end
 function SAIDBATTLEEX.respond(words, sentences)
   local user = words[1]
@@ -587,13 +621,22 @@ function SAIDBATTLEEX.respond(words, sentences)
   else
     table.insert(battle:getChannel().lines, {time = os.date("%X"), mention = mention, ex = true, user = user, msg = text})
   end
+  lobby.render()
 end
 function SAIDEX.respond(words, sentences)
   local chan = words[1]
   local user = words[2]
   local text = string.gsub(sentences[1], "%S+", "", 3) .. "\n"
+  
   local mention = mentioned(text, Channel.s[chan])
-  table.insert(Channel.s[chan].lines, {time = os.date("%X"), mention = mention, ex = true, user = user, msg = text})
+  for link in text:gmatch("http[s]*://%S+") do
+    local links = links or {}
+    local i, j = string.find(text, link)
+    table.insert(links, {link = link, i = i, j = j})
+  end
+  
+  table.insert(Channel.s[chan].lines, {time = os.date("%X"), links = links, mention = mention, ex = true, user = user, msg = text})
+  lobby.render()
   love.filesystem.write( "chatlogs/" .. chan .. ".txt", user .. ": " .. text )
 end
 function SAIDFROM.respond(words, sentences)
@@ -606,6 +649,7 @@ function SAIDPRIVATE.respond(words, sentences)
   end
   mentioned(lobby.username, Channel.s[user])
   table.insert(Channel.s[user].lines, {time = os.date("%X"), user = user, msg = text})
+  lobby.render()
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
 end
 function SAIDPRIVATEEX.respond(words, sentences)
@@ -616,18 +660,21 @@ function SAIDPRIVATEEX.respond(words, sentences)
   end
   mentioned(lobby.username, Channel.s[user])
   table.insert(Channel.s[user].lines, {time = os.date("%X"), ex = true, user = user, msg = text})
+  lobby.render()
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
 end
 function SAYPRIVATE.respond(words, sentences)
   local user = words[1]
   local text = string.gsub(sentences[1], "%S+", "", 2) .. "\n"
   table.insert(Channel.s[user].lines, {time = os.date("%X"), user = lobby.username, msg = text})
+  lobby.render()
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
 end
 function SAYPRIVATEEX.respond(words, sentences)
   local user = words[1]
   local text = string.gsub(sentences[1], "%S+", "", 2) .. "\n"
   table.insert(Channel.s[user].lines, {time = os.date("%X"), ex = true, user = lobby.username, msg = text})
+  lobby.render()
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
 end
 function SERVERMSG.respond(words, sentences)

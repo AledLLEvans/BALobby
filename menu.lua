@@ -3,6 +3,103 @@ local utf8 = require("utf8")
 local base64 = require("base64")
 local md5 = require("md5")
 
+ScrollBar = {}
+ScrollBar.mt = {__index = ScrollBar}
+
+function ScrollBar:new()
+  local new = {}
+  setmetatable(new, ScrollBar.mt)
+  
+  new.x = 0
+  new.y = 0
+  
+  new.length = 0
+  new.innerLength = 0
+  
+  new.offset = 0
+  new.offsetmax = 0
+  
+  new.sspeed = 1
+  
+  new.vertical = true
+  new.horizontal = not new.vertical
+  
+  new.colors = {
+    main = {112/255, 112/255, 112/255},
+    inner = {28/255, 252/255, 139/255}
+  }
+  
+  return new
+end
+
+function ScrollBar:setScrollBarLength(l)
+  self.innerLength = l
+  return self
+end
+
+function ScrollBar:setOffset(o)
+  self.offset = o
+  return self
+end
+
+function ScrollBar:setOffsetMax(o)
+  self.offsetmax = o
+  return self
+end
+
+function ScrollBar:setPosition(x, y)
+  self.x = x or self.x
+  self.y = y or self.y
+  return self
+end
+
+function ScrollBar:setLength(l)
+  self.length = l
+  return self
+end
+
+function ScrollBar:getOffset()
+  return self.offset
+end
+
+function ScrollBar:getOffsetMax()
+  return self.offsetmax
+end
+
+function ScrollBar:setScrollSpeed(s)
+  self.sspeed = s
+  return self
+end
+
+function ScrollBar:getScrollSpeed()
+  return self.sspeed
+end
+
+function ScrollBar:scrollUp()
+  self:setOffset(math.min(self:getOffsetMax(), self:getOffset() + self:getScrollSpeed()))
+  return self
+end
+
+function ScrollBar:scrollDown()
+  self:setOffset(math.max(0, self:getOffset() - self:getScrollSpeed()))
+  return self
+end
+
+function ScrollBar:draw()
+  local d = (self.length - self.innerLength)*(self.offset/(self.offsetmax))
+  lg.setColor(self.colors.main)
+  lg.line(self.x,
+          self.y,
+          self.x + (self.horizontal and self.length or 0),
+          self.y + (self.vertical and self.length or 0))
+  lg.setColor(self.colors.inner)
+  lg.line(self.x + (self.horizontal and d or 0),
+          self.y + (self.vertical and d or 0),
+          self.x + (self.horizontal and d + self.innerLength or 0),
+          self.y + (self.vertical and d + self.innerLength or 0))
+  lg.setColor(1,1,1)
+end
+
 Window = {}
 Window.mt = {__index = Window}
 
@@ -47,23 +144,35 @@ Button.mt =  {__index = Button}
 function Button:new()
   local o = {}
   setmetatable(o, Button.mt)
-  o.text = ""
+  
+  o.font = fonts.latoitalicmedium
+  o.text = lg.newText( o.font )
   o.clickSound = "click"
+  o.colors = {
+    background = {33/255, 33/255, 33/255},
+    text = {1, 1, 1}
+  }
   
   o.func = function() end
   
   return o
 end
 
-function Button:setText(text)
-  self.text = text
+function Button:setFont(font)
+  self.text:setFont(font)
+  return self
+end
+
+function Button:setText(str)
+  self.text:setf(str, self.w, "center")
   return self
 end
 
 function Button:draw()
-  local x, y = x or self.x, y or self.y
-  lg.rectangle("line", x, y, self.w, self.h)
-  lg.printf(self.text, x, y + self.h/2 - fonts.robotosmall:getHeight()/2, self.w, "center")
+  lg.setColor(self.colors.background)
+  lg.rectangle("fill", self.x, self.y, self.w, self.h)
+  lg.setColor(self.colors.text)
+  lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
 end
 
 function Button:click(x, y)
@@ -78,6 +187,11 @@ end
 
 function Button:setFunction(func)
   self.func = func
+end
+
+function Button:setTextColor(c)
+  self.colors.text = c
+  return self
 end
 
 function Button:onClick(func)
@@ -146,23 +260,23 @@ function ChannelTab:draw()
   end
   local text = "#" .. self.text
   if Channel:getActive() and (channel == Channel:getActive().title) then
-    lg.setColor(lobby.color.bb)
+    lg.setColor(colors.bb)
     lg.rectangle("fill", self.x, self.y-1, self.w, self.h + h+1)
     lg.setColor(1,1,1)
     lg.setFont(fonts.latobold)
     lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latobold:getHeight()/2, self.w, "center")
   elseif Channel.s[channel].newMessage then
     --h = 3
-    lg.setColor(lobby.color.bg)
+    lg.setColor(colors.bg)
     lg.setFont(fonts.latobold)
     lg.rectangle("fill", self.x, self.y, self.w, self.h + h)
-    lg.setColor(lobby.color.bt)
+    lg.setColor(colors.bt)
     lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latobold:getHeight()/2, self.w, "center")
   else
     lg.setFont(fonts.latoitalic)
-    lg.setColor(lobby.color.bg)
+    lg.setColor(colors.bg)
     lg.rectangle("fill", self.x, self.y, self.w, self.h + h)
-    lg.setColor(lobby.color.bt)
+    lg.setColor(colors.bt)
     lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latoitalic:getHeight()/2, self.w, "center")
   end
   lg.setFont(fonts.robotosmall)
@@ -199,26 +313,27 @@ function BattleTab:draw()
   local h = self.h
   lg.setFont(fonts.latosmall)
   local fontHeight = fonts.latosmall:getHeight()
-  if User.s[battle.founder].ingame then
-    lg.setColor(0,0.8,0.1,0.9)
-  else
-    lg.setColor(lobby.color.bb)
-  end
+  --if User.s[battle.founder].ingame then
+    --lg.setColor(0,0.8,0.1,0.9)
+  --else
+    lg.setColor(colors.bb)
+  --end
   lg.rectangle("fill", x, y, w, h)
   -- TITLE
   lg.setColor(1,1,1)
   lg.printf(battle.title, x+85, y+5, w-85, "left")
   -- PLAYER/SPEC COUNTS
-  local left = battle.userCount - battle.spectatorCount + 1
+  local left = math.max(0, battle.userCount - battle.spectatorCount + 1)
   local str1 =  left .. "/" .. battle.maxPlayers
-  local str2 = battle.spectatorCount - 1
+  local str2 = math.max(0, battle.spectatorCount - 1)
   local width = fonts.latoboldbig:getWidth(str1)
   local height = fonts.latoboldbig:getHeight(str1)
   lg.setFont(fonts.latoboldbig)
-  if left == 0 then lg.setColor(1,1,1) else lg.setColor(lobby.color.bargreen) end
+  if left == 0 then lg.setColor(1,1,1) else lg.setColor(colors.bargreen) end
   lg.print(str1, x + w - width - 2, y + h/2)
-  lg.setColor(lobby.color.bt)
+  lg.setColor(colors.bt)
   lg.print(str2, x + w - width - 2, y + h/2 + height)
+  lg.draw(img.eye, x + w - 22, y + h - 17 )
   -- MAP NAME
   lg.setFont(fonts.latolightitalic)
   local mapName = battle.mapName
@@ -325,7 +440,7 @@ function Dropdown:click(x, y)
 end
 
 function Dropdown:draw()
-  lg.setColor(lobby.color.bt, 0.8)
+  lg.setColor(colors.bt, 0.8)
   lg.rectangle("fill", self.x, self.y, self.w, self.h)
   lg.setColor(1,1,1)
   for button in pairs(self.buttons) do

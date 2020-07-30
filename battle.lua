@@ -158,35 +158,65 @@ function Battle:update(dt)
     end
   end
 end
-  
+
+local draw = {
+  readyButton = {
+    [true] = function(x, y) lg.setColor(colors.bargreen) lg.circle("fill", x, y, 5) end,
+    [false] = function(x, y) lg.setColor(colors.orange) lg.circle("fill", x, y, 5) end
+  },
+  specButton = function(x, y) lg.setColor(colors.bt) lg.circle("fill", x, y, 4) end,
+  backRect = {
+    [true] = function(x, y, fH) lg.setColor(colors.bb) lg.rectangle("fill", x, y, 260, fH) return false end,
+    [false] = function() return true end
+  }
+}
+
 function Battle:draw()
-  lg.setFont(fonts.latoitalic)
-  for _, button in pairs(self.buttons) do
-    button:draw()
-  end
+  self.buttons.exit:draw()
+  self.buttons.spectate:draw()
+  self.buttons.ready:draw()
+  --
   lg.setFont(fonts.roboto)
+  lg.setColor(colors.bargreen)
+  do
+  local i = 0
+  local text = self.title
+  repeat
+    text = text:sub(1, #text - i)
+    local width = fonts.roboto:getWidth(text)
+    i = i + 1
+  until width < lobby.fixturePoint[2].x - 50 - lobby.fixturePoint[1].x or text == ""
+  if i > 0 then text = text:sub(1, #text - 2) .. ".." end
+  lg.print(text, lobby.fixturePoint[1].x + 50, 10)
+  end
   local fontHeight = fonts.roboto:getHeight()
-  lg.print(self.title, lobby.fixturePoint[1].x + 50, 10)
-  lg.print(self.mapName, lobby.fixturePoint[2].x - 10 - fonts.roboto:getWidth(self.mapName), 10)
+  --
+  lg.setFont(fonts.latoitalic)
+  lg.setColor(colors.bt)
+  lg.print(self.gameName, lobby.fixturePoint[1].x + 50, 10 + fontHeight)
+  --
+  lg.setFont(fonts.robotoitalic)
+  lg.setColor(1,1,1)
+  lg.print(self.mapName, lobby.fixturePoint[2].x - 10 - fonts.robotoitalic:getWidth(self.mapName), 10 + fontHeight)
   if self.minimap then
-    lg.draw(self.minimap, lobby.fixturePoint[2].x - 10 - 1024/8, 20 + fontHeight, 0, 1/8, 1/8)
+    lg.draw(self.minimap, lobby.fixturePoint[2].x - 10 - 1024/8, 20 + 2*fontHeight, 0, 1/8, 1/8)
   elseif self.mapDownload and not self.mapDownload.finished then
-    lg.print(self.mapDownload.filename, lobby.fixturePoint[2].x - 10 - 1024/8, 20 + fontHeight)
-    lg.print(tostring(math.ceil(100*self.mapDownload.downloaded/self.mapDownload.file_size)) .. "%", lobby.fixturePoint[2].x - 10 - 1024/8, 20 + 2*fontHeight)
+    lg.print(self.mapDownload.filename, lobby.fixturePoint[2].x - 10 - 1024/8, 20 + 2*fontHeight)
+    lg.print(tostring(math.ceil(100*self.mapDownload.downloaded/self.mapDownload.file_size)) .. "%", lobby.fixturePoint[2].x - 10 - 1024/8, 20 + 3*fontHeight)
   else
-    lg.draw(img["nomap"], lobby.fixturePoint[2].x - 10 - 1024/8, 20 + fontHeight, 0, 1024/(8*50))
+    lg.draw(img["nomap"], lobby.fixturePoint[2].x - 10 - 1024/8, 20 + 2*fontHeight, 0, 1024/(8*50))
   end
   if self.modDownload then
     lg.printf(self.modDownload.filename, lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8 + 20 + 3*fontHeight, 1024/8, "left")
     lg.printf(tostring(math.ceil(100*self.modDownload.downloaded/self.modDownload.file_size)) .. "%", lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8 + 20 + 4*fontHeight, 1024/8, "left")
-  else
-    lg.printf(self.gameName, lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8 + 20 + 3*fontHeight, 1024/8, "left")
   end
+  --
   local y = 50 + self.userListScrollOffset
   fontHeight = fonts.latosmall:getHeight()
   lg.setFont(fonts.latosmall)
-  lg.translate(lobby.fixturePoint[1].x + 25, 0 )
+  lg.translate(lobby.fixturePoint[1].x + 25, 40 )
   local teamNo = 1
+  local drawBackRect = false
   for i, user in pairs(self.playersByTeam) do
     local username = user.name
     if user.allyTeamNo > teamNo then
@@ -194,20 +224,21 @@ function Battle:draw()
       y = y + fontHeight/2
     end
     if user.battleStatus then
-      local indicator = user.ready and "indicator_green" or "indicator_red"
-      lg.draw(img[indicator], -16, 43 + y, 0, 1/4)
-      if user.icon then
-        lg.draw(img[user.icon], 5, 40 + y, 0, 1/4)
-      end
-      lg.draw(user.flag, 23, 43 + y)
-      lg.draw(user.insignia, 41, 40 + y, 0, 1/4)
-      lg.setColor(0,0,0)
-      lg.rectangle("line", 60, 40 + y, 120, fontHeight)
-      lg.setColor(user.teamColorUnpacked[1]/255, user.teamColorUnpacked[2]/255, user.teamColorUnpacked[3]/255, 0.4)
-      lg.rectangle("fill", 60, 40 + y, 120, fontHeight, 5, 5)
+      drawBackRect = draw.backRect[drawBackRect](0, y, fontHeight)
+      draw.readyButton[user.ready](240, y + 7)
       lg.setColor(1,1,1)
-      lg.print(username, 64, 40 + y)
-      lg.print(user.allyTeamNo, 200, 40 + y)
+      if user.icon then
+        lg.draw(img[user.icon], 5, y, 0, 1/4)
+      end
+      lg.draw(user.flag, 23, 3 + y)
+      lg.draw(user.insignia, 41, y, 0, 1/4)
+      lg.setColor(0,0,0)
+      lg.rectangle("line", 60, y, 120, fontHeight)
+      lg.setColor(user.teamColorUnpacked[1]/255, user.teamColorUnpacked[2]/255, user.teamColorUnpacked[3]/255, 0.4)
+      lg.rectangle("fill", 60, y, 120, fontHeight, 5, 5)
+      lg.setColor(1,1,1)
+      lg.print(username, 64, y)
+      lg.print(user.allyTeamNo, 200, y)
       y = y + fontHeight
       if y > lobby.fixturePoint[1].y then
         lg.origin()
@@ -216,18 +247,22 @@ function Battle:draw()
     end
   end
   y = math.max(8*fontHeight, y + fontHeight)
-  lg.print("Spectators", 60, 40 + y)
+  lg.print("Spectators", 60, y)
   y = y + 3*fontHeight/2
   local specy = y
+  drawBackRect = true
   for username, user in pairs(self.users) do
     if user.isSpectator and user.battleStatus then
+      drawBackRect = draw.backRect[drawBackRect](0, y, fontHeight)
+      draw.specButton(241, 7 + y)
+      lg.setColor(1,1,1)
       if user.icon then
-        lg.draw(img[user.icon], 5, 40 + y, 0, 1/4)
+        lg.draw(img[user.icon], 5, y, 0, 1/4)
       end
-      lg.draw(user.flag, 23, 43 + y)
-      lg.draw(user.insignia, 41, 40 + y, 0, 1/4)
+      lg.draw(user.flag, 23, 3 + y)
+      lg.draw(user.insignia, 41, y, 0, 1/4)
       local w = fonts.latosmall:getWidth(username)
-      lg.print(username, 60, 40 + y)
+      lg.print(username, 60, y)
       y = y + fontHeight
       if y > lobby.fixturePoint[1].y then
         lg.translate(120, 0)
