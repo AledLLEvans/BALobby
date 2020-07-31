@@ -80,7 +80,7 @@ local SAYPRIVATEEX = {}
 local SERVERMSG = {}
 local SERVERMSGBOX = {}
 local SETSCRIPTTAGS = {}
-local TASSERVER = {}
+local TASS = {}
 local UDPSOURCEPORT = {}
 local UNBRIDGEDCLIENTFROM = {}
 local UNIGNORE = {}
@@ -168,7 +168,7 @@ local responses = {
   ["SERVERMSG"] = SERVERMSG,
   ["SERVERMSGBOX"] = SERVERMSGBOX,
   ["SETSCRIPTTAGS"] = SETSCRIPTTAGS,
-  ["TASSERVER"] = TASSERVER,
+  ["TASS"] = TASS,
   ["UDPSOURCEPORT"] = UDPSOURCEPORT,
   ["UNBRIDGEDCLIENTFROM"] = UNBRIDGEDCLIENTFROM,
   ["UNIGNORE"] = UNIGNORE,
@@ -489,6 +489,32 @@ function MOTD.respond(words, sentences)
   table.insert(lobby.MOTD, {time = os.date("%X"), user = "", ex = true, msg = " " .. string.gsub(sentences[1], "%u+ ", "", 1) .. " **" .. "\n"})
 end
 function OK.respond(words, sentences)
+  local k, v = words[1]:match("(.+)=(.+)")
+  --if v == "STLS" then
+    ip, _ = tcp:getsockname()
+    if not ip then
+      lw.showMessageBox("For your information", "tcp connection failed", "error" )
+      return
+    end
+    if login.action == 1 then
+      login.loginString = "LOGIN " .. 
+      login.nameBox.text .. 
+      " " .. 
+      login.passBox.base64 ..
+      " 0 " .. 
+      "* " .. --ip .. 
+      "BAlogin 0.1 0" .. "\n"
+      tcp:send(login.loginString)
+      table.insert(login.log, {to = true, msg = "LOGIN " .. login.nameBox.text .. " " .. ip })
+    elseif login.action == 2 then 
+      login.registerString = "REGISTER " .. 
+      login.nameBox.text .. 
+      " " .. 
+      login.passBox.base64 .. "\n"
+      tcp:send(login.registerString)
+      table.insert(login.log, {to = true, msg = "REGISTER " .. login.nameBox.text })
+    end
+  --end
 end
 function OPENBATTLE.respond(words, sentences)
 end
@@ -689,10 +715,11 @@ function SETSCRIPTTAGS.respond(words, sentences)
   end
   lobby.render()
 end
-function TASSERVER.respond(words, sentences)
+function TASS.respond(words, sentences)
   if not login.TLS then
-    lobby.send("STLS" .. "\n")
-    login.TLS = true
+    OK.respond({"=STLS"})
+    --tcp:send("STLS" .. "\n")
+    --login.TLS = true
   end
 end
 function UDPSOURCEPORT.respond(words, sentences)

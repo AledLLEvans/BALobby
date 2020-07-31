@@ -18,13 +18,7 @@ function login.enter()
   login.video:play()
   login.savePass = true
   login.log = {}
-  tcp = socket.tcp()
-  if not tcp then
-    error(tcp)
-    love.event.quit()
-  end
-  tcp:connect(address, port)
-  tcp:settimeout(0)
+
   function lobby.send(msg)
     table.insert(lobby.serverChannel.lines, {time = os.date("%X"), to = true, msg = msg})
     return tcp:send(msg)
@@ -211,34 +205,32 @@ function settings.add(t)
   return settings.pack()
 end
 
+local function connect()
+  if not tcp then
+    tcp = socket.tcp()
+  end
+  if not tcp then
+    error("no tcp connection")
+    love.event.quit()
+  end
+  tcp:connect(address, port)
+  tcp:settimeout(0)
+end
+
+login.action = 0
 function login.registerAccount()
-  local ip, _ = tcp:getsockname()
-  if not ip then table.insert(login.log, {msg = "NO IP, NOT CONNECTED, CHECK INTERNET CONNECTION"}) return end
-  login.registerString = "REGISTER " .. 
-  login.nameBox.text .. 
-  " " .. 
-  login.passBox.base64 .. "\n"
-  tcp:send(login.registerString)
-  table.insert(login.log, {to = true, msg = "REGISTER " .. login.nameBox.text })
+  login.action = 2
+  connect()
 end
 
 function login.connectToServer()
+  login.action = 1
   if login.savePass then
     settings.add({name = login.nameBox.text, pass = login.passBox.base64})
   else
     settings.add({name = login.nameBox.text})
   end
-  local ip, _ = tcp:getsockname()
-  if not ip then table.insert(login.log, {msg = "NO IP, NOT CONNECTED, CHECK INTERNET CONNECTION"}) return end
-  login.loginString = "LOGIN " .. 
-  login.nameBox.text .. 
-  " " .. 
-  login.passBox.base64 ..
-  " 0 " .. 
-  ip .. 
-  " BAlogin 0.1 0\n"
-  tcp:send(login.loginString)
-  table.insert(login.log, {to = true, msg = "LOGIN " .. login.nameBox.text .. " " .. ip })
+  connect()
 end
 
 local responses = require("response")
@@ -250,6 +242,13 @@ function login.update( dt )
   login.delay = login.delay - dt
   login.nameBox:update(dt)
   login.passBox:update(dt)
+  if login.downloading then
+    login.updateDownload(dt)
+  end
+  if login.unpacking then
+    login.updateUnpack(dt)
+  end
+  if not tcp then return end
   lobby.timer = lobby.timer + dt
   if lobby.timer > 30 then
     tcp:send("PING" .. "\n")
@@ -276,12 +275,6 @@ function login.update( dt )
     if responses[cmd] then
       responses[cmd].respond(words, sentances, data)
     end
-  end
-  if login.downloading then
-    login.updateDownload(dt)
-  end
-  if login.unpacking then
-    login.updateUnpack(dt)
   end
 end
 

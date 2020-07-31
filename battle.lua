@@ -101,8 +101,7 @@ function Battle.exit()
   lobby.clickables[Battle.sideButton] = nil
   Battle.sideButton = nil
   Battle.modoptionsScrollBar = nil
-  lobby.refreshUserButtons()
-  Channel.refresh()
+  lobby.resize(lobby.width, lobby.height)
 end
 
 function Battle.enter()
@@ -123,8 +122,7 @@ function Battle.enter()
               15, self.y + self.h/2)
   end
   lobby.clickables[Battle.sideButton] = true
-  lobby.refreshBattleTabs()
-  Channel.refresh()
+  lobby.resize(lobby.width, lobby.height)
 end
 
 function Battle.enterWithList()
@@ -139,8 +137,7 @@ function Battle.enterWithList()
               self.x + 5, self.y + self.h/2)
   end
   lobby.clickables[Battle.sideButton] = true
-  lobby.refreshBattleTabs()
-  Channel.refresh()
+  lobby.resize(lobby.width, lobby.height)
 end
 
 function Battle:new(battle)
