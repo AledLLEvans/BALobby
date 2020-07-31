@@ -8,12 +8,99 @@ Battle.s = {}
 
 Battle.count = 0
 
+
+---- Courtesy of https://springrts.com/phpbb/viewtopic.php?t&t=32643 ----
+local function writeScript()
+  local battle = Battle:getActiveBattle()
+  script = {
+    --player0 = {name = lobby.username},
+    --gametype = battle.gameName,
+    HostIP = battle.ip,
+    HostPort = battle.hostport or battle.port,
+    --MapName = battle.mapName,
+    MyPlayerName = lobby.username,
+    IsHost=0,
+    --SourcePort=0,
+    MyPasswd=battle.myScriptPassword
+  }
+  
+  local txt = io.open('script.txt', 'w+')
+
+	txt:write('[GAME]\n{\n\n')
+	-- First write Tables
+	for key, value in pairs(script) do
+		if type(value) == 'table' then
+			txt:write('\t['..key..']\n\t{\n')
+			for key, value in pairs(value) do
+				txt:write('\t\t'..key..' = '..value..';\n')
+			end
+			txt:write('\t}\n\n')
+		end
+	end
+	-- Then the rest (purely for aesthetics)
+	for key, value in pairs(script) do
+		if type(value) ~= 'table' then
+			txt:write('\t'..key..' = '..value..';\n')
+		end
+	end
+	txt:write('}')
+
+	txt:close()
+end
+
+local launchCode = [[
+  local exec = ...
+  os.execute(exec)
+  love.window.restore( )
+]]
+
+function Battle:joined(id)
+  if self:mapHandler() and self:modHandler() then
+    lobby.setSynced(true)
+  end
+  self.buttons = {
+    ["exit"] = BattleButton:new()
+    :resetPosition(function() return lobby.fixturePoint[2].x - 380, lobby.fixturePoint[2].y - 50 end)
+    :setDimensions(90, 40)
+    :setText("Exit")
+    :onClick(function() Battle.exit() end),
+    ["spectate"] = BattleButton:new()
+    :resetPosition(function() return lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50 end)
+    :setDimensions(90, 40)
+    :setText("Spectate")
+    :onClick(function() lobby.setSpectator(not User.s[lobby.username].spectator) end),
+    ["ready"] = BattleButton:new()
+    :resetPosition(function() return lobby.fixturePoint[2].x - 290, lobby.fixturePoint[2].y - 50 end)
+    :setDimensions(90, 40)
+    :setText("Ready")
+    :onClick(function() if not User.s[lobby.username].spectator then lobby.setReady(not User.s[lobby.username].ready) end end),
+    ["start"] = BattleButton:new()
+    :resetPosition(function() return lobby.fixturePoint[2].x - 110, lobby.fixturePoint[2].y - 50 end)
+    :setDimensions(90, 40)
+    :setText("Start")
+    :onClick(function()
+                writeScript()
+                local exec = "\"" .. lobby.exeFilePath .. "\"" .. " script.txt"
+                if not lobby.springThread then
+                  lobby.springThread = love.thread.newThread( launchCode )
+                end
+                love.window.minimize( )
+                lobby.springThread:start( exec ) end)
+  }
+  Channel.active = Channel.s["Battle_" .. id]
+  self.display = true
+end
+
 function Battle.exit()
   Channel.active = Channel.s[next(Channel.s, Battle:getActive():getChannel().title)]
   Battle:getActive().display = false
   Battle:getActive():getChannel().display = false
   lobby.send("LEAVEBATTLE" .. "\n")
   lobby.state = "landing"
+  Battle.modoptionsScrollBar = nil
+  lobby.clickables[Battle.sideButton] = nil
+  Battle.sideButton = nil
+  Battle.modoptionsScrollBar = nil
   lobby.refreshUserButtons()
   Channel.refresh()
 end
@@ -21,6 +108,12 @@ end
 function Battle.enter()
   lobby.state = "battle"
   lobby.fixturePoint[1].x = 0
+  Battle.modoptionsScrollBar = ScrollBar:new()
+  :setPosition(lobby.fixturePoint[2].x - 5, (lobby.height-lobby.fixturePoint[2].y)/2 - 20)
+  :setLength(40)
+  :setScrollBarLength(10)
+  :setOffset(0)
+  :setScrollSpeed(15)
   Battle.sideButton = Button:new():setPosition(1, lobby.height/2 - 20):setDimensions(20-2, 40):onClick(function() Battle.enterWithList() end)
   function Battle.sideButton:draw()
     lg.rectangle("line", self.x, self.y, self.w, self.h)
@@ -52,7 +145,20 @@ end
 
 function Battle:new(battle)
   setmetatable(battle, Battle.mt)
+  
   battle.playersByTeam = {}
+  
+  battle.spectatorCount = 0
+  battle.locked = false
+  battle.users = {}
+  battle.userCount = 0
+  
+  battle.noOfTeams = 0
+  battle.userListScrollOffset = 0
+  
+  battle.game = {}
+  battle.game.modoptions = {}
+  
   self.s[battle.id] = battle
   self.count = self.count + 1
 end
@@ -61,13 +167,17 @@ function Battle:getChannel()
   return self.channel
 end
 
+-- lol
 function Battle:getActiveBattle()
   return self.active
 end
-
 function Battle:getActive()
   return self.active
 end
+function Battle.getActive()
+  return Battle.active
+end
+--
 
 function Battle:getPlayers()
   return self.players
@@ -78,6 +188,7 @@ function Battle:getUsers()
 end
 
 function lobby.setSynced(b)
+  if User.s[lobby.username].syncStatus then return end
   User.s[lobby.username].synced = b
   lobby.sendMyBattleStatus()
 end
@@ -172,13 +283,15 @@ local draw = {
 }
 
 function Battle:draw()
+  --Buttons
   self.buttons.exit:draw()
   self.buttons.spectate:draw()
   self.buttons.ready:draw()
-  --
+  self.buttons.start:draw()
+  
+  --Room Name, Title
   lg.setFont(fonts.roboto)
   lg.setColor(colors.bargreen)
-  do
   local i = 0
   local text = self.title
   repeat
@@ -186,15 +299,16 @@ function Battle:draw()
     local width = fonts.roboto:getWidth(text)
     i = i + 1
   until width < lobby.fixturePoint[2].x - 50 - lobby.fixturePoint[1].x or text == ""
-  if i > 0 then text = text:sub(1, #text - 2) .. ".." end
+  if i > 1 then text = text:sub(1, #text - 2) .. ".." end
   lg.print(text, lobby.fixturePoint[1].x + 50, 10)
-  end
   local fontHeight = fonts.roboto:getHeight()
-  --
+  
+  --Game Name, subtitle
   lg.setFont(fonts.latoitalic)
   lg.setColor(colors.bt)
   lg.print(self.gameName, lobby.fixturePoint[1].x + 50, 10 + fontHeight)
-  --
+  
+  --map name and image
   lg.setFont(fonts.robotoitalic)
   lg.setColor(1,1,1)
   lg.print(self.mapName, lobby.fixturePoint[2].x - 10 - fonts.robotoitalic:getWidth(self.mapName), 10 + fontHeight)
@@ -206,12 +320,38 @@ function Battle:draw()
   else
     lg.draw(img["nomap"], lobby.fixturePoint[2].x - 10 - 1024/8, 20 + 2*fontHeight, 0, 1024/(8*50))
   end
-  if self.modDownload then
+  
+  --modoptions
+  local x = lobby.fixturePoint[2].x - 170
+  local ymin = 20 + 3*fontHeight + 1024/8
+  local ymax = lobby.fixturePoint[2].y - fontHeight - 60
+  local y = ymin - self.modoptionsScrollBar:getOffset()
+  lg.setFont(fonts.latoitalic)
+  fontHeight = fonts.latoitalic:getHeight()
+  self.modoptionsScrollBar:getZone():setPosition(x, ymin)
+  self.modoptionsScrollBar:setPosition(lobby.fixturePoint[2].x - 5, ymin + 10):setLength(ymax - ymin)
+  lg.setColor(colors.bt)
+  local c = 0
+  local t = 0
+  for k, v in pairs(self.game.modoptions) do
+    if y < ymax and y >= ymin then
+      lg.print(v, lobby.fixturePoint[2].x - fonts.latoitalic:getWidth(v) - 15, y)
+      lg.print(k, x, y)
+      c = c + 1
+    end
+    y = y + fontHeight
+    t = t + 1
+  end
+  self.modoptionsScrollBar:getZone():setDimensions(170, ymax - ymin + fontHeight)
+  self.modoptionsScrollBar:setOffsetMax(math.max(0, t - c) * fontHeight):draw()
+  
+  --[[if self.modDownload then
     lg.printf(self.modDownload.filename, lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8 + 20 + 3*fontHeight, 1024/8, "left")
     lg.printf(tostring(math.ceil(100*self.modDownload.downloaded/self.modDownload.file_size)) .. "%", lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8 + 20 + 4*fontHeight, 1024/8, "left")
-  end
-  --
-  local y = 50 + self.userListScrollOffset
+  end]]
+  
+  --userlist
+  y = 50 + self.userListScrollOffset
   fontHeight = fonts.latosmall:getHeight()
   lg.setFont(fonts.latosmall)
   lg.translate(lobby.fixturePoint[1].x + 25, 40 )
@@ -221,6 +361,8 @@ function Battle:draw()
     local username = user.name
     if user.allyTeamNo > teamNo then
       teamNo = user.teamNo
+      lg.setColor(colors.bt)
+      lg.line(0, y + fontHeight/4, 240, y + fontHeight/4)
       y = y + fontHeight/2
     end
     if user.battleStatus then
@@ -239,6 +381,7 @@ function Battle:draw()
       lg.setColor(1,1,1)
       lg.print(username, 64, y)
       lg.print(user.allyTeamNo, 200, y)
+      --lg.print(self.game.players[username]., 240, y)
       y = y + fontHeight
       if y > lobby.fixturePoint[1].y then
         lg.origin()
@@ -246,6 +389,7 @@ function Battle:draw()
       end
     end
   end
+  --spectator list
   y = math.max(8*fontHeight, y + fontHeight)
   lg.print("Spectators", 60, y)
   y = y + 3*fontHeight/2

@@ -21,6 +21,10 @@ function ScrollBar:new()
   
   new.sspeed = 1
   
+  new.zone = Window:new()
+  
+  new.func = function() lobby.render() end
+  
   new.vertical = true
   new.horizontal = not new.vertical
   
@@ -29,7 +33,23 @@ function ScrollBar:new()
     inner = {28/255, 252/255, 139/255}
   }
   
+  lobby.scrollBars[new] = true
+  
   return new
+end
+
+function ScrollBar:setRenderFunction(func)
+  self.func = func
+  return self
+end
+
+function ScrollBar:doRender()
+  self.func()
+  return self
+end
+
+function ScrollBar:getZone()
+  return self.zone
 end
 
 function ScrollBar:setScrollBarLength(l)
@@ -75,6 +95,15 @@ function ScrollBar:getScrollSpeed()
   return self.sspeed
 end
 
+function ScrollBar:scroll(y)
+  if y < 0 then
+    self:scrollUp()
+  elseif y > 0 then
+    self:scrollDown()
+  end
+  return self
+end
+
 function ScrollBar:scrollUp()
   self:setOffset(math.min(self:getOffsetMax(), self:getOffset() + self:getScrollSpeed()))
   return self
@@ -109,13 +138,9 @@ function Window:new(o)
   o.y = 0
   o.w = 10
   o.h = 10
-  o.padding = 0
+  
   setmetatable(o, Window.mt)
   return o
-end
-
-function Window:setPadding(p)
-  self.padding = p
 end
 
 function Window:setPosition(x, y)
@@ -136,6 +161,13 @@ end
 
 function Window:getDimensions()
   return self.w, self.h
+end
+
+function Window:isIn(x, y)
+  if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
+    return true
+  end
+  return false
 end
 
 Button = Window:new()
@@ -319,14 +351,14 @@ function BattleTab:draw()
     lg.setColor(colors.bb)
   --end
   lg.rectangle("fill", x, y, w, h)
-  -- TITLE
+  -- BATTLE TITLE
   lg.setColor(1,1,1)
-  lg.printf(battle.title, x+85, y+5, w-85, "left")
+  lg.printf(battle.title, x+85, y+5, w-100, "left")
   -- PLAYER/SPEC COUNTS
   local left = math.max(0, battle.userCount - battle.spectatorCount + 1)
   local str1 =  left .. "/" .. battle.maxPlayers
   local str2 = math.max(0, battle.spectatorCount - 1)
-  local width = fonts.latoboldbig:getWidth(str1)
+  local width = fonts.latoboldbig:getWidth("0/00")
   local height = fonts.latoboldbig:getHeight(str1)
   lg.setFont(fonts.latoboldbig)
   if left == 0 then lg.setColor(1,1,1) else lg.setColor(colors.bargreen) end
@@ -352,7 +384,7 @@ function BattleTab:draw()
     lg.draw(img["nomap"], x + 4, y + 15)
   end
   if User.s[battle.founder].ingame then
-    lg.draw(img["gamepad"], x + w - 18, y + h - 16, 0, 1/4)
+    lg.draw(img["gamepad"], x + w - 18, y + 1, 0, 1/4)
   end
 end
 
@@ -364,6 +396,14 @@ function BattleButton:new()
   
   lobby.clickables[new] = true
   return new
+end
+
+function BattleButton:resetPosition(f)
+  if f then
+    self.resetFunc = f
+  end
+  self:setPosition(self.resetFunc())
+  return self
 end
 
 UserButton = Button:new()

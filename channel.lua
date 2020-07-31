@@ -153,7 +153,7 @@ end
 local drawFunc = {
   ["user"] = function(t) return  "<" .. t .. ">"  end,
   ["mention"] = function(t) lg.setColor(1,0,0) return  "<" .. t .. ">"  end,
-  ["ingame"] = function(t) lg.setColor(colorss.bt) return  "[" .. t .. "]"  end,
+  ["ingame"] = function(t) lg.setColor(colors.bt) return  "[" .. t .. "]"  end,
   ["ex"] = function(t) lg.setColor(1,1,0) return  "*" .. t .. "*"  end,
   ["system"] = function() lg.setColor(1,0,0) return  "! SYSTEM : "  end
 }

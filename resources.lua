@@ -3,16 +3,11 @@ img = {}
 local lg = love.graphics
 
 local IMAGE_FILES = {
-  "loginBox",
-  "balanced+annihilation+big+loadscreen-min",
-  "indicator_red",
-  "indicator_green",
-  "popup_box",
+  --"balanced+annihilation+big+loadscreen-min",
   "nomap",
   "gamepad",
   "nothome",
   "monitor",
-  "popup_box",
   "Menu",
   "MenuExpanded",
   "eye",

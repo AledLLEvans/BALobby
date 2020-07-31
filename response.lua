@@ -246,13 +246,6 @@ function BATTLEOPENED.respond(words, sentences)
   battle.gameName = sentences[#sentences] or "gameName"
   
   --battle.channel = words[16]
-  battle.spectatorCount = 0
-  battle.locked = false
-  battle.users = {}
-  battle.userCount = 0
-  
-  battle.noOfTeams = 0
-  battle.userListScrollOffset = 0
   
   Battle:new(battle)
   lobby.refreshBattleTabs()
@@ -426,32 +419,12 @@ function JOINBATTLE.respond(words, sentences)
   local hashCode = words[2]
   local channel = words[3]
   Battle.active = Battle.s[id]
-  local battle = Battle.active
-  if not battle.channel then
-    battle.channel = BattleChannel:new({title = "Battle_" .. id})
+  if not Battle.active.channel then
+    Battle.active.channel = BattleChannel:new({title = "Battle_" .. id})
   else
-    battle.channel.display = true
+    Battle.active.channel.display = true
   end
-  if battle:mapHandler() and battle:modHandler() then
-    lobby.setSynced(true)
-  end
-  battle.buttons = {
-    ["exit"] = BattleButton:new()
-    :setPosition(lobby.fixturePoint[2].x - 290, lobby.fixturePoint[2].y - 50)
-    :setDimensions(90, 40)
-    :setText("Exit")
-    :onClick(function() Battle.exit() end),
-    ["spectate"] = BattleButton:new()
-    :setPosition(lobby.fixturePoint[2].x - 110, lobby.fixturePoint[2].y - 50)
-    :setDimensions(90, 40):setText("Spectate")
-    :onClick(function() lobby.setSpectator(not User.s[lobby.username].spectator) end),
-    ["ready"] = BattleButton:new()
-    :setPosition(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50)
-    :setDimensions(90, 40):setText("Ready")
-    :onClick(function() if not User.s[lobby.username].spectator then lobby.setReady(not User.s[lobby.username].ready) end end)
-  }
-  Channel.active = Channel.s["Battle_" .. id]
-  battle.display = true
+  Battle.active:joined(id)
   lobby.refreshUserButtons()
   Battle.enter()
 end
@@ -537,6 +510,23 @@ end
 function REMOVEBOT.respond(words, sentences)
 end
 function REMOVESCRIPTTAGS.respond(words, sentences)
+  local battle = Battle:getActive()
+  print("remove")
+  for i = 2, #sentences do
+    print(sentences[i])
+    local tbl = battle
+    local c = sentences[i]:gmatch("(/[^/]+)")
+    print("c: " .. c)
+    for w in sentences[i]:gmatch("([^/]+)") do
+      print(w)
+      if w == c then
+        tbl[w] = nil
+      else
+        tbl = tbl[w]
+      end
+    end
+  end
+  lobby.render()
 end
 function REMOVESTARTRECT.respond(words, sentences)
 end
@@ -548,6 +538,8 @@ function REMOVEUSER.respond(words, sentences)
   end
 end
 function REQUESTBATTLESTATUS.respond(words, sentences)
+  User.s[lobby.username].ready = false
+  User.s[lobby.username].spectator = true
   lobby.sendMyBattleStatus()
 end
 function RESENDVERIFICATIONACCEPTED.respond(words, sentences)
@@ -604,7 +596,7 @@ function SAIDBATTLE.respond(words, sentences)
   local mention = mentioned(text, chan)
   local ingame = false
   if user == founder then
-    local ingame = true
+    ingame = true
     user = "INGAME"
   end
   table.insert(chan.lines, {time = os.date("%X"), ingame = ingame, mention = mention, user = user, msg = text})
@@ -682,6 +674,20 @@ end
 function SERVERMSGBOX.respond(words, sentences)
 end
 function SETSCRIPTTAGS.respond(words, sentences)
+  local battle = Battle:getActive()
+  for i = 2, #sentences do
+    local tbl = battle
+    for w in sentences[i]:gmatch("([^/]+)") do
+      local k, v = w:match("(.+)=(.+)")
+      if k and v then
+        tbl[k] = v
+      else
+        tbl[w] = tbl[w] or {}
+        tbl = tbl[w]
+      end
+    end
+  end
+  lobby.render()
 end
 function TASSERVER.respond(words, sentences)
   if not login.TLS then
@@ -706,7 +712,9 @@ function UPDATEBATTLEINFO.respond(words, sentences)
   Battle.s[id].mapHash = mapHash
   Battle.s[id].spectatorCount = spectatorCount
   Battle.s[id].mapName = mapName
-  --Battle.s[id]:mapHandler()
+  if Battle:getActive() and Battle:getActive() == Battle.s[id] and Battle.s[id]:mapHandler() and Battle.s[id]:modHandler() then
+    lobby.setSynced(true)
+  end
   Battle.s[id]:getMinimap()
   lobby.refreshBattleTabs()
 end

@@ -6,46 +6,6 @@ local md5 = require("md5")
   
 local address, port = "springfightclub.com", 8200
 
-
----- Courtesy of https://springrts.com/phpbb/viewtopic.php?t&t=32643 ----
-function lobby.writeScript()
-  local battle = Battle:getActiveBattle()
-  script = {
-    --player0 = {name = lobby.username},
-    --gametype = battle.gameName,
-    HostIP = battle.ip,
-    HostPort = battle.hostport or battle.port,
-    --MapName = battle.mapName,
-    MyPlayerName = lobby.username,
-    IsHost=0,
-    --SourcePort=0,
-    MyPasswd=battle.myScriptPassword
-  }
-  
-  local txt = io.open('script.txt', 'w+')
-
-	txt:write('[GAME]\n{\n\n')
-	-- First write Tables
-	for key, value in pairs(script) do
-		if type(value) == 'table' then
-			txt:write('\t['..key..']\n\t{\n')
-			for key, value in pairs(value) do
-				txt:write('\t\t'..key..' = '..value..';\n')
-			end
-			txt:write('\t}\n\n')
-		end
-	end
-	-- Then the rest (purely for aesthetics)
-	for key, value in pairs(script) do
-		if type(value) ~= 'table' then
-			txt:write('\t'..key..' = '..value..';\n')
-		end
-	end
-	txt:write('}')
-
-	txt:close()
-end
-
 lobby.MOTD = {}
 function lobby.enter()
   lg.setBackgroundColor(colors.bg)
@@ -53,7 +13,10 @@ function lobby.enter()
     {x = 0, y = 2*lobby.height/3},
     {x = 660, y = 2*lobby.height/3}
   }  
-  lobby.optionsButton = Button:new():setPosition(0, 0):setDimensions(36,36):onClick(function() lobby.optionsExpanded = not lobby.optionsExpanded end)
+  lobby.optionsButton = Button:new()
+  :setPosition(0, 0)
+  :setDimensions(36,36)
+  :onClick(function() lobby.optionsExpanded = not lobby.optionsExpanded end)
   function lobby.optionsButton:draw()
     if lobby.optionsExpanded then
       lg.draw(img["MenuExpanded"], self.x, self.y)
@@ -62,7 +25,18 @@ function lobby.enter()
     end
   end
   lobby.battleTabScrollBar = ScrollBar:new()
-  lobby.userListScrollBar = ScrollBar:new():setPosition(lobby.width - 5, 90):setLength(lobby.height - 180):setScrollBarLength(50)
+  :setScrollSpeed(25)
+  :setRenderFunction(function() lobby.refreshBattleTabs() end)
+  lobby.battleTabScrollBar:getZone()
+  :setPosition(0, 90)
+  :setDimensions(lobby.fixturePoint[2].x, lobby.fixturePoint[2].y - 90)
+  
+  lobby.userListScrollBar = ScrollBar:new()
+  :setScrollSpeed(15)
+  :setRenderFunction(function() lobby.refreshUserButtons() end)
+  lobby.userListScrollBar:getZone()
+  :setPosition(lobby.fixturePoint[2].x, 0)
+  :setDimensions(lobby.width - lobby.fixturePoint[2].x, lobby.height)
   
   lobby.clickables[lobby.optionsButton] = true
   
@@ -75,8 +49,6 @@ function lobby.enter()
   cursor[1] = love.mouse.getCursor( )
   
   --Channel.textbox:setPosition(1, lobby.height - 21):setDimensions(lobby.fixturePoint[2].x - 2, 20)
-  
-
   
   state = STATE_LOBBY
 end
@@ -97,7 +69,6 @@ function lobby.mousepressed(x,y,b)
       lobby.clickedBattleID = i
     end
   end
-  
 end
 
 function lobby.pickCursor(x,y)
@@ -161,9 +132,10 @@ function lobby.mousereleased(x,y,b)
   if lobby.dragLeftX or lobby.dragRightX or lobby.dragY then
     lobby.dragLeftX, lobby.dragRightX, lobby.dragY = false, false, false
     if Battle:getActiveBattle() then
-      Battle:getActiveBattle().buttons.spectate:setPosition(lobby.fixturePoint[2].x - 100, lobby.fixturePoint[2].y - 50)
-      Battle:getActiveBattle().buttons.ready:setPosition(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50)
-      Battle:getActiveBattle().buttons.exit:setPosition(lobby.fixturePoint[2].x - 300, lobby.fixturePoint[2].y - 50)
+      Battle:getActiveBattle().buttons.spectate:resetPosition()
+      Battle:getActiveBattle().buttons.ready:resetPosition()
+      Battle:getActiveBattle().buttons.exit:resetPosition()
+      Battle:getActiveBattle().buttons.start:resetPosition()
     end
     Channel.refresh()
     lobby.refreshBattleTabs()
@@ -196,26 +168,14 @@ function lobby.mousereleased(x,y,b)
   lobby.render()
 end
 
+lobby.scrollBars = {}
 function lobby.wheelmoved(x, y)
   local msx, msy = love.mouse.getPosition()
-  --if lobby.state == "landing" then
-  if msx < lobby.fixturePoint[2].x and msy < lobby.fixturePoint[1].y then
-    if y < 0 then
-      lobby.battleTabScrollBar:setOffset(math.min(lobby.battleTabScrollBar:getOffsetMax(), lobby.battleTabScrollBar:getOffset() + 30))
-    elseif y > 0 then
-      lobby.battleTabScrollBar:setOffset(math.max(0, lobby.battleTabScrollBar:getOffset() - 30))
+  for sb in pairs(lobby.scrollBars) do
+    if sb:getZone():isIn(msx, msy) then
+      sb:scroll(y)
+      sb:doRender()
     end
-    lobby.refreshBattleTabs()
-  end
-  --end
-  if msx > lobby.fixturePoint[2].x and msy < lobby.fixturePoint[2].y then
-    local sb = lobby.userListScrollBar
-    if y > 0 then
-      sb:scrollUp()
-    elseif y < 0 then
-      sb:scrollDown()
-    end
-    lobby.render()
   end
   if Channel.active then
     if msx > Channel.x and msx < Channel.x + Channel.w and msy > Channel.y and msy < Channel.y + Channel.h then
@@ -270,7 +230,7 @@ function lobby.update( dt )
   lobby.receiveData(dt)
   
   --for Map downloading
-  local battle = Battle:getActiveBattle()
+  local battle = Battle:getActive()
   if battle then battle:update(dt) end
 end
 
@@ -337,9 +297,10 @@ function lobby.resize( w, h )
   if lobby.state == "battleWithList" then lobby.fixturePoint[1].x = 260 
   elseif lobby.state == "battle" then lobby.fixturePoint[1].x = 0 end
   if Battle:getActiveBattle() then
-    Battle:getActiveBattle().buttons.spectate:setPosition(lobby.fixturePoint[2].x - 110, lobby.fixturePoint[2].y - 50)
-    Battle:getActiveBattle().buttons.ready:setPosition(lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50)
-    Battle:getActiveBattle().buttons.exit:setPosition(lobby.fixturePoint[2].x - 290, lobby.fixturePoint[2].y - 50)
+    Battle:getActiveBattle().buttons.spectate:resetPosition()
+    Battle:getActiveBattle().buttons.ready:resetPosition()
+    Battle:getActiveBattle().buttons.exit:resetPosition()
+    Battle:getActiveBattle().buttons.start:resetPosition()
   end
   Channel.refresh()
   lobby.refreshBattleTabs()
@@ -352,12 +313,6 @@ function lobby.textinput (text)
   end
 end
 
-local launchCode = [[
-  local exec = ...
-  os.execute(exec)
-  love.window.restore( )
-]]
-
 local keypress = {
   ["c"] = function()
     if (lk.isDown("lctrl") or lk.isDown("rctrl")) and Channel:getTextbox():isActive() then
@@ -368,15 +323,6 @@ local keypress = {
     if (lk.isDown("lctrl") or lk.isDown("rctrl")) and Channel:getTextbox():isActive() then
       Channel:getTextbox():addText(love.system.getClipboardText( ))
     end
-  end,
-  ["0"] = function()
-    lobby.writeScript()
-    local exec = "\"" .. lobby.exeFilePath .. "\"" .. " script.txt"
-    if not lobby.springThread then
-      lobby.springThread = love.thread.newThread( launchCode )
-    end
-    love.window.minimize( )
-    lobby.springThread:start( exec )
   end,
   ["up"] = function()
     if lobby.channelMessageHistoryID then
@@ -487,7 +433,10 @@ function lobby.refreshUserButtons()
   else
     lobby.userListScrollBar:setPosition(lobby.width - 5, 50):setLength(lobby.fixturePoint[2].y - 100)
   end
-  lobby.userListScrollBar:setOffset(0)
+  lobby.userListScrollBar
+  :setPosition(lobby.width - 5, 90)
+  :setLength(lobby.height - 180)
+  :setScrollBarLength(50)
   lobby.userListScrollBar:setOffsetMax(math.max(0, c - math.floor((ymax - y)/fontHeight)) * fontHeight)
   lobby.render()
 end
@@ -542,15 +491,22 @@ function lobby.createBattleTabs(BattleIDsByPlayerCount)
     ymax = lobby.fixturePoint[1].y
     xmax = lobby.fixturePoint[2].x
   end
-  while y < ymax and x + 250 < xmax and i <= #BattleIDsByPlayerCount do
+  local cols = math.floor((xmax - xmin)/250)
+  print("cols", cols)
+  local w = (xmax - xmin) / cols
+  print("w", w)
+  local c = 1
+  while y < ymax and i <= #BattleIDsByPlayerCount do
     if y >= ymin then
       local BattleTab = BattleTab:new(BattleIDsByPlayerCount[i])
       BattleTab:setPosition(x+5, y+5)
-      BattleTab:setDimensions(240, 80)
+      BattleTab:setDimensions(w - 10, 80)
     end 
     i = i + 1
-    x = x + 250
-    if x + 250 > xmax then
+    x = x + w
+    c = c + 1
+    if c > cols then
+      c = 1
       x = xmin
       y = y + 90
     end
