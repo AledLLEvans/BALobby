@@ -252,19 +252,19 @@ function lobby.receiveData(dt)
     love.filesystem.append( "log.txt", data .. "\n" )
     local cmd = string.match(data, "^%u+")
     local words = {}
-    local sentances = {}
+    local sentences = {}
     for sentance in string.gmatch(data, "[^\t]+") do
-      table.insert(sentances, sentance)
+      table.insert(sentences, sentance)
     end
     local i = 0
-    for word in string.gmatch(sentances[1], "%S+") do
+    for word in string.gmatch(sentences[1], "%S+") do
       if i > 0 then 
         table.insert(words, word)
       end
       i = i + 1
     end
     if responses[cmd] then
-      responses[cmd].respond(words, sentances, data)
+      responses[cmd].respond(words, sentences, data)
     end
     lobby.render()
   end
@@ -491,14 +491,20 @@ lobby.renderFunction = {
                 lobby.fixturePoint[1].y,
                 lobby.fixturePoint[2].x,
                 lobby.height - lobby.fixturePoint[1].y)
+    lg.setColor(colors.bg)
+    lg.rectangle("fill",
+                0,
+                lobby.fixturePoint[1].y,
+                lobby.fixturePoint[2].x,
+                23)
     lg.setColor(colors.bt)
-    lg.line(0, 90, lobby.fixturePoint[2].x, 90)
-    lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.height)
-    lg.line(0, lobby.fixturePoint[1].y, lobby.fixturePoint[2].x, lobby.fixturePoint[1].y)
+    --lg.line(0, 90, lobby.fixturePoint[2].x, 90)
+    --lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.height)
+    --lg.line(0, lobby.fixturePoint[1].y, lobby.fixturePoint[2].x, lobby.fixturePoint[1].y)
     --
     lobby.battleTabScrollBar:draw()
     --
-    lg.setColor(colors.text)
+    lg.setColor(colors.bt)
     lg.setFont(fonts.notable)
     lg.print(lobby.battleTabHeadText, 50, 10)
     local h = fonts.notable:getHeight()
@@ -514,9 +520,15 @@ lobby.renderFunction = {
                 lobby.fixturePoint[1].y,
                 lobby.width - lobby.fixturePoint[1].x,
                 lobby.height - lobby.fixturePoint[1].y)
+    lg.setColor(colors.bg)
+    lg.rectangle("fill",
+                0,
+                lobby.fixturePoint[1].y,
+                lobby.width,
+                23)
     lg.setColor(colors.bt)
-    lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.fixturePoint[2].y)
-    lg.line(0, lobby.fixturePoint[1].y, lobby.width, lobby.fixturePoint[1].y)
+    --lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.fixturePoint[2].y)
+    --lg.line(0, lobby.fixturePoint[1].y, lobby.width, lobby.fixturePoint[1].y)
     lg.setColor(1,1,1)
     Battle:getActive():draw()
   end,
@@ -536,10 +548,16 @@ lobby.renderFunction = {
                 0,
                 lobby.fixturePoint[1].x,
                 90)
+    lg.setColor(colors.bg)
+    lg.rectangle("fill",
+                lobby.fixturePoint[1].x,
+                lobby.fixturePoint[1].y,
+                lobby.width - lobby.fixturePoint[1].x,
+                23)
     lg.setColor(colors.bt)
-    lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.fixturePoint[2].y)
-    lg.line(lobby.fixturePoint[1].x, lobby.fixturePoint[1].y, lobby.width, lobby.fixturePoint[1].y)
-    lg.setColor(colors.text)
+    --lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.fixturePoint[2].y)
+    --lg.line(lobby.fixturePoint[1].x, lobby.fixturePoint[1].y, lobby.width, lobby.fixturePoint[1].y)
+    lg.setColor(colors.bt)
     lg.setFont(fonts.notable)
     lg.print("BATTLES", 10, 50)
     lg.setFont(fonts.latoitalic)

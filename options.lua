@@ -4,8 +4,8 @@ local function setLightMode()
   colors.w = {1, 1, 1}
   colors.text = {0, 0, 0}
   colors.bgt = {219/255, 219/255, 219/255, 0.6}
-  colors.bg = {219/255, 219/255, 219/255}
-  colors.bb = {211/255, 211/255, 211/255}
+  colors.bg = {225/255, 225/255, 225/255}
+  colors.bb = {212/255, 212/255, 212/255}
   colors.bd = {200/255, 200/255, 200/255}
   colors.bt = {112/255, 112/255, 112/255}
   colors.bargreen = {0, 191/255, 165/255}

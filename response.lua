@@ -186,6 +186,13 @@ end
 function ADDBOT.respond(words, sentences)
 end
 function ADDSTARTRECT.respond(words, sentences)
+  Battle:getActive().startrect[words[1]] = {
+    words[2]/200,
+    words[3]/200,
+    words[4]/200,
+    words[5]/200
+  }
+  lobby.render()
 end
 function ADDUSER.respond(words, sentences)
   local user = {}
@@ -555,6 +562,8 @@ function REMOVESCRIPTTAGS.respond(words, sentences)
   lobby.render()
 end
 function REMOVESTARTRECT.respond(words, sentences)
+  Battle:getActive().startrect[words[1]] = nil
+  lobby.render()
 end
 function REMOVEUSER.respond(words, sentences)
   local user = words[1]

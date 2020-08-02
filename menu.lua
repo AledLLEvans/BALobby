@@ -177,7 +177,7 @@ function Button:new()
   local o = {}
   setmetatable(o, Button.mt)
   
-  o.font = fonts.latoitalicmedium
+  o.font = fonts.latoitalic
   o.text = lg.newText( o.font )
   o.clickSound = "click"
   o.colors = {
@@ -204,6 +204,7 @@ function Button:draw()
   lg.setColor(self.colors.background)
   lg.rectangle("fill", self.x, self.y, self.w, self.h)
   lg.setColor(self.colors.text)
+  lg.setFont(self.font)
   lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
 end
 
@@ -381,12 +382,17 @@ function BattleTab:draw()
     lg.print(mapName, x+85, y + h - fontHeight - 2)
   end
   -- IMAGES
+  lg.setColor(colors.bd)
+  lg.rectangle("fill", x, y, 80, 80)
   lg.setFont(fonts.latosmall)
   lg.setColor(1,1,1)
   if battle.minimap then
-    lg.draw(battle.minimap, x, y, 0, 80/1024, 80/1024)
+    local modx = math.min(1, battle.minimapWidthHeightRatio)
+    local mody = math.min(1, 1/battle.minimapWidthHeightRatio)
+    lg.draw(battle.minimap, x - (modx-1)*40, y - (mody-1)*40, 0,
+      modx*80/1024, mody*80/1024)
   else
-    lg.draw(img["nomap"], x + 4, y + 15)
+    lg.draw(img["nomap"], x + 15, y + 15)
   end
   lg.setColor(colors.text)
   if User.s[battle.founder].ingame then
@@ -400,6 +406,7 @@ function BattleButton:new()
   local new = Button:new()
   setmetatable(new, BattleButton.mt)
   
+  new.font = fonts.latoitalicmedium
   lobby.clickables[new] = true
   return new
 end

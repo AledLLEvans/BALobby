@@ -126,7 +126,7 @@ function Channel:refreshTabs()
       local textWidth = fonts.latosmall:getWidth("#" .. chanName)
       self.tabs[chanName] = ChannelTab:new(self.x + totalWidth + 4,
         self.y + 3,
-        3 + textWidth,
+        3 + textWidth + 4,
         20,
         showChanName,
         function()
@@ -134,6 +134,7 @@ function Channel:refreshTabs()
             Channel:getActive().newMessage = false
           end
           self.active = channel
+          Channel.textbox.active = true
           channel.newMessage = false
           lobby.channelMessageHistoryID = false
           lobby.refreshUserButtons()
@@ -244,9 +245,9 @@ function BattleChannel:render()
   :setOffsetMax(math.max(0, #self.infolines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight)
   self.infoBoxScrollBar:draw()
   lg.setColor(colors.bt)
-  lg.line(self.x + w, self.y, self.x + w, self.y + self.h - 21)
+  --lg.line(self.x + w, self.y, self.x + w, self.y + self.h - 21)
   lg.setColor(colors.yellow)
-  lg.printf(battle.founder, self.x + w + 10, self.y + fontHeight, ow - 5, "center")  
+  lg.printf(battle.founder, self.x + w + 10, self.y + fontHeight + 10, ow - 5, "center")  
   local i = #self.infolines
   local y = 20 - self.infoBoxScrollBar:getOffset()
   while i > 0 do
