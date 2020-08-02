@@ -325,14 +325,14 @@ function CLIENTBATTLESTATUS.respond(words, sentences)
   
   if username == lobby.username then
     if user.ready then 
-      battle.buttons.ready:setTextColor(colors.w)
+      battle.buttons.ready:setTextColor(colors.text)
     else
       battle.buttons.ready:setTextColor(colors.bt)
     end
     if user.isSpectator then
       battle.buttons.spectate:setTextColor(colors.bt)
     else
-      battle.buttons.spectate:setTextColor(colors.w)
+      battle.buttons.spectate:setTextColor(colors.text)
     end
   end
   

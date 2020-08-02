@@ -181,8 +181,8 @@ function Button:new()
   o.text = lg.newText( o.font )
   o.clickSound = "click"
   o.colors = {
-    background = {33/255, 33/255, 33/255},
-    text = {1, 1, 1}
+    background = colors.bb,
+    text = colors.text
   }
   
   o.func = function() end
@@ -219,6 +219,11 @@ end
 
 function Button:setFunction(func)
   self.func = func
+end
+
+function Button:setBackgroundColor(c)
+  self.colors.background = c
+  return self
 end
 
 function Button:setTextColor(c)
@@ -294,7 +299,7 @@ function ChannelTab:draw()
   if Channel:getActive() and (channel == Channel:getActive().title) then
     lg.setColor(colors.bb)
     lg.rectangle("fill", self.x, self.y-1, self.w, self.h + h+1)
-    lg.setColor(1,1,1)
+    lg.setColor(colors.text)
     lg.setFont(fonts.latobold)
     lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latobold:getHeight()/2, self.w, "center")
   elseif Channel.s[channel].newMessage then
@@ -352,16 +357,16 @@ function BattleTab:draw()
   --end
   lg.rectangle("fill", x, y, w, h)
   -- BATTLE TITLE
-  lg.setColor(1,1,1)
+  lg.setColor(colors.text)
   lg.printf(battle.title, x+85, y+5, w-100, "left")
   -- PLAYER/SPEC COUNTS
   local left = math.max(0, battle.userCount - battle.spectatorCount + 1)
   local str1 =  left .. "/" .. battle.maxPlayers
   local str2 = math.max(0, battle.spectatorCount - 1)
-  local width = fonts.latoboldbig:getWidth("0/00")
+  local width = fonts.latoboldbig:getWidth("00/00")
   local height = fonts.latoboldbig:getHeight(str1)
   lg.setFont(fonts.latoboldbig)
-  if left == 0 then lg.setColor(1,1,1) else lg.setColor(colors.bargreen) end
+  if left == 0 then lg.setColor(colors.text) else lg.setColor(colors.bargreen) end
   lg.print(str1, x + w - width - 2, y + h/2)
   lg.setColor(colors.bt)
   lg.print(str2, x + w - width - 2, y + h/2 + height)
@@ -383,6 +388,7 @@ function BattleTab:draw()
   else
     lg.draw(img["nomap"], x + 4, y + 15)
   end
+  lg.setColor(colors.text)
   if User.s[battle.founder].ingame then
     lg.draw(img["gamepad"], x + w - 18, y + 1, 0, 1/4)
   end
@@ -440,9 +446,11 @@ end
 
 function UserButton:draw()
   lg.setFont(fonts.latoitalic)
+  lg.setColor(1,1,1)
   --lg.rectangle("line", self.x + 60, self.y + 10, self.w, self.h)
   lg.draw(self.flag, self.x + 6, 12 + self.y)
   lg.draw(self.insignia, self.x + 25, 10 + self.y, 0, 1/5, 1/4)
+  lg.setColor(colors.text)
   if self.icon then lg.draw(img[self.icon], self.x + 40, 10 + self.y, 0, 1/4) end
   lg.printf(self.username, self.x + 60, 10 + self.y, lobby.width - lobby.fixturePoint[2].x - 20)
   if self.dropdown then
@@ -482,7 +490,7 @@ end
 function Dropdown:draw()
   lg.setColor(colors.bt, 0.8)
   lg.rectangle("fill", self.x, self.y, self.w, self.h)
-  lg.setColor(1,1,1)
+  lg.setFont(fonts.latoitalic)
   for button in pairs(self.buttons) do
     button:draw()
   end

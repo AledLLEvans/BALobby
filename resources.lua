@@ -284,14 +284,6 @@ end
 loadFlags()
 loadImages()
 
-colors = {}
-colors.w = {1, 1, 1}
-colors.bg = {28/255, 28/255, 28/255}
-colors.bb = {33/255, 33/255, 33/255}
-colors.bt = {112/255, 112/255, 112/255}
-colors.bargreen = {28/255, 252/255, 139/255}
-colors.orange = {1, 156/255, 67/255}
-
 fonts = {}
 fonts.notable = lg.newFont("data/fonts/Notable/Notable-Regular.ttf", 30)
 fonts.roboto = lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 20)

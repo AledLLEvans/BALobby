@@ -53,8 +53,8 @@ function login.enter()
   function login.buttons.login:draw()
     lg.setColor(colors.bb)
     lg.rectangle("fill", self.x, self.y, self.w, self.h, 2)
-    lg.setColor(1,1,1)
-    lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
+    lg.setColor(colors.text)
+    lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2 + 1)
   end
   
   login.buttons.register = Button:new()
@@ -65,8 +65,8 @@ function login.enter()
   function login.buttons.register:draw()
     lg.setColor(colors.bb)
     lg.rectangle("fill", self.x, self.y, self.w, self.h, 2)
-    lg.setColor(1,1,1)
-    lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
+    lg.setColor(colors.text)
+    lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2 + 1)
   end
   
   login.resize( login.width, login.height )
@@ -352,7 +352,7 @@ function login.mousereleased (x, y, b)
 end
 
 function login.drawLoginBox()
-  lg.setColor({28/255, 28/255, 28/255, 0.6})
+  lg.setColor(colors.bgt)
   lg.rectangle("fill", loginBox.x - 8 - 120, loginBox.y - 35 - 100, 1.6*200, 200, 5)
   lg.setColor(colors.bt)
   login.nameBox:draw()
@@ -360,13 +360,14 @@ function login.drawLoginBox()
   login.nameBox:renderText()
   login.passBox:renderText()
   lg.setFont(fonts.latoitalic)
-  lg.setColor(1,1,1)
+  lg.setColor(colors.text)
   for _, k in pairs(login.buttons) do
     k:draw()
   end
 end
 
 function login.draw()
+  lg.setColor(1,1,1)
   lg.draw(login.video, 0, 0, 0, login.width/1920, login.height/1080)
   login.drawLoginBox()
   if not lobby.gotEngine then login.drawDownloadBars() end
@@ -382,7 +383,7 @@ function login.draw()
 end
 
 function login.drawDownloadBars()
-  lg.setColor(255, 255, 255)
+  lg.setColor(1,1,1)
   lg.printf(login.downloadText, 0, 20, login.width, "center")
   lg.rectangle("line", 50, 50, login.width - 100, 20)
   local fontHeight = fonts.robotosmall:getHeight()

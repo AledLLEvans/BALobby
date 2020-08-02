@@ -1,5 +1,6 @@
 require("resources")
 require("user")
+require("options")
 require("textbox")
 require("download")
 require("menu")
@@ -17,7 +18,8 @@ local nfs = require "nativefs"
 local lg = love.graphics
 
 local function checkOS()
-  local os = love.system.getOS( )
+  local os = love.system.getOS()
+  local engine = "103.0"
   if os == "Windows" then
     lobby.springFilePath = lfs.getUserDirectory() .. 'Documents\\My Games\\Spring\\'
     lobby.engineFolder = lobby.springFilePath .. "engine\\"
@@ -25,11 +27,17 @@ local function checkOS()
     lobby.gameFolder = lobby.springFilePath .. "games\\"
     lobby.mapFolder = lobby.springFilePath .. "maps\\"
   elseif os == "Linux" then
+    lobby.springFilePath = lfs.getUserDirectory() .. 'Documents\\My Games\\Spring\\'
   elseif os == "OS X" then
-    
+    lobby.springFilePath = lfs.getUserDirectory() .. 'Documents\\My Games\\Spring\\'
   else
     error("Operating System not recognised")
   end
+  lobby.springFilePath = lfs.getUserDirectory() .. 'Documents\\My Games\\Spring\\'
+  lobby.engineFolder = lobby.springFilePath .. "engine\\"
+  lobby.exeFilePath = lobby.engineFolder .. "103.0\\spring.exe"
+  lobby.gameFolder = lobby.springFilePath .. "games\\"
+  lobby.mapFolder = lobby.springFilePath .. "maps\\"
 end
 
 function love.load()

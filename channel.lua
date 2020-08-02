@@ -154,7 +154,7 @@ local drawFunc = {
   ["user"] = function(t) return  "<" .. t .. ">"  end,
   ["mention"] = function(t) lg.setColor(1,0,0) return  "<" .. t .. ">"  end,
   ["ingame"] = function(t) lg.setColor(colors.bt) return  "[" .. t .. "]"  end,
-  ["ex"] = function(t) lg.setColor(1,1,0) return  "*" .. t .. "*"  end,
+  ["ex"] = function(t) lg.setColor(colors.yellow) return  "*" .. t .. "*"  end,
   ["system"] = function() lg.setColor(1,0,0) return  "! SYSTEM : "  end
 }
 
@@ -167,7 +167,7 @@ function Channel:render()
   :setOffsetMax(math.max(0, #self.lines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight)
   self.scrollBar:draw()
 
-  lg.setColor(1,1,1)
+  lg.setColor(colors.text)
   local i = #self.lines 
   local y = 20 - self.scrollBar:getOffset()
   while i > 0 do
@@ -192,8 +192,9 @@ function Channel:render()
     until self.h < y + 21 + 20 or j == 0
     if self.h < y + 21 + 20 then break end
     i = i - 1
-    lg.setColor(1,1,1)
+    lg.setColor(colors.text)
   end
+  lg.setColor(1,1,1)
 end
 
 function ServerChannel:render()
@@ -205,7 +206,7 @@ function ServerChannel:render()
   :setOffsetMax(math.max(0, #self.lines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight)
   self.scrollBar:draw()
 
-  lg.setColor(1,1,1)
+  lg.setColor(colors.text)
   local i = #self.lines 
   local y = 20 - self.scrollBar:getOffset()
   while i > 0 do
@@ -224,8 +225,9 @@ function ServerChannel:render()
     until self.h < y + 21 + 20 or j == 0
     if self.h < y + 21 + 20 then break end
     i = i - 1
-    lg.setColor(1,1,1)
+    lg.setColor(colors.text)
   end
+  lg.setColor(1,1,1)
 end
 
 function BattleChannel:render()
@@ -235,7 +237,7 @@ function BattleChannel:render()
   local tw = self.w
   local w = 2*tw/3
   local ow = tw/3
-  lg.setColor(1,1,1)
+  lg.setColor(colors.text)
   self.infoBoxScrollBar
   :setPosition(Channel.x + Channel.w, Channel.y + Channel.h - 25)
   :setLength(-Channel.h + 50)
@@ -243,7 +245,7 @@ function BattleChannel:render()
   self.infoBoxScrollBar:draw()
   lg.setColor(colors.bt)
   lg.line(self.x + w, self.y, self.x + w, self.y + self.h - 21)
-  lg.setColor(1,1,0)
+  lg.setColor(colors.yellow)
   lg.printf(battle.founder, self.x + w + 10, self.y + fontHeight, ow - 5, "center")  
   local i = #self.infolines
   local y = 20 - self.infoBoxScrollBar:getOffset()
@@ -264,14 +266,14 @@ function BattleChannel:render()
     i = i - 1
   end
   
-  lg.setColor(1,1,1)
+  lg.setColor(colors.text)
   self.scrollBar
   :setPosition(Channel.x + w - 5, Channel.y + Channel.h - 25)
   :setLength(-Channel.h + 50)
   :setOffsetMax(math.max(0, #self.lines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight)
   self.scrollBar:draw()
   
-  lg.setColor(1,1,1)
+  lg.setColor(colors.text)
   i = #self.lines
   y = 20 - self.scrollBar:getOffset() 
   while i > 0 do
@@ -297,9 +299,9 @@ function BattleChannel:render()
     until self.h < y + 21 + 20 or j == 0
     if self.h < y + 21 + 20 then break end
     i = i - 1
-    lg.setColor(1,1,1)
+    lg.setColor(colors.text)
   end
-  
+  lg.setColor(1,1,1)
 end
 
 --[[for link in wt[j]:gmatch("http[s]*://%S+") do

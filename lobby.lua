@@ -270,13 +270,6 @@ function lobby.receiveData(dt)
   end
 end
 
---[[lobby.width = 800
-lobby.height = 600
-lobby.fixturePoint = {
-  {x = 250, y = 2*lobby.height/3},
-  {x = 650, y = 2*lobby.height/3}
-}]]
-
 local resize = {
   ["landing"] = function()
               lobby.battleTabScrollBar:getZone()
@@ -360,18 +353,20 @@ function lobby.refreshUserButtons()
   UserButton.s = {}
   local c = 0
   for username, user in pairs(list) do
-    m = m + fontHeight
-    if m > ymax - y then return end
-    if m > y then
-      local UB = UserButton:new(username)
-      UB:setPosition(x, m)
-      UB:setDimensions(w, fontHeight)
-      UB.flag = user.flag
-      UB.icon = user.icon
-      UB.insignia = user.insignia
-      UserButton.s[UB] = true
+    if not user.isBot then
+      m = m + fontHeight
+      if m > ymax - y then return end
+      if m > y then
+        local UB = UserButton:new(username)
+        UB:setPosition(x, m)
+        UB:setDimensions(w, fontHeight)
+        UB.flag = user.flag
+        UB.icon = user.icon
+        UB.insignia = user.insignia
+        UserButton.s[UB] = true
+      end
+      c = c + 1
     end
-    c = c + 1
   end
   if lobby.state == "landing" then
     lobby.userListScrollBar:setPosition(lobby.width - 5, 50):setLength(lobby.height - 100)
@@ -481,8 +476,6 @@ lobby.state = "landing"
 
 lobby.renderFunction = {
   ["landing"] = function()
-    lg.setColor(1,1,1)
-    lg.setFont(fonts.latosmall)
     for i, k in pairs(BattleTab.s) do
       k:draw()
     end
@@ -504,13 +497,14 @@ lobby.renderFunction = {
     lg.line(0, lobby.fixturePoint[1].y, lobby.fixturePoint[2].x, lobby.fixturePoint[1].y)
     --
     lobby.battleTabScrollBar:draw()
-    lg.setColor(1,1,1)
     --
+    lg.setColor(colors.text)
     lg.setFont(fonts.notable)
     lg.print(lobby.battleTabHeadText, 50, 10)
     local h = fonts.notable:getHeight()
     lg.setFont(fonts.latosmall)
     lg.print(lobby.battleTabSubText, 50, 10 + h)
+    lg.setColor(1,1,1)
   end,
   
   ["battle"] = function() 
@@ -524,7 +518,7 @@ lobby.renderFunction = {
     lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.fixturePoint[2].y)
     lg.line(0, lobby.fixturePoint[1].y, lobby.width, lobby.fixturePoint[1].y)
     lg.setColor(1,1,1)
-    Battle:getActiveBattle():draw()
+    Battle:getActive():draw()
   end,
   
     ["battleWithList"] = function() 
@@ -545,10 +539,11 @@ lobby.renderFunction = {
     lg.setColor(colors.bt)
     lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.fixturePoint[2].y)
     lg.line(lobby.fixturePoint[1].x, lobby.fixturePoint[1].y, lobby.width, lobby.fixturePoint[1].y)
-    lg.setColor(1,1,1)
+    lg.setColor(colors.text)
     lg.setFont(fonts.notable)
     lg.print("BATTLES", 10, 50)
     lg.setFont(fonts.latoitalic)
+    lg.setColor(1,1,1)
     Battle:getActiveBattle():draw()
   end,
   
@@ -562,6 +557,7 @@ function lobby.render()
   Hyperlink.s = {}
   
   if Channel:getActive() then
+    lg.setColor(colors.text)
     lg.setFont(fonts.latosmall)
     lg.print("Users in channel #" .. Channel:getActive():getName(),
             lobby.fixturePoint[2].x + 10, 10)
@@ -599,6 +595,7 @@ function lobby.render()
       login.drawDownloadBars()
     end
   end
+  lg.setColor(1,1,1)
   lg.setCanvas()
 end
 

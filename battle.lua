@@ -8,7 +8,6 @@ Battle.s = {}
 
 Battle.count = 0
 
-
 ---- Courtesy of https://springrts.com/phpbb/viewtopic.php?t&t=32643 ----
 local function writeScript()
   local battle = Battle:getActiveBattle()
@@ -307,8 +306,9 @@ function Battle:draw()
   
   --map name and image
   lg.setFont(fonts.robotoitalic)
-  lg.setColor(1,1,1)
+  lg.setColor(colors.text)
   lg.print(self.mapName, lobby.fixturePoint[2].x - 10 - fonts.robotoitalic:getWidth(self.mapName), 10 + fontHeight)
+  lg.setColor(1,1,1)
   if self.minimap then
     lg.draw(self.minimap, lobby.fixturePoint[2].x - 10 - 1024/8, 20 + 2*fontHeight, 0, 1/8, 1/8)
   elseif self.mapDownload and not self.mapDownload.finished then
@@ -354,31 +354,38 @@ function Battle:draw()
   lg.translate(lobby.fixturePoint[1].x + 25, 40 )
   local teamNo = 1
   local drawBackRect = false
-  for i, user in pairs(self.playersByTeam) do
+  local cy = y
+  for _, user in pairs(self.playersByTeam) do
     local username = user.name
     if user.allyTeamNo > teamNo then
-      teamNo = user.teamNo
+      lg.setFont(fonts.latomedium)
       lg.setColor(colors.bt)
-      lg.line(0, y + fontHeight/4, 240, y + fontHeight/4)
-      y = y + fontHeight/2
+      lg.print("Team " .. teamNo, 280, cy)
+      teamNo = user.allyTeamNo
+      if teamNo > 0 then
+        lg.line(0, y + fontHeight/4, 260, y + fontHeight/4)
+        y = y + fontHeight/2
+      end
+      cy = y
+      lg.setFont(fonts.latosmall)
     end
     if user.battleStatus then
       drawBackRect = draw.backRect[drawBackRect](0, y, fontHeight)
       draw.readyButton[user.ready](240, y + 7)
       lg.setColor(1,1,1)
+      lg.draw(user.flag, 23, 3 + y)
+      lg.draw(user.insignia, 41, y, 0, 1/4)
+      lg.setColor(user.teamColorUnpacked[1]/255, user.teamColorUnpacked[2]/255, user.teamColorUnpacked[3]/255, 0.4)
+      lg.rectangle("fill", 60, y, 120, fontHeight, 5, 5)
+      lg.setColor(colors.text)
       if user.icon then
         lg.draw(img[user.icon], 5, y, 0, 1/4)
       end
-      lg.draw(user.flag, 23, 3 + y)
-      lg.draw(user.insignia, 41, y, 0, 1/4)
-      lg.setColor(0,0,0)
-      lg.rectangle("line", 60, y, 120, fontHeight)
-      lg.setColor(user.teamColorUnpacked[1]/255, user.teamColorUnpacked[2]/255, user.teamColorUnpacked[3]/255, 0.4)
-      lg.rectangle("fill", 60, y, 120, fontHeight, 5, 5)
-      lg.setColor(1,1,1)
       lg.print(username, 64, y)
-      lg.print(user.allyTeamNo, 200, y)
-      --lg.print(self.game.players[username]., 240, y)
+      --lg.print(user.allyTeamNo, 200, y)
+      if self.game.players[username] and self.game.players[username].skill then
+        lg.print(string.match(self.game.players[username].skill, "%d+"), 200, y)
+      end
       y = y + fontHeight
       if y > lobby.fixturePoint[1].y then
         lg.origin()
@@ -397,12 +404,13 @@ function Battle:draw()
       drawBackRect = draw.backRect[drawBackRect](0, y, fontHeight)
       draw.specButton(241, 7 + y)
       lg.setColor(1,1,1)
-      if user.icon then
-        lg.draw(img[user.icon], 5, y, 0, 1/4)
-      end
       lg.draw(user.flag, 23, 3 + y)
       lg.draw(user.insignia, 41, y, 0, 1/4)
       local w = fonts.latosmall:getWidth(username)
+      lg.setColor(colors.text)
+      if user.icon then
+        lg.draw(img[user.icon], 5, y, 0, 1/4)
+      end
       lg.print(username, 60, y)
       y = y + fontHeight
       if y > lobby.fixturePoint[1].y then
