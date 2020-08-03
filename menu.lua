@@ -43,8 +43,8 @@ function ScrollBar:setRenderFunction(func)
   return self
 end
 
-function ScrollBar:doRender()
-  self.func()
+function ScrollBar:doRender(y)
+  self.func(y)
   return self
 end
 
@@ -207,6 +207,7 @@ function Button:draw()
   lg.setFont(self.font)
   lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
 end
+
 
 function Button:click(x, y)
   if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
@@ -387,8 +388,8 @@ function BattleTab:draw()
   lg.setFont(fonts.latosmall)
   lg.setColor(1,1,1)
   if battle.minimap then
-    local modx = math.min(1, battle.minimapWidthHeightRatio)
-    local mody = math.min(1, 1/battle.minimapWidthHeightRatio)
+    local modx = math.min(1, battle.mapWidthHeightRatio)
+    local mody = math.min(1, 1/battle.mapWidthHeightRatio)
     lg.draw(battle.minimap, x - (modx-1)*40, y - (mody-1)*40, 0,
       modx*80/1024, mody*80/1024)
   else

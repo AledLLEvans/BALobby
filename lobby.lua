@@ -174,7 +174,7 @@ function lobby.wheelmoved(x, y)
   for sb in pairs(lobby.scrollBars) do
     if sb:getZone():isIn(msx, msy) then
       sb:scroll(y)
-      sb:doRender()
+      sb:doRender(y)
     end
   end
   if Channel.active then

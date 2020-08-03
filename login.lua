@@ -13,6 +13,7 @@ local unpacker_channel = love.thread.getChannel("unpacker")
 
 local socket = require "socket"
 
+login.downloadText = ""
 function login.enter()
   login.video = lg.newVideo( "data/bamovie3.ogv" )
   login.video:play()

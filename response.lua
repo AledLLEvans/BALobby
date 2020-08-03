@@ -544,14 +544,10 @@ function REMOVEBOT.respond(words, sentences)
 end
 function REMOVESCRIPTTAGS.respond(words, sentences)
   local battle = Battle:getActive()
-  print("remove")
   for i = 2, #sentences do
-    print(sentences[i])
     local tbl = battle
     local c = sentences[i]:gmatch("(/[^/]+)")
-    print("c: " .. c)
     for w in sentences[i]:gmatch("([^/]+)") do
-      print(w)
       if w == c then
         tbl[w] = nil
       else
