@@ -17,7 +17,6 @@ login.downloadText = ""
 function login.enter()
   login.video = lg.newVideo( "data/bamovie3.ogv" )
   login.video:play()
-  login.savePass = true
   login.log = {}
 
   function lobby.send(msg)
@@ -26,46 +25,64 @@ function login.enter()
   end
   
   lobby.width = 800
-  lobby.height = 600
+  lobby.height = 450
   login.width = 800
-  login.height = 600
+  login.height = 450
   loginBox = {
     x = lobby.width/2,
-    y = lobby.height/2
+    y = lobby.height/2,
+    w = 400,
+    h = 225
   }
   
+  login.savePassCheckbox = Checkbox:new():setPosition(loginBox.x -loginBox.w/2 + 10, loginBox.y + loginBox.h/2 - 30):setDimensions(20, 20):setFunction(function()
+      login.savePass = not login.savePass
+    end):setText("Save Password?")
+  function login.savePassCheckbox:draw()
+    lg.setColor(self.color.back)
+    lg.rectangle("fill", self.x, self.y, self.w, self.h)
+    lg.setColor(self.color.outline)
+    lg.rectangle("line", self.x, self.y, self.w, self.h)
+    if login.savePass then
+      lg.setColor(self.color.inside)
+      lg.rectangle("fill", self.x + 3, self.y + 3, self.w - 6, self.h - 6)
+    end
+    lg.setColor(colors.text)
+    lg.draw(self.text, self.x + self.w + 2, self.y)
+  end
+  
   login.nameBox = Textbox:new({name = 'Username'})
-  login.nameBox:setDimensions(220, 30)
+  login.nameBox:setDimensions(320, 30)
   login.nameBox:setFont(fonts.latomedium)
   --login.nameBox.colors.outline = {50/255, 50/255, 50/255, 255/255}
   
   login.passBox = TextboxPrivate:new({name = 'Password'})
-  login.passBox:setDimensions(220, 30)
+  login.passBox:setDimensions(320, 30)
   login.passBox:setFont(fonts.latomedium)
   --login.passBox.colors.outline = {50/255, 50/255, 50/255, 255/255}
   
   login.buttons = {}
   
   login.buttons.login = Button:new()
-  login.buttons.login:setDimensions(70, 30)
+  login.buttons.login:setDimensions(80, 35)
   login.buttons.login:setText("Sign In")
   login.buttons.login:setFont(fonts.latosmall)
   login.buttons.login:setFunction(function() login.connectToServer() end)
   function login.buttons.login:draw()
     lg.setColor(colors.bb)
-    lg.rectangle("fill", self.x, self.y, self.w, self.h, 2)
+    lg.rectangle("fill", self.x, self.y, self.w, self.h, 5)
     lg.setColor(colors.text)
     lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2 + 1)
   end
   
   login.buttons.register = Button:new()
-  login.buttons.register:setDimensions(100, 30)
+  login.buttons.register:setDimensions(110, 35)
   login.buttons.register:setText("Create Account")
   login.buttons.register:setFont(fonts.latosmall)
   login.buttons.register:setFunction(function() login.registerAccount() end)
   function login.buttons.register:draw()
     lg.setColor(colors.bb)
-    lg.rectangle("fill", self.x, self.y, self.w, self.h, 2)
+    lg.rectangle("fill", self.x, self.y, self.w, self.h, 5)
     lg.setColor(colors.text)
     lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2 + 1)
   end
@@ -86,6 +103,7 @@ function login.enter()
       login.passBox:setBase64(settings.pass)
     end
   end
+  login.savePass = settings.savePass or false
   
   if not lobby.gotEngine then
     if settings.engine_downloaded then
@@ -206,8 +224,17 @@ function settings.add(t)
   return settings.pack()
 end
 
+function settings.remove(t)
+  for i, _ in pairs(t) do
+    settings[i] = nil
+  end
+  return settings.pack()
+end
+
 local function connect()
-  if not tcp then
+  if tcp then
+    return true
+  else
     tcp = socket.tcp()
   end
   if not tcp then
@@ -221,17 +248,57 @@ end
 login.action = 0
 function login.registerAccount()
   login.action = 2
-  connect()
+  if connect() then
+    login.handleResponse()
+  end
+end
+
+function login.handleResponse()
+ --if v == "STLS" then
+  ip, _ = tcp:getsockname()
+  if not ip then
+    lw.showMessageBox("For your information", "tcp connection failed", "error" )
+    return
+  end
+  if login.action == 1 then
+    login.loginString = "LOGIN " .. 
+    login.nameBox.text .. 
+    " " .. 
+    login.passBox.base64 ..
+    " 0 " .. 
+    "* " .. --ip .. 
+    "BAlogin 0.1 0" .. "\n"
+    tcp:send(login.loginString)
+    table.insert(login.log, {to = true, msg = "LOGIN " .. login.nameBox.text .. " " .. ip })
+  elseif login.action == 2 then 
+    login.registerString = "REGISTER " .. 
+    login.nameBox.text .. 
+    " " .. 
+    login.passBox.base64 .. "\n"
+    tcp:send(login.registerString)
+    table.insert(login.log, {to = true, msg = "REGISTER " .. login.nameBox.text })
+  end
+--end
 end
 
 function login.connectToServer()
   login.action = 1
   if login.savePass then
-    settings.add({name = login.nameBox.text, pass = login.passBox.base64})
+    settings.add({
+        name = login.nameBox.text,
+        pass = login.passBox.base64,
+        savePass = true
+      })
   else
-    settings.add({name = login.nameBox.text})
+    settings.add({
+        name = login.nameBox.text,
+        pass = false,
+        savePass = false
+      })
   end
-  connect()
+  if connect() then
+    login.handleResponse()
+  end
 end
 
 local responses = require("response")
@@ -286,10 +353,18 @@ function login.resize( w, h )
   lobby.height = h
   loginBox.x = w/2
   loginBox.y = h/2
-  login.nameBox:setPosition(lobby.width/2 - 90, lobby.height/2 - 90)
-  login.passBox:setPosition(lobby.width/2 - 90, lobby.height/2 - 30)
-  login.buttons.login:setPosition(lobby.width/2, loginBox.y + 25)
-  login.buttons.register:setPosition(lobby.width/2 + 80, loginBox.y + 25)
+  login.nameBox:setPosition(
+          loginBox.x - loginBox.w/2 + 30,
+          loginBox.y - loginBox.h/2 + 50)
+  login.passBox:setPosition(
+          loginBox.x - loginBox.w/2 + 30,
+          loginBox.y - loginBox.h/2 + 105)
+  login.buttons.login:setPosition(
+        loginBox.x + loginBox.w/2 - 210,
+        loginBox.y + loginBox.h/2 - 50)
+  login.buttons.register:setPosition(
+        loginBox.x + loginBox.w/2 - 120,
+        loginBox.y + loginBox.h/2 - 50)
 end
 
 function login.textinput (text)
@@ -350,12 +425,16 @@ function login.mousereleased (x, y, b)
   for _, k in pairs(login.buttons) do
     k:click(x, y)
   end
+  login.savePassCheckbox:click(x,y)
 end
 
 function login.drawLoginBox()
   lg.setColor(colors.bgt)
-  lg.rectangle("fill", loginBox.x - 8 - 120, loginBox.y - 35 - 100, 1.6*200, 200, 5)
-  lg.setColor(colors.bt)
+  lg.rectangle("fill",
+              loginBox.x-loginBox.w/2,
+              loginBox.y-loginBox.h/2,
+              loginBox.w, loginBox.h, 5)
+  lg.setColor(colors.bd)
   login.nameBox:draw()
   login.passBox:draw()
   login.nameBox:renderText()
@@ -365,44 +444,58 @@ function login.drawLoginBox()
   for _, k in pairs(login.buttons) do
     k:draw()
   end
+  login.savePassCheckbox:draw()
 end
 
 function login.draw()
   lg.setColor(1,1,1)
-  lg.draw(login.video, 0, 0, 0, login.width/1920, login.height/1080)
+  lg.draw(login.video, 0, 0, 0, login.width/1920, (login.height)/970)
   login.drawLoginBox()
-  if not lobby.gotEngine then login.drawDownloadBars() end
-  local fontHeight = fonts.robotosmall:getHeight()
-  local i = #login.log
-  lg.rectangle("line", 8, 80, 160, login.height - 160)
-  while i > 0 and 80 + i*fontHeight < login.height - 160 do
-    local txt = login.log[i].msg
-    local _, wt = fonts.robotosmall:getWrap(txt, 156)
-    lg.printf(txt, 12, 70 + i*fontHeight, 156, "left")
-    i = i - #wt
+  if not lobby.gotEngine then
+    login.drawDownloadBars()
+    login.drawDownloadText()
   end
+  --
+  lg.setFont(fonts.robotosmall)
+  for i, k in pairs(login.log) do
+    lg.print(k.msg, 10, 10 + 10*i)
+  end
+  --
 end
 
 function login.drawDownloadBars()
-  lg.setColor(1,1,1)
-  lg.printf(login.downloadText, 0, 20, login.width, "center")
-  lg.rectangle("line", 50, 50, login.width - 100, 20)
-  local fontHeight = fonts.robotosmall:getHeight()
+  lg.setColor(colors.bargreen)
   if login.dl_status then
     if login.dl_status.file_size > 0 then
-      local perc = login.dl_status.downloaded / login.dl_status.file_size
-      perc = math.floor(perc * 100)
-      lg.rectangle("fill", 50, 50, (login.width/2-50)*perc/100, 20)
-      lg.print(string.format("%d%%", perc), login.width/2-20, 20 + fontHeight)
-    end
-    if login.dl_status.err then
-      lg.print(login.dl_status.err, 0, 32)
+      local w = math.floor(login.dl_status.downloaded / login.dl_status.file_size * 100)/100
+      lg.rectangle("fill", 0, 0, (lobby.width/2)*w, 2)
     end
   end
   if login.unpackerCount then
     if login.unpackerCount > 0 then
-      local frac = login.unpackerCount / login.fileCount
-      lg.rectangle("fill", login.width/2, 50, (login.width/2-50)*frac, 20)
+      local w = login.unpackerCount / login.fileCount
+      lg.rectangle("fill", lobby.width/2, 0, (lobby.width/2)*w, 2)
+    end
+  end
+  lg.setColor(1,1,1)
+end
+
+function login.drawDownloadText()
+  lg.setColor(colors.bgt)
+  lg.rectangle("fill", lobby.width/2 - 30, 10, 60, 20)
+  lg.setColor(colors.text)
+  lg.printf(login.downloadText, 0, 20, login.width, "center")
+  local fontHeight = fonts.robotosmall:getHeight()
+  if login.dl_status then
+    if login.dl_status.file_size > 0 then
+      local perc = math.floor(login.dl_status.downloaded / login.dl_status.file_size * 100)/100
+      lg.print(perc .."%",  login.width/2-20, 20 + fontHeight)
+    end
+    if login.dl_status.err then
+      lg.print(login.dl_status.err, 0, 32)
+    end
+  elseif login.unpackerCount then
+    if login.unpackerCount > 0 then
       lg.print(login.unpackerCount .. "/" .. login.fileCount, login.width/2 + 10, 20 + fontHeight)
     end
   end

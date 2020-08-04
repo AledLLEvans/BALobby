@@ -89,21 +89,21 @@ function Battle:joined(id)
   Channel.active = Channel.s["Battle_" .. id]
   self.display = true
   
+  self.showMapScroll = 1
   Battle.mapScrollBar = ScrollBar:new():setOffset(0)
-  :setRenderFunction(function(y) 
+  :setRenderFunction(function(y)
         if y > 0 then
-          self.showMap = "minimap"
-        else
-          self.showMap = "metalmap"
+          self.showMapScroll = math.min(2, self.showMapScroll + 1)
+        elseif y < 0 then
+          self.showMapScroll = math.max(0, self.showMapScroll - 1)
         end
       end)
-  
   
   Battle.spectatorsScrollBar = ScrollBar:new()
   :setLength(40)
   :setScrollBarLength(10)
   :setOffset(0)
-  :setScrollSpeed(fonts.latosmall:getHeight())
+  :setScrollSpeed(fonts.latosmall:getHeight() + 2)
   
   Battle.modoptionsScrollBar = ScrollBar:new()
   :setPosition(lobby.fixturePoint[2].x - 5, (lobby.height-lobby.fixturePoint[2].y)/2 - 20)
@@ -113,7 +113,6 @@ function Battle:joined(id)
   :setScrollSpeed(fonts.latoitalic:getHeight())
   
   Battle.showMap = "minimap"
-  
 end
 
 function Battle.exit()
@@ -123,43 +122,43 @@ function Battle.exit()
   lobby.send("LEAVEBATTLE" .. "\n")
   lobby.state = "landing"
   Battle.modoptionsScrollBar = nil
-  lobby.clickables[Battle.sideButton] = nil
-  Battle.sideButton = nil
+  --lobby.clickables[Battle.sideButton] = nil
+  --Battle.sideButton = nil
   Battle.modoptionsScrollBar = nil
   Battle.spectatorsScrollBar = nil
-  lobby.resize(lobby.width, lobby.height)
   Battle.mapScrollBar = nil
+  lobby.resize(lobby.width, lobby.height)
 end
 
 function Battle.enter()
   lobby.state = "battle"
   lobby.fixturePoint[1].x = 0
   
-  Battle.sideButton = Button:new():setPosition(1, lobby.height/2 - 20):setDimensions(20-2, 40):onClick(function() Battle.enterWithList() end)
+  --Battle.sideButton = Button:new():setPosition(1, lobby.height/2 - 20):setDimensions(20-2, 40):onClick(function() Battle.enterWithList() end)
   
-  function Battle.sideButton:draw()
+  --[[function Battle.sideButton:draw()
     lg.rectangle("line", self.x, self.y, self.w, self.h)
     lg.polygon("line",
               5, self.y + self.h/2 - 8,
               5, self.y + self.h/2 + 8,
               15, self.y + self.h/2)
-  end
-  lobby.clickables[Battle.sideButton] = true
+  end]]
+  --lobby.clickables[Battle.sideButton] = true
   lobby.resize(lobby.width, lobby.height)
 end
 
 function Battle.enterWithList()
   lobby.state = "battleWithList"
   lobby.fixturePoint[1].x = 260
-  Battle.sideButton = Button:new():setPosition(261, lobby.height/2 - 20):setDimensions(20-2, 40):onClick(function() Battle.enter() end)
-  function Battle.sideButton:draw()
+  --Battle.sideButton = Button:new():setPosition(261, lobby.height/2 - 20):setDimensions(20-2, 40):onClick(function() Battle.enter() end)
+  --[[function Battle.sideButton:draw()
     lg.rectangle("line", self.x, self.y, self.w, self.h)
     lg.polygon("line",
               self.x + 15, self.y + self.h/2 - 8,
               self.x + 15, self.y + self.h/2 + 8,
               self.x + 5, self.y + self.h/2)
-  end
-  lobby.clickables[Battle.sideButton] = true
+  end]]
+  --lobby.clickables[Battle.sideButton] = true
   lobby.resize(lobby.width, lobby.height)
 end
 
@@ -365,19 +364,31 @@ function Battle:draw()
       h = math.min(aw, ah)
       w = h
     end
-    lg.draw(self.minimap,
-    xmin, -- (modx-1)*w,
-    ymin, -- (mody-1)*h,
-    0, w/1024, h/1024)
-    if self.showMap == "metalmap" then
+    local x = xmin + aw/2 - w/2
+    --local y = ymin + ah/2 - h/2
+    if self.showMapScroll == 0 then
+      lg.draw(self.heightmap,
+      x, -- (modx-1)*w,
+      ymin, -- (mody-1)*h,
+      0, 2*w/self.mapW, 2*h/self.mapH)
+    elseif self.showMapScroll == 1 then
+      lg.draw(self.minimap,
+      x, -- (modx-1)*w,
+      ymin, -- (mody-1)*h,
+      0, w/1024, h/1024)
+    elseif self.showMapScroll == 2 then
+      lg.draw(self.minimap,
+      x, -- (modx-1)*w,
+      ymin, -- (mody-1)*h,
+      0, w/1024, h/1024)
       lg.setColor(1,1,1,0.75)
       lg.draw(self.metalmap,
-      xmin, -- (modx-1)*w,
+      x, -- (modx-1)*w,
       ymin, -- (mody-1)*h,
       0, 2*w/self.mapW, 2*h/self.mapH)
     end
     --
-    self.mapScrollBar:getZone():setPosition(xmin, ymin):setDimensions(w, h)
+    self.mapScrollBar:getZone():setPosition(x, ymin):setDimensions(w, h)
     local myAllyTeam = 0
     for _, user in pairs(self.playersByTeam) do
       if user.name == lobby.username then
@@ -391,13 +402,13 @@ function Battle:draw()
         lg.setColor(rectColors[2])
       end
       lg.rectangle("fill",
-                    xmin + w*box[1],
+                    x + w*box[1],
                     ymin + h*box[2],
                     w*(box[3] - box[1]),
                     h*(box[4] - box[2]))
       lg.setFont(fonts.roboto)
       lg.setColor(0,0,0)
-      lg.print(ally, xmin + w*(box[1] + box[3])/2 - fonts.roboto:getWidth(ally)/2, ymin + h*(box[2] + box[4])/2 - fonts.roboto:getHeight()/2 )
+      lg.print(ally, x + w*(box[1] + box[3])/2 - fonts.roboto:getWidth(ally)/2, ymin + h*(box[2] + box[4])/2 - fonts.roboto:getHeight()/2 )
     end
   elseif self.mapDownload and not self.mapDownload.finished then
     lg.setColor(colors.text)
@@ -465,12 +476,12 @@ function Battle:draw()
     if user.allyTeamNo > teamNo then
       lg.setFont(fonts.latomedium)
       lg.setColor(colors.bt)
-      teamNo = user.allyTeamNo
-      lg.print("Team " .. teamNo, xmax, y)
-      if teamNo > 1 then
+      if teamNo > 0 then
         lg.line(0, y + fontHeight/4, xmax - 40, y + fontHeight/4)
         y = y + fontHeight/2
       end
+      teamNo = user.allyTeamNo
+      lg.print("Team " .. teamNo, xmax, y)
       cy = y
       lg.setFont(fonts.latosmall)
     end
@@ -500,8 +511,8 @@ function Battle:draw()
   --spectator list
   self.spectatorsScrollBar:getZone():setPosition(lobby.fixturePoint[1].x + 25, y)
   self.spectatorsScrollBar:getZone():setDimensions(midpoint - lobby.fixturePoint[1].x + 25, lobby.fixturePoint[2].y - y)
-  self.spectatorsScrollBar:setPosition(xmax - 20 , y + 30):setLength(lobby.fixturePoint[2].y - y - 60)
   local ymin = math.max(8*fontHeight, y + fontHeight)
+  self.spectatorsScrollBar:setPosition(xmax - 20, ymin + 30)
   local ymax = lobby.fixturePoint[1].y
   y = ymin - self.spectatorsScrollBar:getOffset()
   lg.setColor(colors.text)
@@ -531,12 +542,12 @@ function Battle:draw()
         end
         lg.print(username, 60, y)
       end
+      y = y + fontHeight
     end
-    y = y + fontHeight
   end
-  self.spectatorsScrollBar:setOffsetMax(math.max(0, t - c) * fontHeight):draw()
+  self.spectatorsScrollBar:setLength(ymin - t*(fontHeight + 2)):setOffsetMax(math.max(0, t - c) * fontHeight):draw()
   lg.origin()
-  Battle.sideButton:draw()
+  --Battle.sideButton:draw()
 end
 
 local function hasMap(mapName)
@@ -611,28 +622,41 @@ function Battle:getMinimap()
   if not mapData then self.minimap = nil self.metalmap = nil return end
   nfs.unmount(lobby.mapFolder .. mapArchive, "map")
   
-  local  _, _, _, mapWidth, mapHeight, _, _, _, _, _, hm, tm, ti, minimapOffset, metalmapOffset, _ = 
+  local  _, _, _, mapWidth, mapHeight, _, _, _, _, _, heightmapOffset, tm, ti, minimapOffset, metalmapOffset, _ = 
   love.data.unpack("c16 i4 I4 i4 i4 i4 i4 i4 f f i4 i4 i4 i4 i4 i4", mapData)
 
   self.mapW = mapWidth
   self.mapH = mapHeight
   self.mapWidthHeightRatio = mapWidth/mapHeight
   
+  --Mini Map
   local minimapData = love.data.unpack("c699048", mapData, minimapOffset + 1)
   minimapData = Battle.DDSheader .. minimapData
   local bytedata = love.data.newByteData( minimapData )
   local compdata = love.image.newCompressedData(bytedata)
   self.minimap = lg.newImage(compdata)
   
+  --Metal Map
   local bytes = (mapWidth/2) * (mapHeight/2)
-
-  local metalmapData, err = love.data.unpack("c"..tostring(bytes), mapData, metalmapOffset + 1)
-  
+  local metalmapData = love.data.unpack("c"..tostring(bytes), mapData, metalmapOffset + 1)
   local imageData = love.image.newImageData( (mapWidth)/2, (mapHeight)/2, "r8", metalmapData )
+  self.metalmap =  lg.newImage(imageData)
+  
+  --HeightMap
+ --[[bytes = (mapWidth + 1) * (mapHeight + 1)
+ local heightmapDataString = mapData:sub(heightmapOffset+1)
+ local heightMap
+  for i = 1, bytes, 2 do
+    local a, b = heightmapDataString:byte(i, i+1)
+    heightMap = a * 256
+  end]]
+  --local heightmapData = love.data.unpack("H", mapData, heightmapOffset+1)
+  --local heightMap = love.data.newByteData(heightmapData)-- heightmapOffset + 1, bytes )
+  --imageData = love.image.newImageData( 2, 2, "r8", heightMap)
   --metalmapData = Battle.DDSheader .. metalmapData
   --local mbytedata = love.data.newByteData( metalmapData )
   --local mcompdata = love.image.newCompressedData(mbytedata)
-  self.metalmap =  lg.newImage(imageData)
+  self.heightmap = lg.newImage(imageData)
 end
 
   local header = {}

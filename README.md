@@ -18,5 +18,5 @@ With BALobby you can:
 - autodownload engine, maps and mod
 
 Known 'bugs':
-- server will disconnect if you idle at login screen
+~~- server will disconnect if you idle at login screen~~
 

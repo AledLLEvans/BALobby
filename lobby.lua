@@ -431,7 +431,7 @@ function lobby.createBattleTabs(BattleIDsByPlayerCount)
     ymax = lobby.fixturePoint[1].y
     xmax = lobby.fixturePoint[2].x
   end
-  lobby.battleTabDisplayCols = math.floor((xmax - xmin) / 250)
+  lobby.battleTabDisplayCols = math.floor((xmax - xmin) / 610)
   local w = (xmax - xmin) / lobby.battleTabDisplayCols
   local c = 1
   while y < ymax and i <= #BattleIDsByPlayerCount do
@@ -584,6 +584,7 @@ function lobby.render()
   lobby.renderFunction[lobby.state]()
   
   Channel.textbox:draw()
+  lg.setLineWidth(0.5)
   lobby.userListScrollBar:draw()
   
   if Channel:getActive() then

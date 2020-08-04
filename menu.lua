@@ -211,8 +211,8 @@ end
 
 function Button:click(x, y)
   if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
-    sound[self.clickSound]:stop()
-    sound[self.clickSound]:play()
+    --sound[self.clickSound]:stop()
+    --sound[self.clickSound]:play()
     self.func()
     return true
   end
@@ -221,6 +221,7 @@ end
 
 function Button:setFunction(func)
   self.func = func
+  return self
 end
 
 function Button:setBackgroundColor(c)
@@ -236,6 +237,46 @@ end
 function Button:onClick(func)
   self.func = func
   return self
+end
+
+Checkbox = Button:new()
+Checkbox.mt =  {__index = Checkbox}
+Checkbox.s = {}
+
+function Checkbox:new()
+  local o = Button:new()
+  setmetatable(o, Checkbox.mt)
+  o.font = fonts.latoitalic
+  o.text = lg.newText( o.font )
+  o.ticked = false
+  o.color = {
+    back = colors.bb,
+    outline = colors.bt,
+    inside = colors.bt
+  }
+  
+  self.func = function() self.ticked = not self.ticked end
+  
+  return o
+end
+
+function Checkbox:setText(str)
+  self.text:set(str)
+  return self
+end
+
+function Checkbox:draw()
+  lg.setColor(self.color.back)
+  lg.rectangle("fill", self.x, self.y, self.w, self.h)
+  lg.setColor(self.color.outline)
+  lg.rectangle("line", self.x, self.y, self.w, self.h)
+  if self.ticked then
+    lg.setColor(self.color.inside)
+    lg.rectangle("fill", self.x + 4, self.y + 4, self.w - 8, self.h - 8)
+  end
+  lg.setFont(self.font)
+  lg.setColor(colors.text)
+  lg.draw(self.text, self.x + self.w + 2, self.y)
 end
 
 Hyperlink = Button:new()

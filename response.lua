@@ -497,31 +497,7 @@ function MOTD.respond(words, sentences)
 end
 function OK.respond(words, sentences)
   local k, v = words[1]:match("(.+)=(.+)")
-  --if v == "STLS" then
-    ip, _ = tcp:getsockname()
-    if not ip then
-      lw.showMessageBox("For your information", "tcp connection failed", "error" )
-      return
-    end
-    if login.action == 1 then
-      login.loginString = "LOGIN " .. 
-      login.nameBox.text .. 
-      " " .. 
-      login.passBox.base64 ..
-      " 0 " .. 
-      "* " .. --ip .. 
-      "BAlogin 0.1 0" .. "\n"
-      tcp:send(login.loginString)
-      table.insert(login.log, {to = true, msg = "LOGIN " .. login.nameBox.text .. " " .. ip })
-    elseif login.action == 2 then 
-      login.registerString = "REGISTER " .. 
-      login.nameBox.text .. 
-      " " .. 
-      login.passBox.base64 .. "\n"
-      tcp:send(login.registerString)
-      table.insert(login.log, {to = true, msg = "REGISTER " .. login.nameBox.text })
-    end
-  --end
+
 end
 function OPENBATTLE.respond(words, sentences)
 end
@@ -534,11 +510,12 @@ function REDIRECT.respond(words, sentences)
 end
 function REGISTRATIONACCEPTED.respond(words, sentences)
   local reason = sentences[1]
-  table.insert(login.log, {from = true, msg = reason })
+  table.insert(login.log, {from = true, msg = reason })  lw.showMessageBox("Registration Accepted", "Please login again", "info" )
 end
 function REGISTRATIONDENIED.respond(words, sentences)
   local reason = sentences[1]
   table.insert(login.log, {from = true, msg = reason })
+  lw.showMessageBox("Registration Denied", "REASON: " .. string.gsub(sentences[1], "%S+ ", "", 1), "info" )
 end
 function REMOVEBOT.respond(words, sentences)
 end
@@ -602,6 +579,21 @@ local function mentioned(text, channel)
   end
   return false
 end
+local profanity = {
+  "[c ]+[u ]+[n ]+t",
+  "[f ]+[u ]+[c ]+[k]+",
+  "[s ]+[h ]+[i ]+[t]+",
+  "b[a ]+[s ]+[t ]+ard",
+  "[b ]+[i ]+t[c ]+h",
+  "[n ]+[i ]+[g ]+g[e ]+[r]+",
+  "[r ]+[e ]+[t ]+[a ]+[r ]+[d]+"
+}
+local function profanity_filter(text) --because we love f'ing swearing
+  for i = 1, #profanity do
+    text = string.gsub(text, profanity[i], "****")
+  end
+  return text
+end
 function SAID.respond(words, sentences, data)
   local chan = words[1]
   local user = words[2]
@@ -613,6 +605,8 @@ function SAID.respond(words, sentences, data)
     local i, j = string.find(text, link)
     table.insert(links, {link = link, i = i, j = j})
   end
+  
+  if settings.profanity_filter then text = profanity_filter(text) end
   
   table.insert(Channel.s[chan].lines, {time = os.date("%X"), links = links, mention = mention, user = user, msg = text})
   lobby.render()
@@ -626,6 +620,9 @@ function SAIDBATTLE.respond(words, sentences)
   local chan = battle:getChannel()
   local mention = mentioned(text, chan)
   local ingame = false
+  
+  if settings.profanity_filter then text = profanity_filter(text) end
+  
   if user == founder then
     ingame = true
     user = "INGAME"
@@ -639,6 +636,9 @@ function SAIDBATTLEEX.respond(words, sentences)
   local battle = Battle:getActiveBattle()
   local founder = battle.founder
   local mention = mentioned(text, battle:getChannel())
+  
+  if settings.profanity_filter then text = profanity_filter(text) end
+  
   if user == founder then
     table.insert(battle:getChannel().infolines, {time = os.date("%X"), ex = true, user = user, msg = text})
   else
@@ -650,6 +650,8 @@ function SAIDEX.respond(words, sentences)
   local chan = words[1]
   local user = words[2]
   local text = string.gsub(sentences[1], "%S+", "", 3) .. "\n"
+  
+  if settings.profanity_filter then text = profanity_filter(text) end
   
   local mention = mentioned(text, Channel.s[chan])
   for link in text:gmatch("http[s]*://%S+") do
@@ -670,6 +672,9 @@ function SAIDPRIVATE.respond(words, sentences)
   if not Channel.s[user] then
     User.s[user]:openChannel()
   end
+  
+  if settings.profanity_filter then text = profanity_filter(text) end
+  
   mentioned(lobby.username, Channel.s[user])
   table.insert(Channel.s[user].lines, {time = os.date("%X"), user = user, msg = text})
   lobby.render()
@@ -681,6 +686,9 @@ function SAIDPRIVATEEX.respond(words, sentences)
   if not Channel.s[user] then
     User.s[user]:openChannel()
   end
+  
+  if settings.profanity_filter then text = profanity_filter(text) end
+  
   mentioned(lobby.username, Channel.s[user])
   table.insert(Channel.s[user].lines, {time = os.date("%X"), ex = true, user = user, msg = text})
   lobby.render()
@@ -689,6 +697,9 @@ end
 function SAYPRIVATE.respond(words, sentences)
   local user = words[1]
   local text = string.gsub(sentences[1], "%S+", "", 2) .. "\n"
+  
+  if settings.profanity_filter then text = profanity_filter(text) end
+  
   table.insert(Channel.s[user].lines, {time = os.date("%X"), user = lobby.username, msg = text})
   lobby.render()
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
@@ -696,6 +707,9 @@ end
 function SAYPRIVATEEX.respond(words, sentences)
   local user = words[1]
   local text = string.gsub(sentences[1], "%S+", "", 2) .. "\n"
+  
+  if settings.profanity_filter then text = profanity_filter(text) end
+  
   table.insert(Channel.s[user].lines, {time = os.date("%X"), ex = true, user = lobby.username, msg = text})
   lobby.render()
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
@@ -721,11 +735,7 @@ function SETSCRIPTTAGS.respond(words, sentences)
   lobby.render()
 end
 function TASS.respond(words, sentences)
-  if not login.TLS then
-    OK.respond({"=STLS"})
-    --tcp:send("STLS" .. "\n")
-    --login.TLS = true
-  end
+  login.handleResponse()
 end
 function UDPSOURCEPORT.respond(words, sentences)
 end
