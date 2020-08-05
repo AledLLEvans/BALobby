@@ -20,3 +20,4 @@ With BALobby you can:
 Known 'bugs':
 ~~- server will disconnect if you idle at login screen~~
 
+![Alt text](/screenies/battle.jpg?raw=true "Battle Screenie")

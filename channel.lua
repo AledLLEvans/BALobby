@@ -152,11 +152,12 @@ function Channel:getText()
 end
 
 local drawFunc = {
-  ["user"] = function(t) return  "<" .. t .. ">"  end,
-  ["mention"] = function(t) lg.setColor(1,0,0) return  "<" .. t .. ">"  end,
-  ["ingame"] = function(t) lg.setColor(colors.bt) return  "[" .. t .. "]"  end,
-  ["ex"] = function(t) lg.setColor(colors.yellow) return  "*" .. t .. "*"  end,
-  ["system"] = function() lg.setColor(1,0,0) return  "! SYSTEM : "  end
+  ["user"] = function(u, t) return  "<" .. u .. ">" .. t  end,
+  ["mention"] = function(u, t) lg.setColor(1,0,0) return  "<" .. u .. ">" .. t  end,
+  ["ingame"] = function(u, t) lg.setColor(colors.bt) return  "[" .. u .. "]" .. t end,
+  ["ex"] = function(u, t) lg.setColor(colors.yellow) return  "*" .. u .. "*" .. t  end,
+  ["system"] = function(u, t) lg.setColor(1,0,0) return  "! SYSTEM : ".. t .. "!" end,
+  ["green"] = function(u, t) lg.setColor(0,1,0) return "*" .. t .. "*" end
 }
 
 function Channel:render()
@@ -182,7 +183,7 @@ function Channel:render()
                     "mention" or "user")
                     or "system"
     local align = line.user and "left" or "center"
-    local text = "[" .. line.time .. "] " .. drawFunc[drawType](line.user) .. line.msg
+    local text = "[" .. line.time .. "] " .. drawFunc[drawType](line.user, line.msg)
     local w, wt = self.font:getWrap(text, self.w - 5)
     local j = #wt
     repeat
@@ -284,8 +285,9 @@ function BattleChannel:render()
                     or line.ingame and "ingame"
                     or line.mention and "mention"
                     or "user")
+                    or line.green and "green"
                     or "system"
-    local text = "[" .. line.time .. "] " .. drawFunc[drawType](line.user) .. line.msg
+    local text = "[" .. line.time .. "] " .. drawFunc[drawType](line.user, line.msg)
     local align = line.user and "left" or "center"
     local _, wt = self.font:getWrap(text, w - 10)
     local j = #wt

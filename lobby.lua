@@ -63,6 +63,17 @@ function lobby.enter()
           end
           lobby.render()
         end))
+    
+    lobby.optionsPanel:addButton(Button:new():setText("Open Spring Directory")
+    :setFunction(function()
+          love.system.openURL(lobby.springFilePath)
+        end))
+    
+    lobby.optionsPanel:addButton(Button:new():setText("Options")
+    :setFunction(function()
+            
+          lobby.render()
+        end))
   
   lobby.clickables[lobby.optionsButton] = true
     

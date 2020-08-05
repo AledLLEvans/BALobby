@@ -437,7 +437,7 @@ function JOINBATTLE.respond(words, sentences)
 end
 function JOINBATTLEFAILED.respond(words, sentences)
   Channel:broadcast(" REQUEST TO JOIN BATTLE FAILED, REASON: " .. string.gsub(sentences[1], "%S+ ", "", 1))
-  lw.showMessageBox("REQUEST TO JOIN BATTLE FAILED", "REASON: " .. string.gsub(sentences[1], "%S+ ", "", 1), "info" )
+  --lw.showMessageBox("REQUEST TO JOIN BATTLE FAILED", "REASON: " .. string.gsub(sentences[1], "%S+ ", "", 1), "info" )
 end
 function JOINBATTLEREQUEST.respond(words, sentences)
 end
@@ -457,7 +457,7 @@ function JOINEDBATTLE.respond(words, sentences)
   local battle = Battle:getActive()
   if battle and battleid == battle.id then
     local chan = battle:getChannel()
-    table.insert(chan.lines, {time = os.date("%X"), msg = user .." has joined the battle."})
+    table.insert(chan.lines, {time = os.date("%X"), green = true, msg = user .." has joined the battle."})
   end
   
   lobby.refreshBattleTabs()
@@ -490,9 +490,8 @@ function LEFTBATTLE.respond(words, sentences)
   local battle = Battle:getActive()
   if battle and battleid == battle.id then
     local chan = battle:getChannel()
-    table.insert(chan.lines, {time = os.date("%X"), msg = user .." has left the battle."})
+    table.insert(chan.lines, {time = os.date("%X"), green = true, msg = user .." has left the battle."})
   end
-  
 
   lobby.refreshBattleTabs()
   lobby.render()
@@ -595,13 +594,13 @@ local function mentioned(text, channel)
   return false
 end
 local profanity = {
-  "[c]+[u ]+[n]+t",
-  "[f]+[u ]+[c ]+[k]+",
-  "[s]+[h ]+[i ]+[t]+",
-  "b[a ]+[s ]+[t ]+ard",
-  "[b]+[i ]+t[c ]+h",
-  "[n]+[i ]+[g ]+g[e ]+[r]+",
-  "[r]+[e ]+[t ]+[a ]+[r ]+[d]+"
+  "[c]+[u]+[n]+t",
+  "[f]+[u]+[c]+[k]+",
+  "[s]+[h]+[i]+[t]+",
+  "b[a]+[s]+[t]+ard",
+  "[b]+[i]+t[c]+h",
+  "[n]+[i]+[g]+g[e]+[r]+",
+  "[r]+[e]+[t]+[a]+[r]+[d]+"
 }
 local function profanity_filter(text) --because we love f'ing swearing
   for i = 1, #profanity do
