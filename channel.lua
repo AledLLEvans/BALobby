@@ -4,7 +4,6 @@ local lg = love.graphics
 
 Channel.s = {}
 Channel.tabs = {}
-Channel.textbox = Textbox:new()
 Channel.x = 0
 Channel.y = 0
 Channel.w = 10
@@ -15,6 +14,7 @@ function Channel:new(o, bool)
   
   o.font = fonts.latosmall
   o.scrollBar = ScrollBar:new():setScrollBarLength(-20):setScrollSpeed(o.font:getHeight())
+  lobby.scrollBars[o.scrollBar] = true
   o.lines = {}
   o.users = {} 
   o.sents = {}
@@ -165,8 +165,7 @@ function Channel:render()
   self.scrollBar
   :setPosition(Channel.x + Channel.w, Channel.y + Channel.h - 25)
   :setLength(-Channel.h + 50)
-  :setOffsetMax(math.max(0, #self.lines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight)
-  self.scrollBar:draw()
+  :setOffsetMax(math.max(0, #self.lines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight):draw()
 
   lg.setColor(colors.text)
   local i = #self.lines 
@@ -204,8 +203,7 @@ function ServerChannel:render()
   self.scrollBar
   :setPosition(Channel.x + Channel.w, Channel.y + Channel.h - 25)
   :setLength(-Channel.h + 50)
-  :setOffsetMax(math.max(0, #self.lines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight)
-  self.scrollBar:draw()
+  :setOffsetMax(math.max(0, #self.lines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight):draw()
 
   lg.setColor(colors.text)
   local i = #self.lines 
@@ -242,8 +240,7 @@ function BattleChannel:render()
   self.infoBoxScrollBar
   :setPosition(Channel.x + Channel.w, Channel.y + Channel.h - 25)
   :setLength(-Channel.h + 50)
-  :setOffsetMax(math.max(0, #self.infolines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight)
-  self.infoBoxScrollBar:draw()
+  :setOffsetMax(math.max(0, #self.infolines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight):draw()
   lg.setColor(colors.bt)
   --lg.line(self.x + w, self.y, self.x + w, self.y + self.h - 21)
   lg.setColor(colors.yellow)
@@ -271,8 +268,7 @@ function BattleChannel:render()
   self.scrollBar
   :setPosition(Channel.x + w - 5, Channel.y + Channel.h - 25)
   :setLength(-Channel.h + 50)
-  :setOffsetMax(math.max(0, #self.lines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight)
-  self.scrollBar:draw()
+  :setOffsetMax(math.max(0, #self.lines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight):draw()
   
   lg.setColor(colors.text)
   i = #self.lines

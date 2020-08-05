@@ -15,10 +15,31 @@ local socket = require "socket"
 
 login.downloadText = ""
 function login.enter()
+  state = STATE_LOGIN
+  love.keyboard.setKeyRepeat(true)
   login.video = lg.newVideo( "data/bamovie3.ogv" )
   login.video:play()
   login.log = {}
 
+  settings.unpack()
+  if settings.mode then
+    if settings.mode == "light" then
+      setLightMode()
+      lobby.darkMode = false
+      lobby.lightMode = true
+    elseif settings.mode == "dark" then
+      setDarkMode()
+      lobby.darkMode = true
+      lobby.lightMode = false
+    end
+  else
+    settings.add({mode = "dark"})
+    setDarkMode()
+    lobby.darkMode = true
+    lobby.lightMode = false
+  end
+  login.savePass = settings.savePass or false
+  
   function lobby.send(msg)
     table.insert(lobby.serverChannel.lines, {time = os.date("%X"), to = true, msg = msg})
     return tcp:send(msg)
@@ -51,6 +72,7 @@ function login.enter()
     lg.draw(self.text, self.x + self.w + 2, self.y)
   end
   
+  --LOGIN TEXTBOXES
   login.nameBox = Textbox:new({name = 'Username'})
   login.nameBox:setDimensions(320, 30)
   login.nameBox:setFont(fonts.latomedium)
@@ -60,9 +82,19 @@ function login.enter()
   login.passBox:setDimensions(320, 30)
   login.passBox:setFont(fonts.latomedium)
   --login.passBox.colors.outline = {50/255, 50/255, 50/255, 255/255}
+    
+  if settings.name then
+    login.nameBox:setText(settings.name)
+    login.nameBox.charoffset = #settings.name
+  end
+  if settings.pass then
+    login.passBox.faketext = true
+    login.passBox:setText("*******")
+    login.passBox:setBase64(settings.pass)
+  end
   
+  --LOGIN BUTTONS
   login.buttons = {}
-  
   login.buttons.login = Button:new()
   login.buttons.login:setDimensions(80, 35)
   login.buttons.login:setText("Sign In")
@@ -74,7 +106,6 @@ function login.enter()
     lg.setColor(colors.text)
     lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2 + 1)
   end
-  
   login.buttons.register = Button:new()
   login.buttons.register:setDimensions(110, 35)
   login.buttons.register:setText("Create Account")
@@ -87,24 +118,6 @@ function login.enter()
     lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2 + 1)
   end
   
-  login.resize( login.width, login.height )
-  
-  state = STATE_LOGIN
-  love.keyboard.setKeyRepeat(true)
-  settings.unpack()
-  if settings then
-    if settings.name then
-      login.nameBox:setText(settings.name)
-      login.nameBox.charoffset = #settings.name
-    end
-    if settings.pass then
-      login.passBox.faketext = true
-      login.passBox:setText("*******")
-      login.passBox:setBase64(settings.pass)
-    end
-  end
-  login.savePass = settings.savePass or false
-  
   if not lobby.gotEngine then
     if settings.engine_downloaded then
       if settings.engine_unpacked then
@@ -116,6 +129,7 @@ function login.enter()
       login.startEngineDownload()
     end
   end
+  login.resize( login.width, login.height )
 end
 
 local progress_channel = love.thread.getChannel("progress_login")
@@ -401,7 +415,6 @@ local keypress = {
     login.passBox:toggle()
   end,
   ["escape"] = function()
-    tcp:send("EXIT\n")
     love.event.quit()
   end,
   ["left"] = function()

@@ -2,18 +2,6 @@ img = {}
 
 local lg = love.graphics
 
-local IMAGE_FILES = {
-  --"balanced+annihilation+big+loadscreen-min",
-  "nomap",
-  "gamepad",
-  "nothome",
-  "monitor",
-  "Menu",
-  "MenuExpanded",
-  "eye",
-  "players"
-}
-
 local flag_codes ={
 "AF",
 "AX",
@@ -257,6 +245,22 @@ local flag_codes ={
 "ZW",
 }
 
+local IMAGE_FILES = {
+  --"balanced+annihilation+big+loadscreen-min",
+  "nomap",
+  "gamepad",
+  "nothome",
+  "monitor",
+  "MenuButtonLight",
+  "MenuButtonDark",
+  "MenuPanelLight",
+  "MenuPanelDark",
+  "eye",
+  "players_zero",
+  "playersLight",
+  "playersDark"
+}
+
 --success = love.system.openURL( url )
 
 ranks = {}
@@ -296,6 +300,8 @@ fonts.latoitalicmedium = lg.newFont("data/fonts/Lato/Lato-Italic.ttf", 18)
 fonts.latolightitalic = lg.newFont("data/fonts/Lato/Lato-LightItalic.ttf", 12)
 fonts.latobold = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 12)
 fonts.latoboldbig = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 16)
+fonts.latoboldbigger = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 24)
+fonts.latoboldbiggest = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 48)
 fonts.latobolditalic = lg.newFont("data/fonts/Lato/Lato-BoldItalic.ttf", 12)
   
 sound = {}

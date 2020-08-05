@@ -8,22 +8,72 @@ local address, port = "springfightclub.com", 8200
 
 lobby.MOTD = {}
 function lobby.enter()
+  state = STATE_LOBBY
+  Channel.textbox = Textbox:new()
   lg.setBackgroundColor(colors.bg)
   lobby.fixturePoint = {
     {x = 0, y = 2*lobby.height/3},
     {x = 660, y = 2*lobby.height/3}
-  }  
+  } 
   lobby.optionsButton = Button:new()
   :setPosition(0, 0)
   :setDimensions(36,36)
-  :onClick(function() lobby.optionsExpanded = not lobby.optionsExpanded end)
+  :onClick(function()
+    lobby.optionsExpanded = not lobby.optionsExpanded
+    lobby.clickables[lobby.optionsPanel] = not lobby.clickables[lobby.optionsPanel]
+  end)
+  
+  lobby.optionsPanel = Dropdown:new()
+  :setPosition(0, 36)
+  :setDimensions(163,174)
+  
+  lobby.optionsExpanded = false
+  lobby.clickables[lobby.optionsPanel] = false
+  
+  lobby.optionsPanel:addButton(Button:new():setText("Switch Mode")
+    :setFunction(function()
+          if lobby.darkMode then
+            setLightMode()
+            lobby.darkMode = false
+            lobby.lightMode = true
+            settings.add({mode = "light"})
+            Channel.textbox.colors.background = colors.bg
+            Channel.textbox.colors.text = colors.text
+            local battle = Battle:getActive()
+            if battle then
+              for i, k in pairs(battle.buttons) do
+                k.colors.background = colors.bb
+                k.colors.text = colors.text
+              end
+            end
+          else
+            setDarkMode()
+            lobby.darkMode = true
+            lobby.lightMode = false
+            settings.add({mode = "dark"})
+            Channel.textbox.colors.background = colors.bg
+            Channel.textbox.colors.text = colors.text
+            local battle = Battle:getActive()
+            if battle then
+              for i, k in pairs(battle.buttons) do
+                k.colors.background = colors.bb
+                k.colors.text = colors.text
+              end
+            end
+          end
+          lobby.render()
+        end))
+  
+  lobby.clickables[lobby.optionsButton] = true
+    
   function lobby.optionsButton:draw()
-    if lobby.optionsExpanded then
-      lg.draw(img["MenuExpanded"], self.x, self.y)
+    if lobby.darkMode then
+      lg.draw(img["MenuButtonDark"], self.x, self.y)
     else
-      lg.draw(img["Menu"], self.x, self.y)
+      lg.draw(img["MenuButtonLight"], self.x, self.y)
     end
   end
+  
   lobby.battleTabScrollBar = ScrollBar:new()
   :setScrollSpeed(25)
   :setRenderFunction(function() lobby.refreshBattleTabs() end)
@@ -38,8 +88,6 @@ function lobby.enter()
   :setPosition(lobby.fixturePoint[2].x, 0)
   :setDimensions(lobby.width - lobby.fixturePoint[2].x, lobby.height)
   
-  lobby.clickables[lobby.optionsButton] = true
-  
   lobby.serverChannel = Channel.s["server"]
 
   Channel.active = lobby.serverChannel
@@ -50,17 +98,9 @@ function lobby.enter()
   
   --Channel.textbox:setPosition(1, lobby.height - 21):setDimensions(lobby.fixturePoint[2].x - 2, 20)
   
-  state = STATE_LOBBY
 end
 
 function lobby.mousepressed(x,y,b)
-  if not b == 1 then return end
-  if math.abs(x - lobby.fixturePoint[1].x) < 10 then
-    --lobby.dragLeftX = true
-  end
-  if math.abs(x - lobby.fixturePoint[2].x) < 10 then
-    lobby.dragRightX = true
-  end
   if math.abs(y - lobby.fixturePoint[1].y) < 10 and x > lobby.fixturePoint[1].x and x < lobby.fixturePoint[2].x  then
     lobby.dragY = true
   end
@@ -69,15 +109,16 @@ function lobby.mousepressed(x,y,b)
       lobby.clickedBattleID = i
     end
   end
+  for sb in pairs(lobby.scrollBars) do
+    if x > sb.x - 3 and x < sb.x + 3 and y > sb.y and y < sb.y + sb.length then
+      sb.held = true
+    else
+      sb.held = false
+    end
+  end
 end
 
 function lobby.pickCursor(x,y)
-  if math.abs(x - lobby.fixturePoint[2].x) < 10 then
-    love.mouse.setCursor(cursor[3])
-    return
-  else
-    love.mouse.setCursor(cursor[1])
-  end
   if math.abs(y - lobby.fixturePoint[1].y) < 10 and x > lobby.fixturePoint[1].x and x < lobby.fixturePoint[2].x then
     love.mouse.setCursor(cursor[2])
   else
@@ -86,28 +127,18 @@ function lobby.pickCursor(x,y)
 end
 
 function lobby.mousemoved( x, y, dx, dy, istouch )
-  lobby.pickCursor(x, y)
-  if not lobby.dragLeftX and not lobby.dragRightX and not lobby.dragY then return end
-  local leftMin = 20
-  local leftMax = lobby.fixturePoint[2].x - 500
-  local rightMin = lobby.width - 200
-  local rightMax = lobby.width - 140
-  local Ymin = 90*3 + 70 + 40
-  local Ymax = lobby.height - 100
-  if lobby.dragLeftX then
-    lobby.fixturePoint[1].x = math.min(leftMax, math.max(leftMin, x))
-    for _, chantab in pairs(ChannelTab.s) do
-      chantab.x = chantab.x + dx
-    end
-  end
-  if lobby.dragRightX then
-    lobby.fixturePoint[2].x = math.min(rightMax, math.max(rightMin, x))
-    if Battle:getActive() then
-      for _, button in pairs(Battle:getActive().buttons) do
-        button.x = button.x + dx
+  for sb in pairs(lobby.scrollBars) do
+    if sb.held then
+      if y > sb.innerLength/2 + sb.y + (sb.length)*(sb.offset/sb.offsetmax) then
+        sb:scroll(-1)
+      elseif y < - sb.innerLength/2 + sb.y + (sb.length)*(sb.offset/sb.offsetmax) then
+        sb:scroll(1)
       end
     end
   end
+  lobby.pickCursor(x, y)
+  local Ymin = 90*3 + 70 + 40
+  local Ymax = lobby.height - 100
   if lobby.dragY then
     lobby.fixturePoint[1].y = math.min(Ymax, math.max(Ymin, y))
     lobby.fixturePoint[2].y = lobby.fixturePoint[1].y
@@ -125,12 +156,16 @@ function lobby.mousemoved( x, y, dx, dy, istouch )
   if Channel:getActive() then
     Channel:getActive():render()
   end
+  lobby.render()
 end
 
 lobby.clickables = {}
-function lobby.mousereleased(x,y,b) 
-  if lobby.dragLeftX or lobby.dragRightX or lobby.dragY then
-    lobby.dragLeftX, lobby.dragRightX, lobby.dragY = false, false, false
+function lobby.mousereleased(x,y,b)
+  for sb in pairs(lobby.scrollBars) do
+    sb.held = false
+  end
+  if lobby.dragY then
+    lobby.dragY = false
     if Battle:getActiveBattle() then
       Battle:getActiveBattle().buttons.spectate:resetPosition()
       Battle:getActiveBattle().buttons.ready:resetPosition()
@@ -424,7 +459,7 @@ function lobby.createBattleTabs(BattleIDsByPlayerCount)
   local y = 90 - lobby.battleTabScrollBar:getOffset()
   local x = 0
   local xmin = 0
-  local ymin = 10
+  local ymin = - 10
   local ymax = lobby.height - y
   local xmax = lobby.fixturePoint[1].x
   if lobby.state == "landing" then
@@ -438,7 +473,7 @@ function lobby.createBattleTabs(BattleIDsByPlayerCount)
     if y >= ymin then
       BattleTab:new(BattleIDsByPlayerCount[i])
       :setPosition(x+8, y+5)
-      :setDimensions(w - 16, 80)
+      :setDimensions(w - 16, 100)
     end 
     i = i + 1
     x = x + w
@@ -446,7 +481,7 @@ function lobby.createBattleTabs(BattleIDsByPlayerCount)
     if c > lobby.battleTabDisplayCols then
       c = 1
       x = xmin
-      y = y + 90
+      y = y + 110
     end
   end
   do
@@ -460,14 +495,14 @@ function lobby.createBattleTabs(BattleIDsByPlayerCount)
   if not lobby.loginInfoEnd then
     lobby.battleTabSubText = lobby.battleTabSubText .. "(Loading .. )"
   end
-  lobby.battleTabDisplayRows = math.floor((ymax-ymin)/90) - 1
-  local len = lobby.fixturePoint[2].y - 110 - 40
+  lobby.battleTabDisplayRows = math.floor((ymax-ymin)/110) - 1
+  local len = lobby.fixturePoint[2].y - 90
   local sblen = math.max(0, math.ceil(#BattleIDsByPlayerCount/lobby.battleTabDisplayCols) - lobby.battleTabDisplayRows)
   lobby.battleTabScrollBar
-  :setPosition(lobby.fixturePoint[2].x - 3, 110)
+  :setPosition(lobby.fixturePoint[2].x - 3, 90)
   :setLength(len)
   :setScrollBarLength(len/sblen)
-  :setOffsetMax(sblen * 90)
+  :setOffsetMax(sblen * 110)
   
   lobby.render()
 end
@@ -600,6 +635,9 @@ function lobby.render()
   end
 
   lobby.optionsButton:draw()
+  if lobby.optionsExpanded then
+    lobby.optionsPanel:draw()
+  end
   
   for button in pairs(UserButton.s) do
     button:draw()

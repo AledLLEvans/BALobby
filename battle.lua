@@ -305,6 +305,7 @@ local rectColors = {
 }
     
 function Battle:draw()
+  self.midpoint = math.max(lobby.fixturePoint[1].x + 280, lobby.width * 0.45)
   --Buttons
   self.buttons.exit:draw()
   self.buttons.spectate:draw()
@@ -330,17 +331,30 @@ function Battle:draw()
   lg.setColor(colors.bt)
   lg.print(self.gameName, lobby.fixturePoint[1].x + 50, 10 + fontHeight)
   
-  local midpoint = math.max(lobby.fixturePoint[1].x + 280, lobby.width * 0.45)
+    --[[if self.modDownload then
+    lg.printf(self.modDownload.filename, lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8 + 20 + 3*fontHeight, 1024/8, "left")
+    lg.printf(tostring(math.ceil(100*self.modDownload.downloaded/self.modDownload.file_size)) .. "%", lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8 + 20 + 4*fontHeight, 1024/8, "left")
+  end]]
   
-  --map name and image
+  local h = self:drawMap()
+  self:drawModOptions(h)
+  local y = self:drawPlayers()
+  self:drawSpectators(y)
+
+  lg.origin()
+  --Battle.sideButton:draw()
+end
+
+function Battle:drawMap()
+  local fontHeight = fonts.roboto:getHeight()
   lg.setFont(fonts.robotoitalic)
   lg.setColor(colors.text)
   
-  lg.print(self.mapName, midpoint + 20, 10 + fontHeight)
+  lg.printf(self.mapName, self.midpoint, 10 + fontHeight, lobby.width - self.midpoint, "center")
   lg.setColor(1,1,1)
   local w, h
   if self.minimap then
-    local xmin = midpoint + 20
+    local xmin = self.midpoint + 20
     local xmax = lobby.fixturePoint[2].x - 50
     local ymin = 20 + 2*fontHeight
     local ymax = lobby.fixturePoint[2].y - 60 - 8*fonts.latoitalic:getHeight() - 10
@@ -417,9 +431,12 @@ function Battle:draw()
   else
     lg.draw(img["nomap"], lobby.fixturePoint[2].x - 10 - 1024/8, 20 + 2*fontHeight, 0, 1024/(8*50))
   end
-  
-  --modoptions
-  local x = midpoint + 20
+  return h
+end
+
+function Battle:drawModOptions(h)
+  local fontHeight = fonts.roboto:getHeight()
+  local x = self.midpoint + 20
   local ymin = 20 + 3*fontHeight + (h or 1024/8)
   local ymax = lobby.fixturePoint[2].y - fontHeight - 60
   local y = ymin - self.modoptionsScrollBar:getOffset()
@@ -452,18 +469,14 @@ function Battle:draw()
   end
   self.modoptionsScrollBar:getZone():setDimensions(lobby.fixturePoint[2].x - x, ymax - ymin)
   self.modoptionsScrollBar:setOffsetMax(math.max(0, t - c) * fontHeight):draw()
-  
-  --[[if self.modDownload then
-    lg.printf(self.modDownload.filename, lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8 + 20 + 3*fontHeight, 1024/8, "left")
-    lg.printf(tostring(math.ceil(100*self.modDownload.downloaded/self.modDownload.file_size)) .. "%", lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8 + 20 + 4*fontHeight, 1024/8, "left")
-  end]]
-  
-  --userlist
-  y = 50 + self.userListScrollOffset
-  fontHeight = fonts.latosmall:getHeight() + 2
+end
+
+function Battle:drawPlayers()
+  local y = 50 + self.userListScrollOffset
+  local fontHeight = fonts.latosmall:getHeight() + 2
   lg.setFont(fonts.latosmall)
   lg.translate(lobby.fixturePoint[1].x + 25, 40 )
-  local xmax = midpoint - (lobby.fixturePoint[1].x + 25) - fonts.latomedium:getWidth("Team 00")
+  local xmax = self.midpoint - (lobby.fixturePoint[1].x + 25) - fonts.latomedium:getWidth("Team 00")
   local teamNo = 0
   local drawBackRect = true
   local cy = y
@@ -503,14 +516,20 @@ function Battle:draw()
       end
       lg.print(username, 64, y)
       if self.game.players[username:lower()] and self.game.players[username:lower()].skill then
-        lg.print(string.match(self.game.players[username:lower()].skill, "%d+"), 200, y)
+        lg.print(string.match(self.game.players[username:lower()].skill, "%d+"), 190, y)
       end
       y = y + fontHeight
     end
   end
-  --spectator list
+  return y
+end
+
+function Battle:drawSpectators(y)
+  local xmax = self.midpoint - (lobby.fixturePoint[1].x + 25) - fonts.latomedium:getWidth("Team 00")
+  local fontHeight = fonts.latosmall:getHeight() + 2
+  local drawBackRect = true
   self.spectatorsScrollBar:getZone():setPosition(lobby.fixturePoint[1].x + 25, y)
-  self.spectatorsScrollBar:getZone():setDimensions(midpoint - lobby.fixturePoint[1].x + 25, lobby.fixturePoint[2].y - y)
+  self.spectatorsScrollBar:getZone():setDimensions(self.midpoint - lobby.fixturePoint[1].x + 25, lobby.fixturePoint[2].y - y)
   local ymin = math.max(8*fontHeight, y + fontHeight)
   self.spectatorsScrollBar:setPosition(xmax - 20, ymin + 30)
   local ymax = lobby.fixturePoint[1].y
@@ -524,7 +543,7 @@ function Battle:draw()
   for username, user in pairs(self.users) do
     if user.isSpectator and user.battleStatus then
       t = t + 1
-      if y >= ymin + 40 and y <= ymax - 40 then
+      if y >= ymin and y <= ymax - 40 then
         c = c + 1
         if drawBackRect then
           lg.setColor(colors.bb)
@@ -545,9 +564,7 @@ function Battle:draw()
       y = y + fontHeight
     end
   end
-  self.spectatorsScrollBar:setLength(ymin - t*(fontHeight + 2)):setOffsetMax(math.max(0, t - c) * fontHeight):draw()
-  lg.origin()
-  --Battle.sideButton:draw()
+  self.spectatorsScrollBar:setLength(ymax - ymin - 70):setOffsetMax(math.max(0, t - c) * fontHeight):draw()
 end
 
 local function hasMap(mapName)

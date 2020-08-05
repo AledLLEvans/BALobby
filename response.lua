@@ -186,7 +186,7 @@ end
 function ADDBOT.respond(words, sentences)
 end
 function ADDSTARTRECT.respond(words, sentences)
-  Battle:getActive().startrect[words[1]] = {
+  Battle:getActive().startrect[words[1] + 1] = {
     words[2]/200,
     words[3]/200,
     words[4]/200,
@@ -454,6 +454,12 @@ function JOINEDBATTLE.respond(words, sentences)
   Battle.s[battleid].users[user] = User.s[user]
   Battle.s[battleid].userCount = Battle.s[battleid].userCount + 1
   Battle.s[battleid].scriptPassword = scriptPassword
+  local battle = Battle:getActive()
+  if battle and battleid == battle.id then
+    local chan = battle:getChannel()
+    table.insert(chan.lines, {time = os.date("%X"), msg = user .." has joined the battle."})
+  end
+  
   lobby.refreshBattleTabs()
 end
 function JOINEDFROM.respond(words, sentences)
@@ -480,7 +486,16 @@ function LEFTBATTLE.respond(words, sentences)
   Battle.s[battleid].users[user] = nil
   Battle.s[battleid].userCount = Battle.s[battleid].userCount - 1
   User.s[user].battleid = nil
+  
+  local battle = Battle:getActive()
+  if battle and battleid == battle.id then
+    local chan = battle:getChannel()
+    table.insert(chan.lines, {time = os.date("%X"), msg = user .." has left the battle."})
+  end
+  
+
   lobby.refreshBattleTabs()
+  lobby.render()
 end
 function LEFTFROM.respond(words, sentences)
 end
@@ -580,13 +595,13 @@ local function mentioned(text, channel)
   return false
 end
 local profanity = {
-  "[c ]+[u ]+[n ]+t",
-  "[f ]+[u ]+[c ]+[k]+",
-  "[s ]+[h ]+[i ]+[t]+",
+  "[c]+[u ]+[n]+t",
+  "[f]+[u ]+[c ]+[k]+",
+  "[s]+[h ]+[i ]+[t]+",
   "b[a ]+[s ]+[t ]+ard",
-  "[b ]+[i ]+t[c ]+h",
-  "[n ]+[i ]+[g ]+g[e ]+[r]+",
-  "[r ]+[e ]+[t ]+[a ]+[r ]+[d]+"
+  "[b]+[i ]+t[c ]+h",
+  "[n]+[i ]+[g ]+g[e ]+[r]+",
+  "[r]+[e ]+[t ]+[a ]+[r ]+[d]+"
 }
 local function profanity_filter(text) --because we love f'ing swearing
   for i = 1, #profanity do

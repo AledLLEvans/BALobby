@@ -13,7 +13,7 @@ function Textbox:new(box)
   box.w = box.w or 0
   box.h = box.h or 0
   box.colors = {
-    background = colors.bb,
+    background = colors.bd,
     outline = false, --{112/255, 112/255, 112/255, 255/255},
     text = colors.text
   }
