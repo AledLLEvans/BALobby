@@ -33,7 +33,11 @@ local function checkOS()
     lobby.gameFolder = lobby.springFilePath .. "games/"
     lobby.mapFolder = lobby.springFilePath .. "maps/"
   elseif os == "OS X" then
-    lobby.springFilePath = lfs.getUserDirectory() .. 'Documents\\My Games\\Spring\\'
+    lobby.springFilePath = lfs.getUserDirectory() .. "/.spring/"
+    lobby.engineFolder = lobby.springFilePath .. "engine/"
+    lobby.exeFilePath = lobby.engineFolder .. engine .. "/spring.exe"
+    lobby.gameFolder = lobby.springFilePath .. "games/"
+    lobby.mapFolder = lobby.springFilePath .. "maps/"
   else
     error("Operating System not recognised")
   end
