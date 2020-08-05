@@ -54,6 +54,7 @@ local launchCode = [[
 ]]
 
 function Battle:joined(id)
+  
   if self:mapHandler() and self:modHandler() then
     lobby.setSynced(true)
   end
@@ -113,6 +114,8 @@ function Battle:joined(id)
   :setScrollSpeed(fonts.latoitalic:getHeight())
   
   Battle.showMap = "minimap"
+  
+  self:getChannel().infoBoxScrollBar:setOffset(0)
 end
 
 function Battle.exit()
@@ -357,7 +360,7 @@ function Battle:drawMap()
     local xmin = self.midpoint + 20
     local xmax = lobby.fixturePoint[2].x - 50
     local ymin = 20 + 2*fontHeight
-    local ymax = lobby.fixturePoint[2].y - 60 - 8*fonts.latoitalic:getHeight() - 10
+    local ymax = lobby.fixturePoint[2].y - 60 - (math.floor(lobby.height/100))*fonts.latoitalic:getHeight() - 10
     -- couldnt find a better way to do this
     local aw, ah = xmax - xmin, ymax - ymin
     if self.mapW > self.mapH then
@@ -443,7 +446,7 @@ function Battle:drawModOptions(h)
   lg.setFont(fonts.latoitalic)
   fontHeight = fonts.latoitalic:getHeight()
   self.modoptionsScrollBar:getZone():setPosition(x, ymin)
-  self.modoptionsScrollBar:setPosition(lobby.fixturePoint[2].x - 5, ymin + 10):setLength(ymax - ymin)
+  self.modoptionsScrollBar:setPosition(lobby.fixturePoint[2].x - 5, ymin):setLength(ymax - ymin + 10):setScrollBarLength((ymax - ymin + 10 )/ 10)
   lg.setColor(colors.bt)
   local c = 0
   local t = 0
@@ -472,7 +475,7 @@ function Battle:drawModOptions(h)
 end
 
 function Battle:drawPlayers()
-  local y = 50 + self.userListScrollOffset
+  local y = 20 --+ self.userListScrollOffset
   local fontHeight = fonts.latosmall:getHeight() + 2
   lg.setFont(fonts.latosmall)
   lg.translate(lobby.fixturePoint[1].x + 25, 40 )
@@ -531,7 +534,7 @@ function Battle:drawSpectators(y)
   self.spectatorsScrollBar:getZone():setPosition(lobby.fixturePoint[1].x + 25, y)
   self.spectatorsScrollBar:getZone():setDimensions(self.midpoint - lobby.fixturePoint[1].x + 25, lobby.fixturePoint[2].y - y)
   local ymin = math.max(8*fontHeight, y + fontHeight)
-  self.spectatorsScrollBar:setPosition(xmax - 20, ymin + 30)
+  self.spectatorsScrollBar:setPosition(xmax - 20, ymin)
   local ymax = lobby.fixturePoint[1].y
   y = ymin - self.spectatorsScrollBar:getOffset()
   lg.setColor(colors.text)
@@ -543,7 +546,7 @@ function Battle:drawSpectators(y)
   for username, user in pairs(self.users) do
     if user.isSpectator and user.battleStatus then
       t = t + 1
-      if y >= ymin and y <= ymax - 40 then
+      if y >= ymin + fontHeight and y <= ymax - 40 then
         c = c + 1
         if drawBackRect then
           lg.setColor(colors.bb)

@@ -14,7 +14,6 @@ function Channel:new(o, bool)
   
   o.font = fonts.latosmall
   o.scrollBar = ScrollBar:new():setScrollBarLength(-20):setScrollSpeed(o.font:getHeight())
-  lobby.scrollBars[o.scrollBar] = true
   o.lines = {}
   o.users = {} 
   o.sents = {}
@@ -247,9 +246,10 @@ function BattleChannel:render()
   lg.setColor(colors.yellow)
   lg.printf(battle.founder, self.x + w + 10, self.y + fontHeight + 10, ow - 5, "center")  
   local i = #self.infolines
-  local y = 20 - self.infoBoxScrollBar:getOffset()
+  local ymin = 40
+  local y = ymin - self.infoBoxScrollBar:getOffset()
   while i > 0 do
-    while y < 20 do
+    while y < ymin do
       y = y + fontHeight
       i = i - 1
     end

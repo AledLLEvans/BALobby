@@ -16,6 +16,8 @@ function ScrollBar:new()
   new.length = 0
   new.innerLength = 0
   
+  new.inverted = false
+  
   new.held = false
   
   new.offset = 0
@@ -69,6 +71,35 @@ function ScrollBar:setOffsetMax(o)
   return self
 end
 
+function ScrollBar:mousemoved(y)
+  local pos = self.y + (self.length)*(self.offset/self.offsetmax)
+  if self.inverted then
+    if y < pos then
+      self:scroll(-1)
+    elseif y > pos + self.innerLength/2 then
+      self:scroll(1)
+    end
+  else
+    if y > pos then
+      self:scroll(-1)
+    elseif y < pos + self.innerLength/2 then
+      self:scroll(1)
+    end
+  end
+end
+
+function ScrollBar:mousepressed(x,y)
+  self.held = false
+  if x < self.x - 3 or x > self.x + 3 then
+    return
+  end
+  if self.inverted and y < self.y and y > self.y + self.length then
+    self.held = true
+  elseif y > self.y and y < self.y + self.length then
+    self.held = true
+  end
+end
+
 function ScrollBar:setPosition(x, y)
   self.x = x or self.x
   self.y = y or self.y
@@ -77,6 +108,11 @@ end
 
 function ScrollBar:setLength(l)
   self.length = l
+  if l > 0 then
+    self.inverted = false
+  else
+    self.inverted = true
+  end
   return self
 end
 

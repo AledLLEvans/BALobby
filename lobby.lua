@@ -121,12 +121,9 @@ function lobby.mousepressed(x,y,b)
     end
   end
   for sb in pairs(lobby.scrollBars) do
-    if x > sb.x - 3 and x < sb.x + 3 and y > sb.y and y < sb.y + sb.length then
-      sb.held = true
-    else
-      sb.held = false
-    end
+    sb:mousepressed(x,y)
   end
+  lobby.renderOnUpdate = true
 end
 
 function lobby.pickCursor(x,y)
@@ -138,15 +135,6 @@ function lobby.pickCursor(x,y)
 end
 
 function lobby.mousemoved( x, y, dx, dy, istouch )
-  for sb in pairs(lobby.scrollBars) do
-    if sb.held then
-      if y > sb.innerLength/2 + sb.y + (sb.length)*(sb.offset/sb.offsetmax) then
-        sb:scroll(-1)
-      elseif y < - sb.innerLength/2 + sb.y + (sb.length)*(sb.offset/sb.offsetmax) then
-        sb:scroll(1)
-      end
-    end
-  end
   lobby.pickCursor(x, y)
   local Ymin = 90*3 + 70 + 40
   local Ymax = lobby.height - 100
@@ -172,6 +160,7 @@ end
 
 lobby.clickables = {}
 function lobby.mousereleased(x,y,b)
+  lobby.renderOnUpdate = false
   for sb in pairs(lobby.scrollBars) do
     sb.held = false
   end
@@ -278,6 +267,15 @@ function lobby.update( dt )
   --for Map downloading
   local battle = Battle:getActive()
   if battle then battle:update(dt) end
+  if lobby.renderOnUpdate then
+    local _, y = love.mouse.getPosition()
+    for sb in pairs(lobby.scrollBars) do
+      if sb.held then
+        sb:mousemoved(y)
+      end
+    end
+    lobby.render()
+  end
 end
 
 function lobby.receiveData(dt)

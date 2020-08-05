@@ -646,7 +646,9 @@ function SAIDBATTLE.respond(words, sentences)
 end
 function SAIDBATTLEEX.respond(words, sentences)
   local user = words[1]
+  print(sentences[1])
   local text = string.gsub(sentences[1], "%S+", "", 2) .. "\n"
+  print(text)
   local battle = Battle:getActiveBattle()
   local founder = battle.founder
   local mention = mentioned(text, battle:getChannel())
