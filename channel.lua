@@ -246,7 +246,7 @@ function BattleChannel:render()
   lg.setColor(colors.yellow)
   lg.printf(battle.founder, self.x + w + 10, self.y + fontHeight + 10, ow - 5, "center")  
   local i = #self.infolines
-  local ymin = 40
+  local ymin = 20
   local y = ymin - self.infoBoxScrollBar:getOffset()
   while i > 0 do
     while y < ymin do
@@ -260,8 +260,8 @@ function BattleChannel:render()
       lg.printf(wt[j], self.x + w + 10, self.y + self.h - y - 21, ow - 5, "left")
       y = y + fontHeight
       j = j - 1
-    until self.h < y + 21 + 20 or j == 0
-    if self.h < y + 21 + 20 then break end
+    until self.h < y + 21 + 20 + fontHeight or j == 0
+    if self.h < y + 21 + 20 + fontHeight then break end
     i = i - 1
   end
   

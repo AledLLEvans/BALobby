@@ -72,32 +72,22 @@ function ScrollBar:setOffsetMax(o)
 end
 
 function ScrollBar:mousemoved(y)
-  local pos = self.y + (self.length)*(self.offset/self.offsetmax)
-  if self.inverted then
-    if y < pos then
-      self:scroll(-1)
-    elseif y > pos + self.innerLength/2 then
-      self:scroll(1)
-    end
-  else
-    if y > pos then
-      self:scroll(-1)
-    elseif y < pos + self.innerLength/2 then
-      self:scroll(1)
-    end
-  end
+  self.offset = math.max(0, math.min(self.offsetmax, self.offsetmax * (y - self.y) / (self.length)))
 end
 
 function ScrollBar:mousepressed(x,y)
   self.held = false
   if x < self.x - 3 or x > self.x + 3 then
-    return
+    return false
   end
   if self.inverted and y < self.y and y > self.y + self.length then
     self.held = true
+    return true
   elseif y > self.y and y < self.y + self.length then
     self.held = true
+    return true
   end
+  return false
 end
 
 function ScrollBar:setPosition(x, y)
@@ -135,9 +125,13 @@ end
 
 function ScrollBar:scroll(y)
   if y < 0 then
-    self:scrollUp()
+    for i = -1, y, -1 do
+      self:scrollUp()
+    end
   elseif y > 0 then
-    self:scrollDown()
+    for i = 1, y do 
+      self:scrollDown()
+    end
   end
   return self
 end
@@ -535,6 +529,7 @@ function UserButton:new(username)
       self.dropdown:addButton(Button:new():setText("Ignore"):onClick(function() User.s[username].ignoring = true end), 2)
     end
     self.dropdown.parent = self
+    lobby.dropDown = self.dropdown
     --UserButton.s[self] = true
     lobby.render()
   end
@@ -543,16 +538,14 @@ end
 
 function UserButton:click(x, y, b)
   if b == 2 and x > self.x + 60 and x < self.x + self.w + 60 and y > self.y + 10 and y < self.y + 10 + self.h then
-    sound[self.clickSound]:stop()
-    sound[self.clickSound]:play()
     self.func()
-  elseif self.dropdown then
-    self.dropdown:click(x, y)
+    return true
   end
+  return false
 end
 
 function UserButton:draw()
-  lg.setFont(fonts.latoitalic)
+  lg.setFont(fonts.latosmall)
   lg.setColor(1,1,1)
   --lg.rectangle("line", self.x + 60, self.y + 10, self.w, self.h)
   lg.draw(self.flag, self.x + 6, 12 + self.y)
@@ -560,9 +553,6 @@ function UserButton:draw()
   lg.setColor(colors.text)
   if self.icon then lg.draw(img[self.icon], self.x + 40, 10 + self.y, 0, 1/4) end
   lg.printf(self.username, self.x + 60, 10 + self.y, lobby.width - lobby.fixturePoint[2].x - 20)
-  if self.dropdown then
-    self.dropdown:draw()
-  end
 end
 
 Dropdown = Window:new()
@@ -593,7 +583,7 @@ function Dropdown:click(x, y)
 end
 
 function Dropdown:draw()
-  lg.setColor(colors.bt, 0.8)
+  lg.setColor(colors.bt)
   lg.rectangle("fill", self.x, self.y, self.w, self.h)
   for button in pairs(self.buttons) do
     button:draw()

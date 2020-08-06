@@ -67,7 +67,7 @@ function Battle:joined(id)
     ["spectate"] = BattleButton:new()
     :resetPosition(function() return lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50 end)
     :setDimensions(90, 40)
-    :setText("Spectate")
+    :setText("Unspectate")
     :onClick(function() lobby.setSpectator(not User.s[lobby.username].spectator) end),
     ["ready"] = BattleButton:new()
     :resetPosition(function() return lobby.fixturePoint[2].x - 290, lobby.fixturePoint[2].y - 50 end)
@@ -111,7 +111,7 @@ function Battle:joined(id)
   :setLength(40)
   :setScrollBarLength(10)
   :setOffset(0)
-  :setScrollSpeed(fonts.latoitalic:getHeight())
+  :setScrollSpeed(fonts.latosmall:getHeight())
   
   Battle.showMap = "minimap"
   
@@ -443,8 +443,8 @@ function Battle:drawModOptions(h)
   local ymin = 20 + 3*fontHeight + (h or 1024/8)
   local ymax = lobby.fixturePoint[2].y - fontHeight - 60
   local y = ymin - self.modoptionsScrollBar:getOffset()
-  lg.setFont(fonts.latoitalic)
-  fontHeight = fonts.latoitalic:getHeight()
+  lg.setFont(fonts.latosmall)
+  fontHeight = fonts.latosmall:getHeight()
   self.modoptionsScrollBar:getZone():setPosition(x, ymin)
   self.modoptionsScrollBar:setPosition(lobby.fixturePoint[2].x - 5, ymin):setLength(ymax - ymin + 10):setScrollBarLength((ymax - ymin + 10 )/ 10)
   lg.setColor(colors.bt)
@@ -452,7 +452,7 @@ function Battle:drawModOptions(h)
   local t = 0
   for k, v in pairs(self.game.modoptions) do
     if y < ymax and y >= ymin then
-      local _, wt = fonts.latoitalic:getWrap(k, lobby.fixturePoint[2].x - x - fonts.latoitalic:getWidth(v .. "  "))
+      local _, wt = fonts.latoitalic:getWrap(k, lobby.fixturePoint[2].x - x - fonts.latosmall:getWidth(v .. "  "))
       if #wt > 1 then
         for _, l in ipairs(wt) do
           lg.print(l, x, y)

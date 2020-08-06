@@ -21,6 +21,7 @@ function lobby.enter()
   :onClick(function()
     lobby.optionsExpanded = not lobby.optionsExpanded
     lobby.clickables[lobby.optionsPanel] = not lobby.clickables[lobby.optionsPanel]
+    lobby.render()
   end)
   
   lobby.optionsPanel = Dropdown:new()
@@ -29,6 +30,22 @@ function lobby.enter()
   
   lobby.optionsExpanded = false
   lobby.clickables[lobby.optionsPanel] = false
+  
+  function lobby.optionsPanel:click(x,y)
+    for button in pairs(self.buttons) do
+      button:click(x, y)
+    end
+    lobby.optionsExpanded = false
+    lobby.clickables[lobby.optionsPanel] = false
+  end
+  
+  function lobby.optionsButton:draw()
+    if lobby.darkMode then
+      lg.draw(img["MenuButtonDark"], self.x, self.y)
+    else
+      lg.draw(img["MenuButtonLight"], self.x, self.y)
+    end
+  end
   
   lobby.optionsPanel:addButton(Button:new():setText("Switch Mode")
     :setFunction(function()
@@ -46,6 +63,10 @@ function lobby.enter()
                 k.colors.text = colors.text
               end
             end
+            for k in pairs(lobby.optionsPanel.buttons) do
+              k.colors.background = colors.bb
+              k.colors.text = colors.text
+            end
           else
             setDarkMode()
             lobby.darkMode = true
@@ -60,30 +81,26 @@ function lobby.enter()
                 k.colors.text = colors.text
               end
             end
+            for k in pairs(lobby.optionsPanel.buttons) do
+              k.colors.background = colors.bb
+              k.colors.text = colors.text
+            end
           end
           lobby.render()
         end))
     
-    lobby.optionsPanel:addButton(Button:new():setText("Open Spring Directory")
+    lobby.optionsPanel:addButton(Button:new():setText("Open Spring Dir")
     :setFunction(function()
           love.system.openURL(lobby.springFilePath)
         end))
     
     lobby.optionsPanel:addButton(Button:new():setText("Options")
     :setFunction(function()
-            
+          love.window.showMessageBox("FYI", "Coming Soon", "info")
           lobby.render()
         end))
   
   lobby.clickables[lobby.optionsButton] = true
-    
-  function lobby.optionsButton:draw()
-    if lobby.darkMode then
-      lg.draw(img["MenuButtonDark"], self.x, self.y)
-    else
-      lg.draw(img["MenuButtonLight"], self.x, self.y)
-    end
-  end
   
   lobby.battleTabScrollBar = ScrollBar:new()
   :setScrollSpeed(25)
@@ -120,10 +137,11 @@ function lobby.mousepressed(x,y,b)
       lobby.clickedBattleID = i
     end
   end
+  local bool
   for sb in pairs(lobby.scrollBars) do
-    sb:mousepressed(x,y)
+    bool = sb:mousepressed(x,y) or bool
   end
-  lobby.renderOnUpdate = true
+  if bool then lobby.renderOnUpdate = true end
 end
 
 function lobby.pickCursor(x,y)
@@ -150,20 +168,23 @@ function lobby.mousemoved( x, y, dx, dy, istouch )
       end
     end
   end
+  for _, k in pairs(BattleTab.s) do
+    --playerlist on hover
+  end
   lobby.refreshUserButtons()
   lobby.refreshBattleTabs()
   if Channel:getActive() then
     Channel:getActive():render()
   end
+  
   lobby.render()
 end
 
 lobby.clickables = {}
 function lobby.mousereleased(x,y,b)
+  if lobby.dropDown then lobby.dropDown:click(x,y) end
+  lobby.dropDown = nil
   lobby.renderOnUpdate = false
-  for sb in pairs(lobby.scrollBars) do
-    sb.held = false
-  end
   if lobby.dragY then
     lobby.dragY = false
     if Battle:getActiveBattle() then
@@ -176,12 +197,15 @@ function lobby.mousereleased(x,y,b)
     lobby.refreshBattleTabs()
     return
   end
+  for sb in pairs(lobby.scrollBars) do
+    sb.held = false
+  end
   if not lobby.loginInfoEnd then return end
   if b == 1 then
-    for v in pairs(lobby.clickables) do
-      if v:click(x,y) then break end
+    for v, b in pairs(lobby.clickables) do
+      if b then if v:click(x, y) then break end end
     end
-    if y < lobby.fixturePoint[1].y or lobby.state == "battleWithList" then
+    if y < lobby.fixturePoint[1].y then
       for i, k in pairs(BattleTab.s) do
         if lobby.clickedBattleID == i then
           k:click(x, y)
@@ -193,8 +217,6 @@ function lobby.mousereleased(x,y,b)
     for h in pairs(Hyperlink.s) do
       h:click(x,y)
     end
-  elseif b == 2 then
-
   end
   for button in pairs(UserButton.s) do
     button:click(x, y, b)
@@ -396,6 +418,7 @@ function lobby.refreshUserButtons()
   end
   UserButton.s = {}
   local c = 0
+  local w = lobby.width - x
   for username, user in pairs(list) do
     if not user.isBot then
       m = m + fontHeight
@@ -652,15 +675,12 @@ function lobby.render()
     button:draw()
   end
   
-  --[[if lobby.cursorDropdown then
-    lobby.cursorDropdown:draw()
-  end]]
-  
   if login.dl_status or login.unpackerCount > 0 then
     if not settings.engine_downloaded or not settings.engine_unpacked then
       login.drawDownloadBars()
     end
   end
+  if lobby.dropDown then lobby.dropDown:draw() end
   lg.setColor(1,1,1)
   lg.setCanvas()
 end

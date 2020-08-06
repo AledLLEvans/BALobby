@@ -30,4 +30,4 @@ function setDarkMode()
   lg.setBackgroundColor(colors.bg)
 end
 
-setLightMode()
+setDarkMode()

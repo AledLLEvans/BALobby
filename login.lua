@@ -122,7 +122,6 @@ function login.enter()
     if settings.engine_downloaded then
       if settings.engine_unpacked then
         love.window.showMessageBox("Cant find engine.", "Check engine installation or delete settings.lua in appdata, you may have trouble launching the game", "error" )
-        return
       end
       login.startEngineUnpack()
     else
