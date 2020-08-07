@@ -4,10 +4,10 @@ function love.conf(t)
   t.window.icon = "data/images/balogo.png"
 
   t.window.width = 800
-  t.window.height = 450
+  t.window.height = 600
 
   t.window.minwidth = 800
-  t.window.minheight = 450
+  t.window.minheight = 600
 
   t.window.resizable = true
   

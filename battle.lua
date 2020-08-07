@@ -8,85 +8,47 @@ Battle.s = {}
 
 Battle.count = 0
 
----- Courtesy of https://springrts.com/phpbb/viewtopic.php?t&t=32643 ----
-local function writeScript()
-  local battle = Battle:getActiveBattle()
-  script = {
-    --player0 = {name = lobby.username},
-    --gametype = battle.gameName,
-    HostIP = battle.ip,
-    HostPort = battle.hostport or battle.port,
-    --MapName = battle.mapName,
-    MyPlayerName = lobby.username,
-    IsHost=0,
-    --SourcePort=0,
-    MyPasswd=battle.myScriptPassword
-  }
-  
-  local txt = io.open('script.txt', 'w+')
-
-	txt:write('[GAME]\n{\n\n')
-	-- First write Tables
-	for key, value in pairs(script) do
-		if type(value) == 'table' then
-			txt:write('\t['..key..']\n\t{\n')
-			for key, value in pairs(value) do
-				txt:write('\t\t'..key..' = '..value..';\n')
-			end
-			txt:write('\t}\n\n')
-		end
-	end
-	-- Then the rest (purely for aesthetics)
-	for key, value in pairs(script) do
-		if type(value) ~= 'table' then
-			txt:write('\t'..key..' = '..value..';\n')
-		end
-	end
-	txt:write('}')
-
-	txt:close()
-end
-
-local launchCode = [[
-  local exec = ...
-  os.execute(exec)
-  love.window.restore( )
-]]
-
 function Battle:joined(id)
-  
   if self:mapHandler() and self:modHandler() then
     lobby.setSynced(true)
   end
   self.buttons = {
+    ["autolaunch"] = Checkbox:new()
+    :resetPosition(function() return lobby.fixturePoint[2].x - 160, lobby.fixturePoint[2].y - 40 end)
+    :setDimensions(20,20)
+    :setText("Auto-launch")
+    :setToggleVariable(function() return lobby.launchOnGameStart end)
+    :onClick(function() lobby.launchOnGameStart = not lobby.launchOnGameStart end),
     ["exit"] = BattleButton:new()
-    :resetPosition(function() return lobby.fixturePoint[2].x - 380, lobby.fixturePoint[2].y - 50 end)
-    :setDimensions(90, 40)
+    :resetPosition(function() return lobby.fixturePoint[2].x - 370, lobby.fixturePoint[2].y - 50 end)
+    :setDimensions(40, 40)
     :setText("Exit")
     :onClick(function() Battle.exit() end),
-    ["spectate"] = BattleButton:new()
-    :resetPosition(function() return lobby.fixturePoint[2].x - 200, lobby.fixturePoint[2].y - 50 end)
-    :setDimensions(90, 40)
-    :setText("Unspectate")
-    :onClick(function() lobby.setSpectator(not User.s[lobby.username].spectator) end),
-    ["ready"] = BattleButton:new()
-    :resetPosition(function() return lobby.fixturePoint[2].x - 290, lobby.fixturePoint[2].y - 50 end)
-    :setDimensions(90, 40)
+    ["ready"] = Checkbox:new()
+    :resetPosition(function() return lobby.fixturePoint[2].x - 230 , lobby.fixturePoint[2].y - 40 end)
+    :setDimensions(20, 20)
     :setText("Ready")
+    :setToggleVariable(function() return User.s[lobby.username].ready end)
     :onClick(function() if not User.s[lobby.username].spectator then lobby.setReady(not User.s[lobby.username].ready) end end),
-    ["start"] = BattleButton:new()
-    :resetPosition(function() return lobby.fixturePoint[2].x - 110, lobby.fixturePoint[2].y - 50 end)
-    :setDimensions(90, 40)
-    :setText("Start")
+    ["spectate"] = Checkbox:new()
+    :resetPosition(function() return lobby.fixturePoint[2].x - 315, lobby.fixturePoint[2].y - 40 end)
+    :setDimensions(20, 20)
+    :setText("Spectate")
+    :setToggleVariable(function() return User.s[lobby.username].spectator end)
+    :onClick(function() lobby.setSpectator(not User.s[lobby.username].spectator) end),
+    ["launch"] = BattleButton:new()
+    :resetPosition(function() return lobby.fixturePoint[2].x - 55, lobby.fixturePoint[2].y - 50 end)
+    :setDimensions(60, 40)
+    :setText("Launch")
     :onClick(function()
-                writeScript()
-                local exec = "\"" .. lobby.exeFilePath .. "\"" .. " script.txt"
-                if not lobby.springThread then
-                  lobby.springThread = love.thread.newThread( launchCode )
-                end
-                love.window.minimize( )
-                lobby.springThread:start( exec ) end)
+      if Battle:getActive().founder.ingame then
+        lobby.launchSpring()
+      else
+        love.window.showMessageBox("For your information", "Game has not yet started.", "info")
+      end
+    end)
   }
+  
   Channel.active = Channel.s["Battle_" .. id]
   self.display = true
   
@@ -310,10 +272,10 @@ local rectColors = {
 function Battle:draw()
   self.midpoint = math.max(lobby.fixturePoint[1].x + 280, lobby.width * 0.45)
   --Buttons
-  self.buttons.exit:draw()
-  self.buttons.spectate:draw()
-  self.buttons.ready:draw()
-  self.buttons.start:draw()
+  
+  for _, button in pairs(self.buttons) do
+    button:draw()
+  end
   
   --Room Name, Title
   lg.setFont(fonts.roboto)

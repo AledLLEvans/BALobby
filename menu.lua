@@ -72,6 +72,8 @@ function ScrollBar:setOffsetMax(o)
 end
 
 function ScrollBar:mousemoved(y)
+  print("offset", self.offset)
+  print("length", self.length)
   self.offset = math.max(0, math.min(self.offsetmax, self.offsetmax * (y - self.y) / (self.length)))
 end
 
@@ -197,7 +199,7 @@ function Window:getDimensions()
   return self.w, self.h
 end
 
-function Window:isIn(x, y)
+function Window:isOver(x, y)
   if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
     return true
   end
@@ -300,7 +302,14 @@ function Checkbox:new()
   
   self.func = function() self.ticked = not self.ticked end
   
+  lobby.clickables[o] = true
+  
   return o
+end
+
+function Checkbox:setToggleVariable(f)
+  self.checkfunc = f
+  return self
 end
 
 function Checkbox:setText(str)
@@ -313,7 +322,7 @@ function Checkbox:draw()
   lg.rectangle("fill", self.x, self.y, self.w, self.h)
   lg.setColor(self.color.outline)
   lg.rectangle("line", self.x, self.y, self.w, self.h)
-  if self.ticked then
+  if self.checkfunc() then
     lg.setColor(self.color.inside)
     lg.rectangle("fill", self.x + 4, self.y + 4, self.w - 8, self.h - 8)
   end
@@ -386,21 +395,21 @@ function ChannelTab:draw()
     lg.setColor(colors.bb)
     lg.rectangle("fill", self.x, self.y-1, self.w, self.h + h+1)
     lg.setColor(colors.text)
-    lg.setFont(fonts.latobold)
-    lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latobold:getHeight()/2, self.w, "center")
+    lg.setFont(fonts.latochantabbold)
+    lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latochantabbold:getHeight()/2, self.w, "center")
   elseif Channel.s[channel].newMessage then
     --h = 3
     lg.setColor(colors.bg)
-    lg.setFont(fonts.latobold)
+    lg.setFont(fonts.latochantabbold)
     lg.rectangle("fill", self.x, self.y, self.w, self.h + h)
     lg.setColor(colors.bt)
-    lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latobold:getHeight()/2, self.w, "center")
+    lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latochantabbold:getHeight()/2, self.w, "center")
   else
-    lg.setFont(fonts.latoitalic)
+    lg.setFont(fonts.latochantab)
     lg.setColor(colors.bg)
     lg.rectangle("fill", self.x, self.y, self.w, self.h + h)
     lg.setColor(colors.bt)
-    lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latoitalic:getHeight()/2, self.w, "center")
+    lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latochantab:getHeight()/2, self.w, "center")
   end
   lg.setFont(fonts.robotosmall)
   lg.setColor(1,1,1)
@@ -413,6 +422,13 @@ function BattleTab:new(id)
   local new = Button:new()
   setmetatable(new, BattleTab.mt)
   
+  new.colors = {
+    background = {
+      default = colors.bb,
+      highlight = colors.bd
+    }   
+  }
+  new.highlighted = false
   new.visible = true
   new.battleid = id
   new.func = function()
@@ -428,15 +444,30 @@ function BattleTab:new(id)
   return new
 end
 
+function BattleTab:isOver(x,y)
+  if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
+    lobby.battleTabHover = self
+    lobby.battleTabHoverTimer = 0.9
+    self.highlighted = true
+    return true
+  end
+  self.highlighted = false
+  return false
+end
+
 function BattleTab:draw()
   local battle = Battle.s[self.battleid]
   local y = self.y
   local x = self.x
   local w = self.w
   local h = self.h
-  lg.setFont(fonts.latosmall)
+  lg.setFont(fonts.latosmall) 
   local fontHeight = fonts.latosmall:getHeight()
-  lg.setColor(colors.bb)
+  if self.highlighted then
+    lg.setColor(self.colors.background.highlight)
+  else
+    lg.setColor(self.colors.background.default) 
+  end
   lg.rectangle("fill", x, y, w, h)
   -- BATTLE TITLE
   lg.setColor(colors.text)
@@ -488,8 +519,42 @@ function BattleTab:draw()
     lg.draw(img["nomap"], x + 25, y + 25)
   end
   lg.setColor(colors.text)
-  if User.s[battle.founder].ingame then
+  if battle.founder.ingame then
     lg.draw(img["gamepad"], x + w - 18, y + 1, 0, 1/4)
+  end
+end
+
+BattleTabHoverWindow = Window:new()
+BattleTabHoverWindow.mt = {__index = BattleTabHoverWindow}
+function BattleTabHoverWindow:new(battleid)
+  local new = {}
+  new.battle = Battle.s[battleid]
+  setmetatable(new, BattleTabHoverWindow.mt)
+  
+  return new
+end
+
+function BattleTabHoverWindow:draw()
+  local battle = self.battle
+  if battle.userCount == 0 then
+    return
+  end
+  local msx, msy = love.mouse.getPosition()
+  lg.setFont(fonts.latosmall)
+  local fontHeight = fonts.latosmall:getHeight()
+  local y = msy + 10
+  lg.setColor(colors.bb, 0.5)
+  lg.rectangle("fill", msx, y+8, 140, fontHeight*battle.userCount + 2)
+  lg.setColor(colors.text)
+  lg.rectangle("line", msx, y+8, 140, fontHeight*battle.userCount + 2)
+  for _, user in pairs(battle.users) do
+    lg.setColor(1,1,1)
+    lg.draw(user.flag, msx + 2, y + 10)
+    lg.draw(user.insignia, msx + 21, y + 8, 0, 1/5, 1/4)
+    if user.icon then lg.draw(img[user.icon], msx + 42, y + 8, 0, 1/4) end
+    lg.setColor(colors.text)
+    lg.print(user.name, msx + 56, y + 8)
+    y = y + fontHeight
   end
 end
 
@@ -505,7 +570,7 @@ function BattleButton:new()
   return new
 end
 
-function BattleButton:resetPosition(f)
+function Button:resetPosition(f)
   if f then
     self.resetFunc = f
   end

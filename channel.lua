@@ -122,11 +122,11 @@ function Channel:refreshTabs()
       if string.find(chanName, "Battle") then
         showChanName = "Battle"
       end
-      local textWidth = fonts.latosmall:getWidth("#" .. chanName)
+      local textWidth = fonts.latochantab:getWidth("#" .. chanName)
       self.tabs[chanName] = ChannelTab:new(self.x + totalWidth + 4,
         self.y + 3,
-        3 + textWidth + 4,
-        20,
+        3 + textWidth + 16,
+        35,
         showChanName,
         function()
           if Channel:getActive() then
@@ -140,7 +140,7 @@ function Channel:refreshTabs()
         end)
       lobby.clickables[self.tabs[chanName]] = true
       i = i + 1
-      totalWidth = totalWidth + textWidth + 6
+      totalWidth = totalWidth + textWidth + 16
     end
   end
   lobby.render()
@@ -159,13 +159,21 @@ local drawFunc = {
   ["green"] = function(u, t) lg.setColor(0,1,0) return "*" .. t .. "*" end
 }
 
+local function sbOffsetMax(n, h, fh)
+  return math.max(0, n - math.floor((h - 20 - 21)/fh) - 6) * fh
+end
+
+local function sbPosX() return Channel.x + Channel.w end
+local function sbPosY() return Channel.y + Channel.h - 25 end 
+local function sbLength() return - Channel.h + 65 end
+
 function Channel:render()
   lg.setFont(self.font)
   local fontHeight = self.font:getHeight()
   self.scrollBar
-  :setPosition(Channel.x + Channel.w, Channel.y + Channel.h - 25)
-  :setLength(-Channel.h + 50)
-  :setOffsetMax(math.max(0, #self.lines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight):draw()
+  :setPosition(sbPosX(), sbPosY())
+  :setLength(sbLength())
+  :setOffsetMax(sbOffsetMax(#self.lines, self.h, fontHeight)):draw()
 
   lg.setColor(colors.text)
   local i = #self.lines 
@@ -189,8 +197,8 @@ function Channel:render()
       lg.printf(wt[j], self.x + 10, self.y + self.h - y - 21, self.w - 5, align)
       y = y + fontHeight
       j = j - 1
-    until self.h < y + 21 + 20 or j == 0
-    if self.h < y + 21 + 20 then break end
+    until self.h < y + 21 + 30 or j == 0
+    if self.h < y + 21 + 30 then break end
     i = i - 1
     lg.setColor(colors.text)
   end
@@ -201,9 +209,9 @@ function ServerChannel:render()
   lg.setFont(self.font)
   local fontHeight = self.font:getHeight()
   self.scrollBar
-  :setPosition(Channel.x + Channel.w, Channel.y + Channel.h - 25)
-  :setLength(-Channel.h + 50)
-  :setOffsetMax(math.max(0, #self.lines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight):draw()
+  :setPosition(sbPosX(), sbPosY())
+  :setLength(sbLength())
+  :setOffsetMax(sbOffsetMax(#self.lines, self.h, fontHeight)):draw()
 
   lg.setColor(colors.text)
   local i = #self.lines 
@@ -236,11 +244,13 @@ function BattleChannel:render()
   local tw = self.w
   local w = 2*tw/3
   local ow = tw/3
+  
+  -- "Info" Box
   lg.setColor(colors.text)
   self.infoBoxScrollBar
-  :setPosition(Channel.x + Channel.w, Channel.y + Channel.h - 25)
-  :setLength(-Channel.h + 50)
-  :setOffsetMax(math.max(0, #self.infolines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight):draw()
+  :setPosition(sbPosX(), sbPosY())
+  :setLength(sbLength())
+  :setOffsetMax(sbOffsetMax(#self.lines, self.h, fontHeight)):draw()
   lg.setColor(colors.bt)
   --lg.line(self.x + w, self.y, self.x + w, self.y + self.h - 21)
   lg.setColor(colors.yellow)
@@ -260,17 +270,19 @@ function BattleChannel:render()
       lg.printf(wt[j], self.x + w + 10, self.y + self.h - y - 21, ow - 5, "left")
       y = y + fontHeight
       j = j - 1
-    until self.h < y + 21 + 20 + fontHeight or j == 0
-    if self.h < y + 21 + 20 + fontHeight then break end
+    until self.h < y + 21 + 30 + fontHeight or j == 0
+    if self.h < y + 21 + 30 + fontHeight then break end
     i = i - 1
   end
+  --
   
+  -- Player Chat
   lg.setColor(colors.text)
   self.scrollBar
-  :setPosition(Channel.x + w - 5, Channel.y + Channel.h - 25)
-  :setLength(-Channel.h + 50)
-  :setOffsetMax(math.max(0, #self.lines - math.floor((self.h - 20 - 21)/fontHeight) - 1) * fontHeight):draw()
-  
+  :setPosition(sbPosX(), sbPosY())
+  :setLength(sbLength())
+  :setOffsetMax(sbOffsetMax(#self.lines, self.h, fontHeight)):draw()
+
   lg.setColor(colors.text)
   i = #self.lines
   y = 20 - self.scrollBar:getOffset() 
@@ -287,12 +299,15 @@ function BattleChannel:render()
                     or "user")
                     or line.green and "green"
                     or "system"
-    local text = "[" .. line.time .. "] " .. drawFunc[drawType](line.user, line.msg)
+    local text = drawFunc[drawType](line.user, line.msg)
+    local ttext = "[" .. line.time .. "] "
+    local ttextw = self.font:getWidth(ttext)
     local align = line.user and "left" or "center"
     local _, wt = self.font:getWrap(text, w - 10)
     local j = #wt
     repeat
-      lg.printf(wt[j], self.x + 10, self.y + self.h - y - 21, w - 10, align)
+      lg.printf(ttext, self.x + 10, self.y + self.h - y - 21, w - 10, "left")
+      lg.printf(wt[j], self.x + 10 + ttextw, self.y + self.h - y - 21, w - 10 - ttextw, align)
       y = y + fontHeight
       j = j - 1
     until self.h < y + 21 + 20 or j == 0
@@ -300,6 +315,8 @@ function BattleChannel:render()
     i = i - 1
     lg.setColor(colors.text)
   end
+  --
+  
   lg.setColor(1,1,1)
 end
 

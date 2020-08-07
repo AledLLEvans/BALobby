@@ -11,6 +11,7 @@ function lobby.enter()
   state = STATE_LOBBY
   Channel.textbox = Textbox:new()
   lg.setBackgroundColor(colors.bg)
+  lobby.launchOnGameStart = true
   lobby.fixturePoint = {
     {x = 0, y = 2*lobby.height/3},
     {x = 660, y = 2*lobby.height/3}
@@ -86,7 +87,7 @@ function lobby.enter()
               k.colors.text = colors.text
             end
           end
-          lobby.render()
+          lobby.refreshBattleTabs()
         end))
     
     lobby.optionsPanel:addButton(Button:new():setText("Open Spring Dir")
@@ -152,6 +153,7 @@ function lobby.pickCursor(x,y)
   end
 end
 
+lobby.battleTabHoverTimer = 0
 function lobby.mousemoved( x, y, dx, dy, istouch )
   lobby.pickCursor(x, y)
   local Ymin = 90*3 + 70 + 40
@@ -168,15 +170,19 @@ function lobby.mousemoved( x, y, dx, dy, istouch )
       end
     end
   end
+  lobby.refreshBattleTabs()
+  local bool = false
   for _, k in pairs(BattleTab.s) do
-    --playerlist on hover
+    bool = k:isOver(x, y) or bool or false
+  end
+  if not bool then
+    lobby.battleTabHover = nil
+    lobby.battleTabHoverWindow = nil
   end
   lobby.refreshUserButtons()
-  lobby.refreshBattleTabs()
   if Channel:getActive() then
     Channel:getActive():render()
   end
-  
   lobby.render()
 end
 
@@ -187,11 +193,11 @@ function lobby.mousereleased(x,y,b)
   lobby.renderOnUpdate = false
   if lobby.dragY then
     lobby.dragY = false
-    if Battle:getActiveBattle() then
-      Battle:getActiveBattle().buttons.spectate:resetPosition()
-      Battle:getActiveBattle().buttons.ready:resetPosition()
-      Battle:getActiveBattle().buttons.exit:resetPosition()
-      Battle:getActiveBattle().buttons.start:resetPosition()
+    local battle = Battle:getActive()
+    if battle then
+      for _, button in pairs(battle.buttons) do
+        button:resetPosition()
+      end
     end
     Channel.refresh()
     lobby.refreshBattleTabs()
@@ -229,7 +235,7 @@ lobby.scrollBars = {}
 function lobby.wheelmoved(x, y)
   local msx, msy = love.mouse.getPosition()
   for sb in pairs(lobby.scrollBars) do
-    if sb:getZone():isIn(msx, msy) then
+    if sb:getZone():isOver(msx, msy) then
       sb:scroll(y)
       sb:doRender(y)
     end
@@ -247,7 +253,64 @@ function lobby.wheelmoved(x, y)
   end
   lobby.render()
 end
+
+
+---- Courtesy of https://springrts.com/phpbb/viewtopic.php?t&t=32643 ----
+local function writeScript()
+  local battle = Battle:getActiveBattle()
+  script = {
+    --player0 = {name = lobby.username},
+    --gametype = battle.gameName,
+    HostIP = battle.ip,
+    HostPort = battle.hostport or battle.port,
+    --MapName = battle.mapName,
+    MyPlayerName = lobby.username,
+    IsHost=0,
+    --SourcePort=0,
+    MyPasswd=battle.myScriptPassword
+  }
   
+  local txt = io.open('script.txt', 'w+')
+
+	txt:write('[GAME]\n{\n\n')
+	-- First write Tables
+	for key, value in pairs(script) do
+		if type(value) == 'table' then
+			txt:write('\t['..key..']\n\t{\n')
+			for key, value in pairs(value) do
+				txt:write('\t\t'..key..' = '..value..';\n')
+			end
+			txt:write('\t}\n\n')
+		end
+	end
+	-- Then the rest (purely for aesthetics)
+	for key, value in pairs(script) do
+		if type(value) ~= 'table' then
+			txt:write('\t'..key..' = '..value..';\n')
+		end
+	end
+	txt:write('}')
+
+	txt:close()
+end
+
+local launchCode = [[
+  local exec = ...
+  io.popen(exec)
+  love.window.restore( )
+]]
+
+function lobby.launchSpring()
+  lobby.setReady(false)
+  writeScript()
+  local exec = "start /b \"" .. lobby.exeFilePath .. " script.txt\""
+  if not lobby.springThread then
+    lobby.springThread = love.thread.newThread( launchCode )
+  end
+  love.window.minimize( )
+  lobby.springThread:start( exec )
+end
+
 lobby.reeltimer = 0
 lobby.timer = 0
 local responses = require("response")
@@ -279,6 +342,27 @@ function lobby.update( dt )
   if lobby.loginInfoEnd and not love.window.hasFocus() then
     love.timer.sleep(0.2)
   end
+  
+  --battle tab hovering
+  lobby.battleTabHoverTimer = lobby.battleTabHoverTimer - dt
+  if lobby.battleTabHoverTimer < 0 then
+    if lobby.battleTabHover and not lobby.battleTabHoverWindow then
+      lobby.battleTabHoverWindow = BattleTabHoverWindow:new(lobby.battleTabHover.battleid)
+      lobby.render()
+    end
+  end
+  
+  --scrollbars
+  if lobby.renderOnUpdate then
+    local _, y = love.mouse.getPosition()
+    for sb in pairs(lobby.scrollBars) do
+      if sb.held then
+        sb:mousemoved(y)
+      end
+    end
+    lobby.render()
+  end
+  
   Channel:getTextbox():update(dt)
   lobby.timer = lobby.timer + dt
   lobby.reeltimer = lobby.reeltimer + dt
@@ -289,15 +373,7 @@ function lobby.update( dt )
   --for Map downloading
   local battle = Battle:getActive()
   if battle then battle:update(dt) end
-  if lobby.renderOnUpdate then
-    local _, y = love.mouse.getPosition()
-    for sb in pairs(lobby.scrollBars) do
-      if sb.held then
-        sb:mousemoved(y)
-      end
-    end
-    lobby.render()
-  end
+
 end
 
 function lobby.receiveData(dt)
@@ -543,7 +619,7 @@ lobby.state = "landing"
 
 lobby.renderFunction = {
   ["landing"] = function()
-    for i, k in pairs(BattleTab.s) do
+    for _, k in pairs(BattleTab.s) do
       k:draw()
     end
     --
@@ -563,7 +639,7 @@ lobby.renderFunction = {
                 0,
                 lobby.fixturePoint[1].y,
                 lobby.fixturePoint[2].x,
-                23)
+                38)
     lg.setColor(colors.bt)
     --lg.line(0, 90, lobby.fixturePoint[2].x, 90)
     --lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.height)
@@ -592,44 +668,12 @@ lobby.renderFunction = {
                 0,
                 lobby.fixturePoint[1].y,
                 lobby.width,
-                23)
+                38)
     lg.setColor(colors.bt)
     --lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.fixturePoint[2].y)
     --lg.line(0, lobby.fixturePoint[1].y, lobby.width, lobby.fixturePoint[1].y)
     lg.setColor(1,1,1)
     Battle:getActive():draw()
-  end,
-  
-    ["battleWithList"] = function() 
-    for i, k in pairs(BattleTab.s) do
-      k:draw()
-    end
-    lg.setColor(colors.bb)
-    lg.rectangle("fill",
-                lobby.fixturePoint[1].x,
-                lobby.fixturePoint[1].y,
-                lobby.width - lobby.fixturePoint[1].x,
-                lobby.height - lobby.fixturePoint[1].y)
-    lg.rectangle("fill",
-                0,
-                0,
-                lobby.fixturePoint[1].x,
-                90)
-    lg.setColor(colors.bg)
-    lg.rectangle("fill",
-                lobby.fixturePoint[1].x,
-                lobby.fixturePoint[1].y,
-                lobby.width - lobby.fixturePoint[1].x,
-                23)
-    lg.setColor(colors.bt)
-    --lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.fixturePoint[2].y)
-    --lg.line(lobby.fixturePoint[1].x, lobby.fixturePoint[1].y, lobby.width, lobby.fixturePoint[1].y)
-    lg.setColor(colors.bt)
-    lg.setFont(fonts.notable)
-    lg.print("BATTLES", 10, 50)
-    lg.setFont(fonts.latoitalic)
-    lg.setColor(1,1,1)
-    Battle:getActiveBattle():draw()
   end,
   
   ["options"] = function() end
@@ -649,7 +693,7 @@ function lobby.render()
   end
   
   lobby.renderFunction[lobby.state]()
-  
+
   Channel.textbox:draw()
   lg.setLineWidth(0.5)
   lobby.userListScrollBar:draw()
@@ -681,6 +725,7 @@ function lobby.render()
     end
   end
   if lobby.dropDown then lobby.dropDown:draw() end
+  if lobby.battleTabHoverWindow then lobby.battleTabHoverWindow:draw() end
   lg.setColor(1,1,1)
   lg.setCanvas()
 end

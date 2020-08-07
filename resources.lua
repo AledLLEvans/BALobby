@@ -294,6 +294,8 @@ fonts.roboto = lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 20)
 fonts.robotosmall = lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 12)
 fonts.robotoitalic = lg.newFont("data/fonts/Roboto/Roboto-Italic.ttf", 20)
 fonts.latosmall = lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 12)
+fonts.latochantab = lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 12)
+fonts.latochantabbold = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 12)
 fonts.latomedium = lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 18)
 fonts.latoitalic = lg.newFont("data/fonts/Lato/Lato-Italic.ttf", 14)
 fonts.latoitalicmedium = lg.newFont("data/fonts/Lato/Lato-Italic.ttf", 18)
@@ -303,7 +305,7 @@ fonts.latoboldbig = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 16)
 fonts.latoboldbigger = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 24)
 fonts.latoboldbiggest = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 48)
 fonts.latobolditalic = lg.newFont("data/fonts/Lato/Lato-BoldItalic.ttf", 12)
-  
+
 sound = {}
 sound.ring = love.audio.newSource("data/sounds/doorbell-old-tring.ogg", "static")
 sound.ding = love.audio.newSource("data/sounds/bell_02.ogg", "static")

@@ -45,10 +45,7 @@ function login.enter()
     return tcp:send(msg)
   end
   
-  lobby.width = 800
-  lobby.height = 450
-  login.width = 800
-  login.height = 450
+  lobby.width, lobby.height = lg.getDimensions()
   loginBox = {
     x = lobby.width/2,
     y = lobby.height/2,
@@ -128,7 +125,7 @@ function login.enter()
       login.startEngineDownload()
     end
   end
-  login.resize( login.width, login.height )
+  login.resize( lobby.width, lobby.height )
 end
 
 local progress_channel = love.thread.getChannel("progress_login")
@@ -266,8 +263,19 @@ function login.registerAccount()
   end
 end
 
-function login.handleResponse()
- --if v == "STLS" then
+login.stls = false
+function login.handleResponse(k, v)
+  print(k, v)
+  if k == "tass" then
+    if login.stls then
+      tcp:send("STLS".."\n")
+      return
+    end
+  end
+  local pass = login.passBox.base64
+  if k == "cmd" and v == "STLS" then
+    pass = login.passBox.base64md5
+  end
   ip, _ = tcp:getsockname()
   if not ip then
     lw.showMessageBox("For your information", "tcp connection failed", "error" )
@@ -277,21 +285,20 @@ function login.handleResponse()
     login.loginString = "LOGIN " .. 
     login.nameBox.text .. 
     " " .. 
-    login.passBox.base64 ..
+    pass ..
     " 0 " .. 
     "* " .. --ip .. 
-    "BAlogin 0.1 0" .. "\n"
+    "BAlobby 0.1 0" .. "\n"
     tcp:send(login.loginString)
     table.insert(login.log, {to = true, msg = "LOGIN " .. login.nameBox.text .. " " .. ip })
   elseif login.action == 2 then 
     login.registerString = "REGISTER " .. 
     login.nameBox.text .. 
     " " .. 
-    login.passBox.base64 .. "\n"
+    pass .. "\n"
     tcp:send(login.registerString)
     table.insert(login.log, {to = true, msg = "REGISTER " .. login.nameBox.text })
   end
---end
 end
 
 function login.connectToServer()
@@ -310,7 +317,7 @@ function login.connectToServer()
       })
   end
   if connect() then
-    login.handleResponse()
+    --login.handleResponse()
   end
 end
 
@@ -338,6 +345,7 @@ function login.update( dt )
   end
   local data = tcp:receive()
   if data then
+    print("data", data)
     love.filesystem.append( "log.txt", data .. "\n" )
     local cmd = string.match(data, "^%u+")
     local words = {}
@@ -360,8 +368,8 @@ function login.update( dt )
 end
 
 function login.resize( w, h )
-  login.width = w
-  login.height = h
+  lobby.width = w
+  lobby.height = h
   lobby.width = w
   lobby.height = h
   loginBox.x = w/2
@@ -461,7 +469,7 @@ end
 
 function login.draw()
   lg.setColor(1,1,1)
-  lg.draw(login.video, 0, 0, 0, login.width/1920, (login.height)/970)
+  lg.draw(login.video, 0, 0, 0, lobby.width/1920, (lobby.height)/970)
   login.drawLoginBox()
   if not lobby.gotEngine then
     login.drawDownloadBars()
@@ -496,19 +504,19 @@ function login.drawDownloadText()
   lg.setColor(colors.bgt)
   lg.rectangle("fill", lobby.width/2 - 30, 10, 60, 20)
   lg.setColor(colors.text)
-  lg.printf(login.downloadText, 0, 20, login.width, "center")
+  lg.printf(login.downloadText, 0, 20, lobby.width, "center")
   local fontHeight = fonts.robotosmall:getHeight()
   if login.dl_status then
     if login.dl_status.file_size > 0 then
       local perc = math.floor(login.dl_status.downloaded / login.dl_status.file_size * 100)/100
-      lg.print(perc .."%",  login.width/2-20, 20 + fontHeight)
+      lg.print(perc .."%",  lobby.width/2-20, 20 + fontHeight)
     end
     if login.dl_status.err then
       lg.print(login.dl_status.err, 0, 32)
     end
   elseif login.unpackerCount then
     if login.unpackerCount > 0 then
-      lg.print(login.unpackerCount .. "/" .. login.fileCount, login.width/2 + 10, 20 + fontHeight)
+      lg.print(login.unpackerCount .. "/" .. login.fileCount, lobby.width/2 + 10, 20 + fontHeight)
     end
   end
 end

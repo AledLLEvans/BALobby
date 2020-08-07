@@ -234,7 +234,7 @@ function BATTLEOPENED.respond(words, sentences)
   battle.id = words[1]
   battle.type = words[2]
   battle.natType = words[3]
-  battle.founder = words[4]
+  battle.founder = User.s[words[4]]
   battle.ip = words[5]
   battle.port = words[6]
   battle.maxPlayers = words[7]
@@ -330,7 +330,7 @@ function CLIENTBATTLESTATUS.respond(words, sentences)
   end
   battle.playersByTeam = teams
   
-  if username == lobby.username then
+  --[[if username == lobby.username then
     if user.ready then 
       battle.buttons.ready:setTextColor(colors.text)
     else
@@ -343,7 +343,7 @@ function CLIENTBATTLESTATUS.respond(words, sentences)
       battle.buttons.spectate:setTextColor(colors.text)
       battle.buttons.spectate:setText("Spectate")
     end
-  end
+  end]]
   
   lobby.render()
 end
@@ -380,6 +380,12 @@ function CLIENTSTATUS.respond(words, sentences)
   user.isHuman = not user.isBot
   
   user.icon = user.isBot and "monitor" or user.ingame and "gamepad" or user.away and "nothome" or false
+  
+  
+  local battle = Battle:getActive()
+  if battle and battle.founder == user and user.ingame and lobby.launchOnGameStart then
+    lobby.launchSpring()
+  end
 end
 function COMPFLAGS.respond(words, sentences)
 end
@@ -496,7 +502,6 @@ function LEFTBATTLE.respond(words, sentences)
   end
 
   lobby.refreshBattleTabs()
-  lobby.render()
 end
 function LEFTFROM.respond(words, sentences)
 end
@@ -513,7 +518,7 @@ function MOTD.respond(words, sentences)
 end
 function OK.respond(words, sentences)
   local k, v = words[1]:match("(.+)=(.+)")
-
+  login.handleResponse(k, v)
 end
 function OPENBATTLE.respond(words, sentences)
 end
@@ -639,7 +644,7 @@ function SAIDBATTLE.respond(words, sentences)
   
   if settings.profanity_filter then text = profanity_filter(text) end
   
-  if user == founder then
+  if user == founder.name then
     ingame = true
     user = "INGAME"
   end
@@ -655,7 +660,7 @@ function SAIDBATTLEEX.respond(words, sentences)
   
   if settings.profanity_filter then text = profanity_filter(text) end
   
-  if user == founder then
+  if user == founder.name then
     table.insert(battle:getChannel().infolines, {time = os.date("%X"), ex = true, user = user, msg = text})
   else
     table.insert(battle:getChannel().lines, {time = os.date("%X"), mention = mention, ex = true, user = user, msg = text})
@@ -751,7 +756,7 @@ function SETSCRIPTTAGS.respond(words, sentences)
   lobby.render()
 end
 function TASS.respond(words, sentences)
-  login.handleResponse()
+  login.handleResponse("tass")
 end
 function UDPSOURCEPORT.respond(words, sentences)
 end

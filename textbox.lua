@@ -34,7 +34,6 @@ end
 TextboxPrivate = Textbox:new()
 TextboxPrivate.mt =  {__index = TextboxPrivate}
 
-
 local function addText(str, offset, text)
   local left = string.sub(str, 0, offset)
   local right = string.sub(str, offset + 1)
@@ -57,6 +56,11 @@ end
 
 function TextboxPrivate:setBase64(t)
   self.base64 = t
+  self:setMd5(self.base64)
+end
+
+function TextboxPrivate:setMd5(b)
+  self.base64md5 = md5sum(b)
 end
 
 function TextboxPrivate:display()
