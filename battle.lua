@@ -158,6 +158,7 @@ function Battle:new(battle)
   
   self.s[battle.id] = battle
   self.count = self.count + 1
+  self.tab = BattleTab:new(battle.id)
 end
 
 function Battle:getChannel()

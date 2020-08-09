@@ -1,37 +1,110 @@
-colors = {}
+options = {}
 
 local lg = love.graphics
 
-function setLightMode()
-  colors.w = {1, 1, 1}
-  colors.text = {0, 0, 0}
-  colors.bgt = {219/255, 219/255, 219/255, 0.6}
-  colors.bg = {225/255, 225/255, 225/255}
-  colors.bb = {212/255, 212/255, 212/255}
-  colors.bbh = {206/255, 206/255, 206/255}
-  colors.bd = {200/255, 200/255, 200/255}
-  colors.bt = {112/255, 112/255, 112/255}
-  colors.mo = {50/255, 50/255, 50/255}
-  colors.bargreen = {0, 191/255, 165/255}
-  colors.orange = {1, 156/255, 67/255}
-  colors.yellow = {1/2, 1/2, 0}
-  lg.setBackgroundColor(colors.bg)
+function options.initialize()
+  options.button = Button:new()
+  :setPosition(0, 0)
+  :setDimensions(36,36)
+  :onClick(function()
+    options.expanded = not options.expanded
+    lobby.clickables[options.panel] = not lobby.clickables[options.panel]
+    lobby.render.background()
+  end)
+  
+  options.panel = Dropdown:new()
+  :setPosition(0, 36)
+  :setDimensions(163,174)
+  
+  options.expanded = false
+  lobby.clickables[options.panel] = false
+  
+  function options.panel:click(x,y)
+    local bool = false
+    for button in pairs(self.buttons) do
+      bool = button:click(x, y) or bool
+    end
+    options.expanded = false
+    lobby.clickables[options.panel] = false
+    return bool
+  end
+  
+  function options.button:draw()
+    if lobby.darkMode then
+      lg.draw(img["MenuButtonDark"], self.x, self.y)
+    else
+      lg.draw(img["MenuButtonLight"], self.x, self.y)
+    end
+  end
+  
+  options.panel:addButton(Button:new():setText("Switch Mode")
+    :setFunction(function()
+          if lobby.darkMode then
+            setLightMode()
+            lobby.darkMode = false
+            lobby.lightMode = true
+            settings.add({mode = "light"})
+            Channel.textbox.colors.background = colors.bg
+            Channel.textbox.colors.text = colors.text
+            local battle = Battle:getActive()
+            if battle then
+              for i, k in pairs(battle.buttons) do
+                k.colors.background = colors.bb
+                k.colors.text = colors.text
+              end
+            end
+            for k in pairs(options.panel.buttons) do
+              k.colors.background = colors.bb
+              k.colors.text = colors.text
+            end
+            for id, bt in pairs(BattleTab.s) do
+              bt.colors.background.default = colors.bb
+              bt.colors.background.highlight = colors.bd
+            end
+          else
+            setDarkMode()
+            lobby.darkMode = true
+            lobby.lightMode = false
+            settings.add({mode = "dark"})
+            Channel.textbox.colors.background = colors.bg
+            Channel.textbox.colors.text = colors.text
+            local battle = Battle:getActive()
+            if battle then
+              for i, k in pairs(battle.buttons) do
+                k.colors.background = colors.bb
+                k.colors.text = colors.text
+              end
+            end
+            for k in pairs(options.panel.buttons) do
+              k.colors.background = colors.bb
+              k.colors.text = colors.text
+            end
+            for id, bt in pairs(BattleTab.s) do
+              bt.colors.background.default = colors.bb
+              bt.colors.background.highlight = colors.bd
+            end
+          end
+          lobby.refreshBattleTabs()
+        end))
+    
+    options.panel:addButton(Button:new():setText("Replays")
+    :setFunction(function()
+          Replay.fetchLocalReplays()
+          lobby.state = "replays"
+        end))
+    
+    options.panel:addButton(Button:new():setText("Open Spring Dir")
+    :setFunction(function()
+          love.system.openURL(lobby.springFilePath)
+        end))
+    
+    options.panel:addButton(Button:new():setText("Options")
+    :setFunction(function()
+          love.window.showMessageBox("FYI", "Coming Soon", "info")
+          lobby.render.background()
+        end))
+  
+  lobby.clickables[options.button] = true
 end
 
-function setDarkMode()
-  colors.w = {1, 1, 1}
-  colors.text = {1, 1, 1}
-  colors.bgt = {28/255, 28/255, 28/255, 0.6}
-  colors.bg = {28/255, 28/255, 28/255}
-  colors.bb = {33/255, 33/255, 33/255}
-  colors.bbh = {39/255, 39/255, 39/255}
-  colors.bd = {50/255, 50/255, 50/255}
-  colors.bt = {112/255, 112/255, 112/255}
-  colors.mo = {201/255, 201/255, 201/255}
-  colors.bargreen = {28/255, 252/255, 139/255}
-  colors.orange = {1, 156/255, 67/255}
-  colors.yellow = {1, 1, 0}
-  lg.setBackgroundColor(colors.bg)
-end
-
-setDarkMode()
+return options

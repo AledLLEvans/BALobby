@@ -1,6 +1,5 @@
 require("resources")
 require("user")
-require("options")
 require("textbox")
 require("download")
 require("menu")

@@ -27,7 +27,7 @@ function ScrollBar:new()
   
   new.zone = Window:new()
   
-  new.func = function() lobby.render() end
+  new.func = function() lobby.render.background() end
   
   new.vertical = true
   new.horizontal = not new.vertical
@@ -428,18 +428,18 @@ function BattleTab:new(id)
     }   
   }
   new.highlighted = false
-  new.visible = true
   new.battleid = id
   new.func = function()
-    if Battle:getActiveBattle() then
+    if Battle:getActive() then
       tcp:send("LEAVEBATTLE" .. "\n")
-      Battle:getActiveBattle():getChannel().display = false
+      Battle:getActive():getChannel().display = false
     end
     local sp = string.match(love.math.random(), "0%.(.*)")
     Battle.s[id].myScriptPassword = sp
     tcp:send("JOINBATTLE " .. id .. " EMPTY " .. sp .."\n")
   end
-  table.insert(self.s, new)
+  new.visible = false
+  self.s[id] = new
   return new
 end
 
@@ -595,7 +595,7 @@ function UserButton:new(username)
     self.dropdown.parent = self
     lobby.dropDown = self.dropdown
     --UserButton.s[self] = true
-    lobby.render()
+    lobby.render.background()
   end
   return o
 end
@@ -642,8 +642,9 @@ end
 
 function Dropdown:click(x, y)
   for button in pairs(self.buttons) do
-    button:click(x, y)
+    if button:click(x, y) then return true end
   end
+  return false
 end
 
 function Dropdown:draw()

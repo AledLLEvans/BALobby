@@ -7,6 +7,12 @@ local md5 = require("md5")
 local address, port = "springfightclub.com", 8200
 
 lobby.MOTD = {}
+lobby.canvas = {}
+lobby.render = {}
+
+lobby.options = require "options"
+lobby.userlist = require "userlist"
+lobby.battlelist = require "battlelist"
 function lobby.enter()
   state = STATE_LOBBY
   Channel.textbox = Textbox:new()
@@ -14,114 +20,12 @@ function lobby.enter()
   lobby.launchOnGameStart = true
   lobby.fixturePoint = {
     {x = 0, y = 2*lobby.height/3},
-    {x = 660, y = 2*lobby.height/3}
+    {x = 3*lobby.width/4, y = 2*lobby.height/3}
   } 
-  lobby.optionsButton = Button:new()
-  :setPosition(0, 0)
-  :setDimensions(36,36)
-  :onClick(function()
-    lobby.optionsExpanded = not lobby.optionsExpanded
-    lobby.clickables[lobby.optionsPanel] = not lobby.clickables[lobby.optionsPanel]
-    lobby.render()
-  end)
   
-  lobby.optionsPanel = Dropdown:new()
-  :setPosition(0, 36)
-  :setDimensions(163,174)
-  
-  lobby.optionsExpanded = false
-  lobby.clickables[lobby.optionsPanel] = false
-  
-  function lobby.optionsPanel:click(x,y)
-    for button in pairs(self.buttons) do
-      button:click(x, y)
-    end
-    lobby.optionsExpanded = false
-    lobby.clickables[lobby.optionsPanel] = false
-  end
-  
-  function lobby.optionsButton:draw()
-    if lobby.darkMode then
-      lg.draw(img["MenuButtonDark"], self.x, self.y)
-    else
-      lg.draw(img["MenuButtonLight"], self.x, self.y)
-    end
-  end
-  
-  lobby.optionsPanel:addButton(Button:new():setText("Switch Mode")
-    :setFunction(function()
-          if lobby.darkMode then
-            setLightMode()
-            lobby.darkMode = false
-            lobby.lightMode = true
-            settings.add({mode = "light"})
-            Channel.textbox.colors.background = colors.bg
-            Channel.textbox.colors.text = colors.text
-            local battle = Battle:getActive()
-            if battle then
-              for i, k in pairs(battle.buttons) do
-                k.colors.background = colors.bb
-                k.colors.text = colors.text
-              end
-            end
-            for k in pairs(lobby.optionsPanel.buttons) do
-              k.colors.background = colors.bb
-              k.colors.text = colors.text
-            end
-          else
-            setDarkMode()
-            lobby.darkMode = true
-            lobby.lightMode = false
-            settings.add({mode = "dark"})
-            Channel.textbox.colors.background = colors.bg
-            Channel.textbox.colors.text = colors.text
-            local battle = Battle:getActive()
-            if battle then
-              for i, k in pairs(battle.buttons) do
-                k.colors.background = colors.bb
-                k.colors.text = colors.text
-              end
-            end
-            for k in pairs(lobby.optionsPanel.buttons) do
-              k.colors.background = colors.bb
-              k.colors.text = colors.text
-            end
-          end
-          lobby.refreshBattleTabs()
-        end))
-    
-        lobby.optionsPanel:addButton(Button:new():setText("Replays")
-    :setFunction(function()
-          Replay.fetchLocalReplays()
-          lobby.state = "replays"
-        end))
-    
-    lobby.optionsPanel:addButton(Button:new():setText("Open Spring Dir")
-    :setFunction(function()
-          love.system.openURL(lobby.springFilePath)
-        end))
-    
-    lobby.optionsPanel:addButton(Button:new():setText("Options")
-    :setFunction(function()
-          love.window.showMessageBox("FYI", "Coming Soon", "info")
-          lobby.render()
-        end))
-  
-  lobby.clickables[lobby.optionsButton] = true
-  
-  lobby.battleTabScrollBar = ScrollBar:new()
-  :setScrollSpeed(25)
-  :setRenderFunction(function() lobby.refreshBattleTabs() end)
-  lobby.battleTabScrollBar:getZone()
-  :setPosition(0, 90)
-  :setDimensions(lobby.fixturePoint[2].x, lobby.fixturePoint[2].y - 90)
-  
-  lobby.userListScrollBar = ScrollBar:new()
-  :setScrollSpeed(15)
-  :setRenderFunction(function() lobby.refreshUserButtons() end)
-  lobby.userListScrollBar:getZone()
-  :setPosition(lobby.fixturePoint[2].x, 0)
-  :setDimensions(lobby.width - lobby.fixturePoint[2].x, lobby.height)
+  lobby.userlist.initialize()
+  lobby.battlelist.initialize()
+  lobby.options.initialize()
   
   lobby.serverChannel = Channel.s["server"]
 
@@ -135,20 +39,57 @@ function lobby.enter()
   
 end
 
-function lobby.mousepressed(x,y,b)
-  if math.abs(y - lobby.fixturePoint[1].y) < 10 and x > lobby.fixturePoint[1].x and x < lobby.fixturePoint[2].x  then
-    lobby.dragY = true
+function lobby.refreshBattleTabs()
+  lobby.battlelist.refresh()
+end
+
+local resize = {
+  ["landing"] = function()
+              lobby.battlelist.scrollbar:getZone()
+              :setPosition(0, 90)
+              :setDimensions(lobby.fixturePoint[2].x, lobby.fixturePoint[2].y - 90)
+  end,
+  ["battle"] = function()
+              lobby.fixturePoint[1].x = 0
+              for _, b in pairs(Battle:getActiveBattle().buttons) do
+                b:resetPosition()
+              end
+              lobby.battlelist.scrollbar:getZone()
+              :setPosition(0, 0)
+              :setDimensions(0, 0)
+  end,
+  ["replays"] = function()
+              Replay.initialize()
+              lobby.fixturePoint[1].x = 0
   end
-  for i, k in pairs(BattleTab.s) do
-    if x > k.x and x < k.x + k.w and y > k.y and y < k.y + k.h then
-      lobby.clickedBattleID = i
-    end
-  end
-  local bool
-  for sb in pairs(lobby.scrollBars) do
-    bool = sb:mousepressed(x,y) or bool
-  end
-  if bool then lobby.renderOnUpdate = true end
+}
+
+function lobby.resize( w, h )
+  lobby.oldwidth = lobby.width
+  lobby.oldheight = lobby.height
+  lobby.width = w
+  lobby.height = h
+  lobby.fixturePoint = {
+    {
+      x = lobby.fixturePoint[1].x * lobby.width/lobby.oldwidth,
+      y = lobby.fixturePoint[1].y * lobby.height/lobby.oldheight
+    },
+    {
+      x = math.max(lobby.width - 200, math.min(lobby.width - 140, lobby.fixturePoint[2].x * lobby.width/lobby.oldwidth)),
+      y = lobby.fixturePoint[2].y * lobby.height/lobby.oldheight
+    }
+  }
+  
+  lobby.canvas.battlelist = lg.newCanvas(lobby.width, lobby.height)
+  lobby.canvas.background = lg.newCanvas(lobby.width, lobby.height)
+  lobby.canvas.userlist = lg.newCanvas(lobby.width, lobby.height)
+  
+  resize[lobby.state]()
+
+  Channel.refresh()
+  
+  lobby.userlist.resize()
+  lobby.battlelist.resize()
 end
 
 function lobby.pickCursor(x,y)
@@ -176,27 +117,52 @@ function lobby.mousemoved( x, y, dx, dy, istouch )
       end
     end
   end
-  lobby.refreshBattleTabs()
+  battlelist.refresh()
   local bool = false
-  for _, k in pairs(BattleTab.s) do
-    bool = k:isOver(x, y) or bool or false
+  for _, bt in pairs(BattleTab.s) do
+    bool = bt:isOver(x, y) or bool or false
   end
   if not bool then
     lobby.battleTabHover = nil
     lobby.battleTabHoverWindow = nil
   end
-  lobby.refreshUserButtons()
+  --lobby.refreshUserButtons()
   if Channel:getActive() then
     Channel:getActive():render()
   end
-  lobby.render()
+  lobby.render.background()
 end
 
 lobby.clickables = {}
-function lobby.mousereleased(x,y,b)
-  if lobby.dropDown then lobby.dropDown:click(x,y) end
+
+local function mrexit( ) 
   lobby.dropDown = nil
   lobby.renderOnUpdate = false
+  lobby.clickedBattleID = 0
+  lobby.render.background()
+end
+
+function lobby.mousepressed(x,y,b)
+  if math.abs(y - lobby.fixturePoint[1].y) < 10 and x > lobby.fixturePoint[1].x and x < lobby.fixturePoint[2].x  then
+    lobby.dragY = true
+  end
+  for i, k in pairs(BattleTab.s) do
+    if x > k.x and x < k.x + k.w and y > k.y and y < k.y + k.h then
+      lobby.clickedBattleID = i
+    end
+  end
+  local bool
+  for sb in pairs(lobby.scrollBars) do
+    bool = sb:mousepressed(x,y) or bool
+  end
+  if bool then lobby.renderOnUpdate = true end
+end
+
+function lobby.mousereleased(x,y,b)
+  if lobby.dropDown then
+    lobby.dropDown:click(x,y)
+    return mrexit()
+  end
   if lobby.dragY then
     lobby.dragY = false
     local battle = Battle:getActive()
@@ -206,7 +172,7 @@ function lobby.mousereleased(x,y,b)
       end
     end
     Channel.refresh()
-    lobby.refreshBattleTabs()
+    lobby.battlelist.refresh()
     return
   end
   for sb in pairs(lobby.scrollBars) do
@@ -215,26 +181,25 @@ function lobby.mousereleased(x,y,b)
   if not lobby.loginInfoEnd then return end
   if b == 1 then
     for v, b in pairs(lobby.clickables) do
-      if b then if v:click(x, y) then break end end
+      if b then if v:click(x, y) then return mrexit() end end
     end
-    if y < lobby.fixturePoint[1].y then
-      for i, k in pairs(BattleTab.s) do
-        if lobby.clickedBattleID == i then
-          k:click(x, y)
+    if lobby.state == "landing" and y > 40 and y < lobby.fixturePoint[1].y then
+      for id, bt in pairs(BattleTab.s) do
+        if lobby.clickedBattleID == id then
+          bt:click(x, y)
         end
       end
     end
-    Channel:getTextbox():click(x, y)
     lobby.clickedBattleID = 0
-    for h in pairs(Hyperlink.s) do
+    Channel:getTextbox():click(x, y)
+    --[[for h in pairs(Hyperlink.s) do
       h:click(x,y)
-    end
+    end]]
   end
-  for button in pairs(UserButton.s) do
+  --[[for button in pairs(UserButton.s) do
     button:click(x, y, b)
-  end
-  lobby.clickedBattleID = 0
-  lobby.render()
+  end]]
+  return mrexit()
 end
 
 lobby.scrollBars = {}
@@ -257,7 +222,7 @@ function lobby.wheelmoved(x, y)
       end
     end
   end
-  lobby.render()
+  lobby.render.background()
 end
 
 
@@ -324,7 +289,7 @@ local updateFunc = {
     if lobby.battleTabHoverTimer < 0 then
       if lobby.battleTabHover and not lobby.battleTabHoverWindow then
         lobby.battleTabHoverWindow = BattleTabHoverWindow:new(lobby.battleTabHover.battleid)
-        lobby.render()
+        lobby.render.background()
       end
     end
   end,
@@ -332,6 +297,7 @@ local updateFunc = {
   ["battle"] = function(dt) end
 }
 
+lobby.events = {}
 lobby.reeltimer = 0
 lobby.timer = 0
 local responses = require("response")
@@ -339,6 +305,7 @@ function lobby.update( dt )
   if not lobby.connected then
     return
   end
+  -- Manual Garbage Collection
   local time_budget = 1/1000
   local safetynet_megabytes = 64
   local max_steps = 1000
@@ -354,14 +321,28 @@ function lobby.update( dt )
 	if collectgarbage("count") / 1024 > safetynet_megabytes then
 		collectgarbage("collect")
 	end
+  --
+  
+  -- Sleep if initialized and minimized 
+  if lobby.loginInfoEnd and not love.window.hasFocus() then
+    love.timer.sleep(0.2)
+  end
+  --
+  
   if login.downloading then
     login.updateDownload(dt)
   end
   if login.unpacking then
     login.updateUnpack(dt)
   end
-  if lobby.loginInfoEnd and not love.window.hasFocus() then
-    love.timer.sleep(0.2)
+  
+  local bool = false
+  for event in pairs(lobby.events) do
+    bool = event:update(dt) or bool
+  end
+  if bool then
+    lobby.render.userlist()
+    lobby.battlelist.refresh()
   end
 
   updateFunc[lobby.state](dt)
@@ -374,7 +355,7 @@ function lobby.update( dt )
         sb:mousemoved(y)
       end
     end
-    lobby.render()
+    lobby.render.background()
   end
   
   Channel:getTextbox():update(dt)
@@ -422,53 +403,8 @@ function lobby.receiveData(dt)
     if responses[cmd] then
       responses[cmd].respond(words, sentences, data)
     end
-    lobby.render()
+    lobby.render.background()
   end
-end
-
-local resize = {
-  ["landing"] = function()
-              lobby.battleTabScrollBar:getZone()
-              :setPosition(0, 90)
-              :setDimensions(lobby.fixturePoint[2].x, lobby.fixturePoint[2].y - 90)
-  end,
-  ["battle"] = function()
-              lobby.fixturePoint[1].x = 0
-              for _, b in pairs(Battle:getActiveBattle().buttons) do
-                b:resetPosition()
-              end
-              lobby.battleTabScrollBar:getZone()
-              :setPosition(0, 0)
-              :setDimensions(0, 0)
-  end,
-  ["replays"] = function()
-              Replay.initialize()
-              lobby.fixturePoint[1].x = 0
-  end
-}
-
-function lobby.resize( w, h )
-  lobby.oldwidth = lobby.width
-  lobby.oldheight = lobby.height
-  lobby.width = w
-  lobby.height = h
-  lobby.fixturePoint = {
-    {
-      x = lobby.fixturePoint[1].x * lobby.width/lobby.oldwidth,
-      y = lobby.fixturePoint[1].y * lobby.height/lobby.oldheight
-    },
-    {
-      x = math.max(lobby.width - 200, math.min(lobby.width - 140, lobby.fixturePoint[2].x * lobby.width/lobby.oldwidth)),
-      y = lobby.fixturePoint[2].y * lobby.height/lobby.oldheight
-    }
-  }
-  lobby.canvas = lg.newCanvas(lobby.width, lobby.height)
-  
-  resize[lobby.state]()
-
-  Channel.refresh()
-  lobby.refreshBattleTabs()
-  lobby.refreshUserButtons()
 end
 
 function lobby.textinput (text)
@@ -478,14 +414,13 @@ function lobby.textinput (text)
 end
 
 local keypress = require("keypress")
-
 function lobby.keypressed(k, uni)
   if keypress[k] then keypress[k]() end
-  lobby.render()
+  lobby.render.background()
 end
 
-function lobby.refreshUserButtons()
-  local m = 30 - lobby.userListScrollBar:getOffset()
+--[[function lobby.refreshUserButtons()
+  local m = 30 -- lobby.userListScrollBar:getOffset()
   local y = 30
   local ymax = lobby.state == "landing" and lobby.height or lobby.fixturePoint[2].y
   local x = lobby.fixturePoint[2].x
@@ -521,123 +456,33 @@ function lobby.refreshUserButtons()
     end
   end
   if lobby.state == "landing" then
-    lobby.userListScrollBar:setPosition(lobby.width - 5, 50):setLength(lobby.height - 100)
+    --lobby.userListScrollBar:setPosition(lobby.width - 5, 50):setLength(lobby.height - 100)
   else
-    lobby.userListScrollBar:setPosition(lobby.width - 5, 50):setLength(lobby.fixturePoint[2].y - 100)
+    --lobby.userListScrollBar:setPosition(lobby.width - 5, 50):setLength(lobby.fixturePoint[2].y - 100)
   end
-  lobby.userListScrollBar
-  :setPosition(lobby.width - 5, 90)
-  :setLength(lobby.height - 180)
-  :setScrollBarLength(50)
-  lobby.userListScrollBar:setOffsetMax(math.max(0, c - math.floor((ymax - y)/fontHeight)) * fontHeight)
-  lobby.render()
-end
-
-function lobby.sortBattleIDsByPlayerCount()
-  local battleIDs = {}
-  local battleIDsByPlayerCount = {}
-  for i in pairs(Battle.s) do
-    table.insert(battleIDs, i)
-  end
-  while #battleIDs > 0 do
-    local highestIndex
-    local highestPlayerCount = -1
-    local highestBattleID
-    for index, battleid in pairs(battleIDs) do
-      local playerCount = Battle.s[battleid].userCount
-      if playerCount > highestPlayerCount then
-        highestPlayerCount = playerCount
-        highestIndex = index
-        highestBattleID = battleid
-      end
-    end
-    table.insert(battleIDsByPlayerCount, highestBattleID)
-    table.remove(battleIDs, highestIndex)
-  end
-  return battleIDsByPlayerCount
-end
-
-function lobby.refreshBattleTabs()
-  local BattleIDsByPlayerCount = lobby.sortBattleIDsByPlayerCount()
-  for rank = 1, #BattleIDsByPlayerCount do
-    Battle.s[BattleIDsByPlayerCount[rank]].rankByPlayerCount = rank
-  end
-  BattleTab.s = {}
-  lobby.createBattleTabs(BattleIDsByPlayerCount)
-end
-
-lobby.battleTabDisplayRows = 1
-lobby.battleTabDisplayCols = 1
-lobby.battleTabSubText = ""
-lobby.battleTabHeadText = "OPEN BATTLEROOMS"
-local headTexts = {"OPEN BATTLEROOMS", "BATTLEROOMS", "OPEN BATTLES", "BATTLES", ""}
-function lobby.createBattleTabs(BattleIDsByPlayerCount)
-  local i = 1
-  local y = 90 - lobby.battleTabScrollBar:getOffset()
-  local x = 0
-  local xmin = 0
-  local ymin = - 10
-  local ymax = lobby.height - y
-  local xmax = lobby.fixturePoint[1].x
-  if lobby.state == "landing" then
-    ymax = lobby.fixturePoint[1].y
-    xmax = lobby.fixturePoint[2].x
-  end
-  lobby.battleTabDisplayCols = math.floor((xmax - xmin) / 610)
-  local w = (xmax - xmin) / lobby.battleTabDisplayCols
-  local c = 1
-  while y < ymax and i <= #BattleIDsByPlayerCount do
-    if y >= ymin then
-      BattleTab:new(BattleIDsByPlayerCount[i])
-      :setPosition(x+8, y+5)
-      :setDimensions(w - 16, 100)
-    end 
-    i = i + 1
-    x = x + w
-    c = c + 1
-    if c > lobby.battleTabDisplayCols then
-      c = 1
-      x = xmin
-      y = y + 110
-    end
-  end
-  do
-    local i = 0
-    repeat
-      i = i + 1
-      lobby.battleTabHeadText = headTexts[i]
-    until i == #headTexts or lobby.fixturePoint[2].x - 50 > fonts.notable:getWidth(headTexts[i])
-  end
-  lobby.battleTabSubText = "Showing " .. #BattleIDsByPlayerCount .. " battles."
-  if not lobby.loginInfoEnd then
-    lobby.battleTabSubText = lobby.battleTabSubText .. "(Loading .. )"
-  end
-  lobby.battleTabDisplayRows = math.floor((ymax-ymin)/110) - 1
-  local len = lobby.fixturePoint[2].y - 90
-  local sblen = math.max(0, math.ceil(#BattleIDsByPlayerCount/lobby.battleTabDisplayCols) - lobby.battleTabDisplayRows)
-  lobby.battleTabScrollBar
-  :setPosition(lobby.fixturePoint[2].x - 3, 90)
-  :setLength(len)
-  :setScrollBarLength(len/sblen)
-  :setOffsetMax(sblen * 110)
-  
-  lobby.render()
-end
+  --lobby.userListScrollBar
+  --:setPosition(lobby.width - 5, 90)
+  --:setLength(lobby.height - 180)
+  --:setScrollBarLength(50)
+  --lobby.userListScrollBar:setOffsetMax(math.max(0, c - math.floor((ymax - y)/fontHeight)) * fontHeight)
+  lobby.render.background()
+end]]
 
 lobby.state = "landing"
 
 lobby.renderFunction = {
   ["landing"] = function()
-    for _, k in pairs(BattleTab.s) do
-      k:draw()
-    end
+    --for _, k in pairs(BattleTab.s) do
+    --  k:draw()
+    --end
     --
+    
     lg.setColor(colors.bb)
     lg.rectangle("fill",
                 0,
                 0,
                 lobby.fixturePoint[2].x,
-                90)
+                40)
     lg.rectangle("fill",
                 0,
                 lobby.fixturePoint[1].y,
@@ -654,18 +499,19 @@ lobby.renderFunction = {
     --lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.height)
     --lg.line(0, lobby.fixturePoint[1].y, lobby.fixturePoint[2].x, lobby.fixturePoint[1].y)
     --
-    lobby.battleTabScrollBar:draw()
+    --lobby.battleTabScrollBar:draw()
     --
-    lg.setColor(colors.bt)
-    lg.setFont(fonts.notable)
-    lg.print(lobby.battleTabHeadText, 50, 10)
+    --lg.setColor(colors.bt)
+    --lg.setFont(fonts.notable)
+    --lg.print(lobby.battleTabHeadText, 50, 10)
     local h = fonts.notable:getHeight()
     lg.setFont(fonts.latosmall)
-    lg.print(lobby.battleTabSubText, 50, 10 + h)
+    lg.print(lobby.battleTabSubText, 50, h - 15)
     lg.setColor(1,1,1)  
     for button in pairs(UserButton.s) do
-      button:draw()
+      --button:draw()
     end
+    
   end,
   
   ["battle"] = function() 
@@ -694,7 +540,7 @@ lobby.renderFunction = {
                 0,
                 0,
                 lobby.fixturePoint[2].x,
-                90)
+                40)
     lg.rectangle("fill",
                 0,
                 lobby.fixturePoint[1].y,
@@ -711,13 +557,13 @@ lobby.renderFunction = {
     lg.setFont(fonts.notable)
     lg.print("Your Demos", 50, 10)
     
-    for tab in pairs(ReplayTab.s) do
+    for _, tab in pairs(ReplayTab.s) do
       tab:draw()
     end
   
     lg.setColor(1,1,1)  
     for button in pairs(UserButton.s) do
-      button:draw()
+      --button:draw()
     end
   end,
   
@@ -725,23 +571,16 @@ lobby.renderFunction = {
   ["options"] = function() end
 }
 
-function lobby.render()
-  lg.setCanvas(lobby.canvas)
+function lobby.render.background()
+  lg.setCanvas(lobby.canvas.background)
   lg.clear()
   
   Hyperlink.s = {}
   
-  if Channel:getActive() then
-    lg.setColor(colors.text)
-    lg.setFont(fonts.latosmall)
-    lg.print("Users in channel #" .. Channel:getActive():getName(),
-            lobby.fixturePoint[2].x + 10, 10)
-  end
-  
   lobby.renderFunction[lobby.state]()
-
+  
   Channel.textbox:draw()
-  lobby.userListScrollBar:draw()
+  --lobby.userListScrollBar:draw()
   
   if Channel:getActive() then
     Channel:getActive():render()
@@ -755,9 +594,9 @@ function lobby.render()
     h:draw()
   end
 
-  lobby.optionsButton:draw()
-  if lobby.optionsExpanded then
-    lobby.optionsPanel:draw()
+  lobby.options.button:draw()
+  if lobby.options.expanded then
+    lobby.options.panel:draw()
   end
   
   if login.dl_status or login.unpackerCount > 0 then
@@ -771,8 +610,27 @@ function lobby.render()
   lg.setCanvas()
 end
 
+function lobby.render.battlelist()
+  lg.setCanvas(lobby.canvas.battlelist)
+  lg.clear()
+  for _, bt in pairs(BattleTab.s) do
+    if bt.visible then bt:draw() end
+  end
+  lobby.battlelist.scrollbar:draw()
+  lg.setCanvas()
+end
+
+function lobby.render.userlist()
+  lg.setCanvas(lobby.canvas.userlist)
+  lg.clear()
+  lobby.userlist.bar:draw()
+  lg.setCanvas()
+end
+
 function lobby.draw()
   if not love.window.isVisible() then return end
-  lg.draw(lobby.canvas)
+  if lobby.state == "landing" then lg.draw(lobby.canvas.battlelist) end
+  lg.draw(lobby.canvas.background)
+  lg.draw(lobby.canvas.userlist)
   Channel.textbox:renderText()
 end

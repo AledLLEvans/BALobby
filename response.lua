@@ -192,7 +192,7 @@ function ADDSTARTRECT.respond(words, sentences)
     words[4]/200,
     words[5]/200
   }
-  lobby.render()
+  lobby.render.background()
 end
 function ADDUSER.respond(words, sentences)
   local user = {}
@@ -346,7 +346,7 @@ function CLIENTBATTLESTATUS.respond(words, sentences)
     end
   end]]
   
-  lobby.render()
+  lobby.render.background()
 end
 function CLIENTIPPORT.respond(words, sentences)
 end
@@ -427,7 +427,7 @@ function JOIN.respond(words, sentences)
       table.insert(Channel.s[chan].lines, lobby.MOTD[i])
     end
   end
-  lobby.refreshUserButtons()
+  lobby.render.userlist()
   Channel:refreshTabs()
 end
 function JOINBATTLE.respond(words, sentences)
@@ -441,7 +441,7 @@ function JOINBATTLE.respond(words, sentences)
     Battle.active.channel.display = true
   end
   Battle.active:joined(id)
-  lobby.refreshUserButtons()
+  --lobby.refreshUserButtons()
   Battle.enter()
 end
 function JOINBATTLEFAILED.respond(words, sentences)
@@ -454,6 +454,7 @@ function JOINED.respond(words, sentences)
   local chan = words[1]
   local user = words[2]
   Channel.s[chan].users[user] = User.s[user]
+  lobby.render.userlist()
 end
 function JOINEDBATTLE.respond(words, sentences)
   local battleid = words[1]
@@ -488,6 +489,7 @@ function LEFT.respond(words, sentences)
     Channel.s[chan].display = false
     Channel:refreshTabs()
   end
+  lobby.render.userlist()
 end
 function LEFTBATTLE.respond(words, sentences)
   local battleid = words[1]
@@ -510,9 +512,10 @@ function LOGININFOEND.respond(words, sentences)
   lobby.send("JOIN main" .. "\n")
   lobby.send("JOIN en" .. "\n")
   lobby.send("JOIN newbies" .. "\n")
-  lobby.refreshBattleTabs()
   lobby.loginInfoEnd = true
   lobby.refreshBattleTabs()
+  lobby.render.background()
+  lobby.render.userlist()
 end
 function MOTD.respond(words, sentences)
   table.insert(lobby.MOTD, {time = os.date("%X"), user = "", ex = true, msg = " " .. string.gsub(sentences[1], "%u+ ", "", 1) .. " **" .. "\n"})
@@ -554,11 +557,11 @@ function REMOVESCRIPTTAGS.respond(words, sentences)
       end
     end
   end
-  lobby.render()
+  lobby.render.background()
 end
 function REMOVESTARTRECT.respond(words, sentences)
   Battle:getActive().startrect[words[1]] = nil
-  lobby.render()
+  lobby.render.background()
 end
 function REMOVEUSER.respond(words, sentences)
   local user = words[1]
@@ -631,7 +634,7 @@ function SAID.respond(words, sentences, data)
   if settings.profanity_filter then text = profanity_filter(text) end
   
   table.insert(Channel.s[chan].lines, {time = os.date("%X"), links = links, mention = mention, user = user, msg = text})
-  lobby.render()
+  lobby.render.background()
   love.filesystem.write( "chatlogs/" .. chan .. ".txt", user .. ": " .. text )
 end
 function SAIDBATTLE.respond(words, sentences)
@@ -650,7 +653,7 @@ function SAIDBATTLE.respond(words, sentences)
     user = "INGAME"
   end
   table.insert(chan.lines, {time = os.date("%X"), ingame = ingame, mention = mention, user = user, msg = text})
-  lobby.render()
+  lobby.render.background()
 end
 function SAIDBATTLEEX.respond(words, sentences)
   local user = words[1]
@@ -666,7 +669,7 @@ function SAIDBATTLEEX.respond(words, sentences)
   else
     table.insert(battle:getChannel().lines, {time = os.date("%X"), mention = mention, ex = true, user = user, msg = text})
   end
-  lobby.render()
+  lobby.render.background()
 end
 function SAIDEX.respond(words, sentences)
   local chan = words[1]
@@ -683,7 +686,7 @@ function SAIDEX.respond(words, sentences)
   end
   
   table.insert(Channel.s[chan].lines, {time = os.date("%X"), links = links, mention = mention, ex = true, user = user, msg = text})
-  lobby.render()
+  lobby.render.background()
   love.filesystem.write( "chatlogs/" .. chan .. ".txt", user .. ": " .. text )
 end
 function SAIDFROM.respond(words, sentences)
@@ -699,7 +702,7 @@ function SAIDPRIVATE.respond(words, sentences)
   
   mentioned(lobby.username, Channel.s[user])
   table.insert(Channel.s[user].lines, {time = os.date("%X"), user = user, msg = text})
-  lobby.render()
+  lobby.render.background()
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
 end
 function SAIDPRIVATEEX.respond(words, sentences)
@@ -713,7 +716,7 @@ function SAIDPRIVATEEX.respond(words, sentences)
   
   mentioned(lobby.username, Channel.s[user])
   table.insert(Channel.s[user].lines, {time = os.date("%X"), ex = true, user = user, msg = text})
-  lobby.render()
+  lobby.render.background()
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
 end
 function SAYPRIVATE.respond(words, sentences)
@@ -723,7 +726,7 @@ function SAYPRIVATE.respond(words, sentences)
   if settings.profanity_filter then text = profanity_filter(text) end
   
   table.insert(Channel.s[user].lines, {time = os.date("%X"), user = lobby.username, msg = text})
-  lobby.render()
+  lobby.render.background()
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
 end
 function SAYPRIVATEEX.respond(words, sentences)
@@ -733,7 +736,7 @@ function SAYPRIVATEEX.respond(words, sentences)
   if settings.profanity_filter then text = profanity_filter(text) end
   
   table.insert(Channel.s[user].lines, {time = os.date("%X"), ex = true, user = lobby.username, msg = text})
-  lobby.render()
+  lobby.render.background()
   love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
 end
 function SERVERMSG.respond(words, sentences)
@@ -761,7 +764,7 @@ function SETSCRIPTTAGS.respond(words, sentences)
       end
     end
   end
-  lobby.render()
+  lobby.render.background()
 end
 function TASS.respond(words, sentences)
   login.handleResponse("tass")

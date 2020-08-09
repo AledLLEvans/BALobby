@@ -31,26 +31,37 @@ function Replay.fetchLocalReplays()
 end
 
 function Replay.initialize()
-  lobby.replayTabs = {}
+  ReplayTab:clean()
   local i = #Replay.local_demos.date
-  local y = 90
-  local x = 0
-  local xmin = 0
-  local ymin = - 10
-  local ymax = lobby.fixturePoint[1].y
-  local xmax = lobby.fixturePoint[2].x
-  local cols = math.floor((xmax - xmin) / 610)
-  local w = (xmax - xmin) / cols
-  local c = 1
+  local ymin = 40
+  local ymax = lobby.fixturePoint[1].y - 35
+  local y = ymin
   while y < ymax do
-    ReplayTab:new(
+    ReplayTab:new(i,
     Replay.local_demos.filename[i],
     Replay.local_demos.date[i],
     Replay.local_demos.time[i],
     Replay.local_demos.mapName[i],
     Replay.local_demos.version[i])
-        :setDimensions(w - 16, 25)
-        :setPosition(x+8, y+5)
+    i = i - 1
+    y = y + 35
+  end
+  Replay.refresh()
+end
+
+function Replay.refresh()
+  local i = #Replay.local_demos.date
+  local y = 40
+  local x = 0
+  local xmin = 0
+  local ymin = - 10
+  local ymax = lobby.fixturePoint[1].y
+  local xmax = lobby.fixturePoint[2].x - 60
+  local cols = math.floor((xmax - xmin) / 540)
+  local w = (xmax - xmin) / cols
+  local c = 1
+  while y < ymax and ReplayTab.s[i] do
+    ReplayTab.s[i]:setDimensions(w - 16, 25):setPosition(x+8, y+5)
     i = i - 1
     x = x + w
     c = c + 1
@@ -143,7 +154,7 @@ local launchCode = [[
 ReplayTab = Button:new()
 ReplayTab.mt = {__index = ReplayTab}
 ReplayTab.s = {}
-function ReplayTab:new(filename, date, time, mapName, version)
+function ReplayTab:new(id, filename, date, time, mapName, version)
   local new = Button:new()
   setmetatable(new, ReplayTab.mt)
   
@@ -153,6 +164,8 @@ function ReplayTab:new(filename, date, time, mapName, version)
       highlight = colors.bd
     }   
   }
+
+  new.id = id
 
   new.filename = filename
   
@@ -180,15 +193,15 @@ function ReplayTab:new(filename, date, time, mapName, version)
     lobby.springThread:start( exec )
   end
  
-  self.s[new] = true
+  self.s[id] = new
   lobby.clickables[new] = true
   return new
 end
 
 function ReplayTab:clean()
-  for RT in pairs(self.s) do
-    lobby.clickables[RT] = nil
-    self.s[RT] = nil
+  for id, rt in pairs(self.s) do
+    lobby.clickables[rt] = nil
+    self.s[id] = nil
   end
 end
 

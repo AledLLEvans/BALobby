@@ -136,7 +136,7 @@ function Channel:refreshTabs()
           Channel.textbox.active = true
           channel.newMessage = false
           lobby.channelMessageHistoryID = false
-          lobby.refreshUserButtons()
+          lobby.render.userlist()
         end)
       lobby.clickables[self.tabs[chanName]] = true
       i = i + 1
@@ -144,7 +144,7 @@ function Channel:refreshTabs()
     end
   end
   Channel.addChannelButton = Button:new():setPosition(self.x + totalWidth + 4, self.y + 3):setDimensions(30, 30):setText("+"):setFunction(function() print("chanbuttonaddclick") end)
-  lobby.render()
+  lobby.render.background()
 end
 
 function Channel:getText()
