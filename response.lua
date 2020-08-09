@@ -329,6 +329,7 @@ function CLIENTBATTLESTATUS.respond(words, sentences)
     end
   end
   battle.playersByTeam = teams
+  battle.teamCount = #teams
   
   --[[if username == lobby.username then
     if user.ready then 
@@ -746,6 +747,13 @@ function SETSCRIPTTAGS.respond(words, sentences)
     for w in sentences[i]:gmatch("([^/]+)") do
       local k, v = w:match("(.+)=(.+)")
       if k and v then
+        if k == "mo_ffa" then
+          if v == "1" then
+            battle.ffa = true
+          elseif v == 0 then
+            battle.ffa = false
+          end
+        end
         tbl[k] = v
       else
         tbl[w] = tbl[w] or {}

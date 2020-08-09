@@ -308,6 +308,7 @@ fonts.latobolditalic = lg.newFont("data/fonts/Lato/Lato-BoldItalic.ttf", 12)
 
 sound = {}
 sound.ring = love.audio.newSource("data/sounds/doorbell-old-tring.ogg", "static")
+sound.ring:setVolume(0.5)
 sound.ding = love.audio.newSource("data/sounds/bell_02.ogg", "static")
 sound.click = love.audio.newSource("data/sounds/metal_02.ogg", "static")
 sound.click:setVolume(0.5)

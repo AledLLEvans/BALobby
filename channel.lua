@@ -90,7 +90,7 @@ local channel_dimensions = {
       y = lobby.fixturePoint[1].y,
       w = lobby.width - lobby.fixturePoint[1].x - 10,
       h = lobby.height - lobby.fixturePoint[2].y - 1} end,
-  ["battleWithList"] = function() return {
+  ["replays"] = function() return {
       x = lobby.fixturePoint[1].x + 5,
       y = lobby.fixturePoint[1].y,
       w = lobby.width - lobby.fixturePoint[1].x - 10,
@@ -143,6 +143,7 @@ function Channel:refreshTabs()
       totalWidth = totalWidth + textWidth + 16
     end
   end
+  Channel.addChannelButton = Button:new():setPosition(self.x + totalWidth + 4, self.y + 3):setDimensions(30, 30):setText("+"):setFunction(function() print("chanbuttonaddclick") end)
   lobby.render()
 end
 

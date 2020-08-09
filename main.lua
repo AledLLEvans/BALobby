@@ -8,6 +8,7 @@ require("lobby")
 require("login")
 require("battle")
 require("channel")
+require("replays")
 
 STATE_LAUNCHPAD, STATE_LOGIN, STATE_LOBBY = 0,1,2
 
@@ -26,18 +27,20 @@ local function checkOS()
     lobby.exeFilePath = lobby.engineFolder .. engine .. "\\spring.exe"
     lobby.gameFolder = lobby.springFilePath .. "games\\"
     lobby.mapFolder = lobby.springFilePath .. "maps\\"
+    lobby.replayFolder = lobby.springFilePath .. "demos\\"
   elseif os == "Linux" then
     lobby.springFilePath = lfs.getUserDirectory() .. "/.spring/"
     lobby.engineFolder = lobby.springFilePath .. "engine/"
     lobby.exeFilePath = lobby.engineFolder .. engine .. "/spring.exe"
     lobby.gameFolder = lobby.springFilePath .. "games/"
-    lobby.mapFolder = lobby.springFilePath .. "maps/"
+    lobby.replayFolder = lobby.springFilePath .. "demos/"
   elseif os == "OS X" then
     lobby.springFilePath = lfs.getUserDirectory() .. "/.spring/"
     lobby.engineFolder = lobby.springFilePath .. "engine/"
     lobby.exeFilePath = lobby.engineFolder .. engine .. "/spring.exe"
     lobby.gameFolder = lobby.springFilePath .. "games/"
     lobby.mapFolder = lobby.springFilePath .. "maps/"
+    lobby.replayFolder = lobby.springFilePath .. "demos/"
   else
     error("Operating System not recognised")
   end

@@ -386,6 +386,7 @@ function login.resize( w, h )
   login.buttons.register:setPosition(
         loginBox.x + loginBox.w/2 - 120,
         loginBox.y + loginBox.h/2 - 50)
+  login.savePassCheckbox:setPosition(loginBox.x - loginBox.w/2 + 10, loginBox.y + loginBox.h/2 - 30)
 end
 
 function login.textinput (text)

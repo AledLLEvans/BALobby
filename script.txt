@@ -1,9 +1,9 @@
 [GAME]
 {
 
-	HostIP = 217.61.106.62;
+	HostIP = 37.187.98.53;
 	IsHost = 0;
-	HostPort = 8451;
+	HostPort = 8252;
 	MyPlayerName = MastaAli;
-	MyPasswd = 091242197020174;
+	MyPasswd = 6131938386975;
 }

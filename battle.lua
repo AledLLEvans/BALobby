@@ -8,6 +8,15 @@ Battle.s = {}
 
 Battle.count = 0
 
+local shader = lg.newShader[[
+  vec4 effect(vec4 vcolor, Image tex, vec2 texcoord, vec2 pixcoord)
+{
+  vec4 texcolor = Texel(tex, texcoord);
+  texcolor.rgb = texcolor.grb;
+  return texcolor * vcolor;
+}
+]]
+
 function Battle:joined(id)
   if self:mapHandler() and self:modHandler() then
     lobby.setSynced(true)
@@ -137,13 +146,15 @@ function Battle:new(battle)
   battle.users = {}
   battle.userCount = 0
   
-  battle.noOfTeams = 0
+  battle.teamCount = 0
   battle.userListScrollOffset = 0
   
   battle.game = {}
   battle.game.modoptions = {}
   battle.game.players = {}
   battle.startrect = {}
+  
+  --battle.ffa = false
   
   self.s[battle.id] = battle
   self.count = self.count + 1
@@ -245,7 +256,7 @@ function Battle:update(dt)
     if self.mapDownload.error then
       self.mapMirrorID = self.mapMirrorID + 1
       if self.mapMirrorID > #self.mapMirrors then
-        love.window.showMessageBox("Error auto-downloading map", "\nFailed to find URL\nTry installing manually", "error" )
+        love.window.showMessageBox("Auto Map Downloader", "\nFailed to find URL for map\nTry installing manually\n(Type !maplink, click on the hyperlink and place the file in your spring/maps/ directory)", "error" )
         self.mapDownload:release()
         self.mapDownload = nil
         return
@@ -346,10 +357,13 @@ function Battle:drawMap()
     local x = xmin + aw/2 - w/2
     --local y = ymin + ah/2 - h/2
     if self.showMapScroll == 0 then
+      lg.setShader(shader)
+      lg.setColor(1,1,1)
       lg.draw(self.heightmap,
       x, -- (modx-1)*w,
       ymin, -- (mody-1)*h,
       0, 2*w/self.mapW, 2*h/self.mapH)
+      lg.setShader()
     elseif self.showMapScroll == 1 then
       lg.draw(self.minimap,
       x, -- (modx-1)*w,
@@ -360,11 +374,13 @@ function Battle:drawMap()
       x, -- (modx-1)*w,
       ymin, -- (mody-1)*h,
       0, w/1024, h/1024)
-      lg.setColor(1,1,1,0.75)
+      lg.setColor(1,1,1,0.7)
+      lg.setShader(shader)
       lg.draw(self.metalmap,
       x, -- (modx-1)*w,
       ymin, -- (mody-1)*h,
       0, 2*w/self.mapW, 2*h/self.mapH)
+      lg.setShader( )
     end
     --
     self.mapScrollBar:getZone():setPosition(x, ymin):setDimensions(w, h)
@@ -405,16 +421,17 @@ function Battle:drawModOptions(h)
   local ymin = 20 + 3*fontHeight + (h or 1024/8)
   local ymax = lobby.fixturePoint[2].y - fontHeight - 60
   local y = ymin - self.modoptionsScrollBar:getOffset()
-  lg.setFont(fonts.latosmall)
-  fontHeight = fonts.latosmall:getHeight()
+  local font = fonts.latobold
+  lg.setFont(font)
+  fontHeight = font:getHeight()
   self.modoptionsScrollBar:getZone():setPosition(x, ymin)
   self.modoptionsScrollBar:setPosition(lobby.fixturePoint[2].x - 5, ymin):setLength(ymax - ymin + 10):setScrollBarLength((ymax - ymin + 10 )/ 10)
-  lg.setColor(colors.bt)
+  lg.setColor(colors.mo)
   local c = 0
   local t = 0
   for k, v in pairs(self.game.modoptions) do
     if y < ymax and y >= ymin then
-      local _, wt = fonts.latoitalic:getWrap(k, lobby.fixturePoint[2].x - x - fonts.latosmall:getWidth(v .. "  "))
+      local _, wt = font:getWrap(k, lobby.fixturePoint[2].x - x - font:getWidth(v .. "  "))
       if #wt > 1 then
         for _, l in ipairs(wt) do
           lg.print(l, x, y)
@@ -426,7 +443,7 @@ function Battle:drawModOptions(h)
       else
         lg.print(k, x, y)
       end
-      lg.print(v, lobby.fixturePoint[2].x - fonts.latoitalic:getWidth(v) - 15, y)
+      lg.print(v, lobby.fixturePoint[2].x - font:getWidth(v) - 10, y)
       c = c + 1
     end
     y = y + fontHeight
@@ -446,20 +463,25 @@ function Battle:drawPlayers()
   local drawBackRect = true
   local cy = y
   local myAllyTeam = 0
+  local teamBool = (self.teamCount > 2) and not self.ffa
+  lg.setFont(fonts.latomedium)
+  lg.setColor(colors.bt)
+  if (self.teamCount < 3) then lg.print("Duel", xmax, y) elseif self.ffa then lg.print("FFA", xmax, y) end
+  lg.setFont(fonts.latosmall)
   for _, user in pairs(self.playersByTeam) do
     local username = user.name
     if username == lobby.username then
       myAllyTeam = user.allyTeamNo
     end
     if user.allyTeamNo > teamNo then
-      lg.setFont(fonts.latomedium)
-      lg.setColor(colors.bt)
       if teamNo > 0 then
         lg.line(0, y + fontHeight/4, xmax - 40, y + fontHeight/4)
         y = y + fontHeight/2
       end
+      lg.setFont(fonts.latomedium)
+      lg.setColor(colors.bt)
       teamNo = user.allyTeamNo
-      lg.print("Team " .. teamNo, xmax, y)
+      if teamBool then lg.print("Team " .. teamNo, xmax, y) end
       cy = y
       lg.setFont(fonts.latosmall)
     end
@@ -622,6 +644,7 @@ function Battle:getMinimap()
   local bytes = (mapWidth/2) * (mapHeight/2)
   local metalmapData = love.data.unpack("c"..tostring(bytes), mapData, metalmapOffset + 1)
   local imageData = love.image.newImageData( (mapWidth)/2, (mapHeight)/2, "r8", metalmapData )
+
   self.metalmap =  lg.newImage(imageData)
   
   --HeightMap

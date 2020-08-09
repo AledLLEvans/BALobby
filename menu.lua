@@ -72,8 +72,6 @@ function ScrollBar:setOffsetMax(o)
 end
 
 function ScrollBar:mousemoved(y)
-  print("offset", self.offset)
-  print("length", self.length)
   self.offset = math.max(0, math.min(self.offsetmax, self.offsetmax * (y - self.y) / (self.length)))
 end
 
@@ -127,13 +125,13 @@ end
 
 function ScrollBar:scroll(y)
   if y < 0 then
-    for i = -1, y, -1 do
+    --for i = -1, y, -1 do
       self:scrollUp()
-    end
+    --end
   elseif y > 0 then
-    for i = 1, y do 
+    --for i = 1, y do 
       self:scrollDown()
-    end
+   --end
   end
   return self
 end
@@ -149,6 +147,7 @@ function ScrollBar:scrollDown()
 end
 
 function ScrollBar:draw()
+  if self.offsetmax == 0 then return end
   local d = (self.length - self.innerLength)*(self.offset/(self.offsetmax))
   lg.setLineWidth(4)
   lg.setColor(self.colors.main)
@@ -447,7 +446,7 @@ end
 function BattleTab:isOver(x,y)
   if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
     lobby.battleTabHover = self
-    lobby.battleTabHoverTimer = 0.9
+    lobby.battleTabHoverTimer = 0.5
     self.highlighted = true
     return true
   end

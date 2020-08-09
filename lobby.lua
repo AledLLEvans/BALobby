@@ -90,6 +90,12 @@ function lobby.enter()
           lobby.refreshBattleTabs()
         end))
     
+        lobby.optionsPanel:addButton(Button:new():setText("Replays")
+    :setFunction(function()
+          Replay.fetchLocalReplays()
+          lobby.state = "replays"
+        end))
+    
     lobby.optionsPanel:addButton(Button:new():setText("Open Spring Dir")
     :setFunction(function()
           love.system.openURL(lobby.springFilePath)
@@ -303,13 +309,28 @@ local launchCode = [[
 function lobby.launchSpring()
   lobby.setReady(false)
   writeScript()
-  local exec = "start /b \"" .. lobby.exeFilePath .. " script.txt\""
+  local exec = "\"" .. lobby.exeFilePath .. "\" script.txt"
   if not lobby.springThread then
     lobby.springThread = love.thread.newThread( launchCode )
   end
   love.window.minimize( )
   lobby.springThread:start( exec )
 end
+
+local updateFunc = {
+  ["landing"] = function(dt)
+    --battle tab hovering
+    lobby.battleTabHoverTimer = lobby.battleTabHoverTimer - dt
+    if lobby.battleTabHoverTimer < 0 then
+      if lobby.battleTabHover and not lobby.battleTabHoverWindow then
+        lobby.battleTabHoverWindow = BattleTabHoverWindow:new(lobby.battleTabHover.battleid)
+        lobby.render()
+      end
+    end
+  end,
+  ["replays"] = function(dt) end,
+  ["battle"] = function(dt) end
+}
 
 lobby.reeltimer = 0
 lobby.timer = 0
@@ -342,15 +363,8 @@ function lobby.update( dt )
   if lobby.loginInfoEnd and not love.window.hasFocus() then
     love.timer.sleep(0.2)
   end
-  
-  --battle tab hovering
-  lobby.battleTabHoverTimer = lobby.battleTabHoverTimer - dt
-  if lobby.battleTabHoverTimer < 0 then
-    if lobby.battleTabHover and not lobby.battleTabHoverWindow then
-      lobby.battleTabHoverWindow = BattleTabHoverWindow:new(lobby.battleTabHover.battleid)
-      lobby.render()
-    end
-  end
+
+  updateFunc[lobby.state](dt)
   
   --scrollbars
   if lobby.renderOnUpdate then
@@ -427,14 +441,9 @@ local resize = {
               :setPosition(0, 0)
               :setDimensions(0, 0)
   end,
-  ["battleWithList"] = function()
-              lobby.fixturePoint[1].x = 260
-              for _, b in pairs(Battle:getActiveBattle().buttons) do
-                b:resetPosition()
-              end
-              lobby.battleTabScrollBar:getZone()
-              :setPosition(0, 90)
-              :setDimensions(lobby.fixturePoint[1].x, lobby.height)
+  ["replays"] = function()
+              Replay.initialize()
+              lobby.fixturePoint[1].x = 0
   end
 }
 
@@ -653,7 +662,10 @@ lobby.renderFunction = {
     local h = fonts.notable:getHeight()
     lg.setFont(fonts.latosmall)
     lg.print(lobby.battleTabSubText, 50, 10 + h)
-    lg.setColor(1,1,1)
+    lg.setColor(1,1,1)  
+    for button in pairs(UserButton.s) do
+      button:draw()
+    end
   end,
   
   ["battle"] = function() 
@@ -675,6 +687,40 @@ lobby.renderFunction = {
     lg.setColor(1,1,1)
     Battle:getActive():draw()
   end,
+    
+  ["replays"] = function()
+    lg.setColor(colors.bb)
+    lg.rectangle("fill",
+                0,
+                0,
+                lobby.fixturePoint[2].x,
+                90)
+    lg.rectangle("fill",
+                0,
+                lobby.fixturePoint[1].y,
+                lobby.fixturePoint[2].x,
+                lobby.height - lobby.fixturePoint[1].y)
+    lg.setColor(colors.bg)
+    lg.rectangle("fill",
+                0,
+                lobby.fixturePoint[1].y,
+                lobby.fixturePoint[2].x,
+                38)
+              
+    lg.setColor(colors.bt)
+    lg.setFont(fonts.notable)
+    lg.print("Your Demos", 50, 10)
+    
+    for tab in pairs(ReplayTab.s) do
+      tab:draw()
+    end
+  
+    lg.setColor(1,1,1)  
+    for button in pairs(UserButton.s) do
+      button:draw()
+    end
+  end,
+  
   
   ["options"] = function() end
 }
@@ -695,7 +741,6 @@ function lobby.render()
   lobby.renderFunction[lobby.state]()
 
   Channel.textbox:draw()
-  lg.setLineWidth(0.5)
   lobby.userListScrollBar:draw()
   
   if Channel:getActive() then
@@ -713,10 +758,6 @@ function lobby.render()
   lobby.optionsButton:draw()
   if lobby.optionsExpanded then
     lobby.optionsPanel:draw()
-  end
-  
-  for button in pairs(UserButton.s) do
-    button:draw()
   end
   
   if login.dl_status or login.unpackerCount > 0 then

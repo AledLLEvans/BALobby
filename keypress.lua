@@ -63,7 +63,12 @@ return {
   ["tab"] = function() 
   end,
   ["escape"] = function()
-    Battle.exit()
+    if lobby.state == "replays" then
+      lobby.state = "landing"
+      ReplayTab:clean()
+    elseif Battle:getActive() then
+      Battle.exit()
+    end
   end,
   ["left"] = function()
     if Channel:getActive() and Channel:getActive():getTextbox():isActive() then
