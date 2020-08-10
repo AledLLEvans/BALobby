@@ -195,7 +195,8 @@ function ADDSTARTRECT.respond(words, sentences)
   lobby.render.background()
 end
 function ADDUSER.respond(words, sentences)
-  local user = {}
+  local existing_user = User.s[words[1]]
+  local user = existing_user or {}
   user.name = words[1]
   user.country = words[2]
   user.flag = flag[user.country] or flag["XX"]
@@ -212,6 +213,13 @@ function ADDUSER.respond(words, sentences)
     user.spectator = 1
     user.synced = 0
     user.color = 0
+  end
+  if existing_user then
+    local chan = existing_user.channel 
+    if chan then
+      table.insert(chan.lines, {time = os.date("%X"), msg = user.name .. " is now online."})
+    end
+    return
   end
   User:new(user)
 end
@@ -572,9 +580,11 @@ function REMOVESTARTRECT.respond(words, sentences)
 end
 function REMOVEUSER.respond(words, sentences)
   local user = words[1]
-  User.s[user] = nil
-  for name, chan in pairs(Channel.s) do
-    chan.users[user] = nil
+  local chan = User.s[user].channel
+  if chan then
+    table.insert(chan.lines, {time = os.date("%X"), msg = user .. " is now offline."})
+  else
+    User.s[user] = nil
   end
 end
 function REQUESTBATTLESTATUS.respond(words, sentences)

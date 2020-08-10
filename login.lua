@@ -17,17 +17,17 @@ login.downloadText = ""
 function login.enter()
   state = STATE_LOGIN
   love.keyboard.setKeyRepeat(true)
-  login.video = lg.newVideo( "data/bamovie3.ogv" )
+  login.video = lg.newVideo( "data/bamoviecrop4.ogv" )
   login.video:play()
   login.log = {}
-
+  
   login.savePass = settings.savePass or false
   
   function lobby.send(msg)
     table.insert(lobby.serverChannel.lines, {time = os.date("%X"), to = true, msg = msg})
     return tcp:send(msg .. "\n")
   end
-  
+    
   lobby.width, lobby.height = lg.getDimensions()
   loginBox = {
     x = lobby.width/2,
@@ -410,7 +410,8 @@ end
 
 function login.draw()
   lg.setColor(1,1,1)
-  lg.draw(login.video, 0, 0, 0, lobby.width/1920, (lobby.height)/970)
+  local as = 
+  lg.draw(login.video, 0, 0, 0, 1/3, 1/3)--lobby.width/2, lobby.height/2, 0, lobby.width/1920, (lobby.height)/1080, 1920/2, 1080/2)
   login.drawLoginBox()
   if not lobby.gotEngine then
     login.drawDownloadBars()

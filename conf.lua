@@ -3,11 +3,11 @@ function love.conf(t)
   t.window.title = "Balanced Annihilation Lobby"
   t.window.icon = "data/images/balogo.png"
 
-  t.window.width = 800
-  t.window.height = 600
+  t.window.width = 640
+  t.window.height = 288
 
-  t.window.minwidth = 800
-  t.window.minheight = 600
+  t.window.minwidth = 640
+  t.window.minheight = 288
 
   t.window.resizable = true
   

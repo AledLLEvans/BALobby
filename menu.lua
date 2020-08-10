@@ -382,16 +382,17 @@ function ChannelTab:click(x,y,b)
         Channel:getActive().newMessage = false
       end
       Channel.active = self.parent
+      Channel.scrollBar:setOffset(0)
       Channel.textbox.active = true
       self.parent.newMessage = false
       lobby.channelMessageHistoryID = false
       lobby.render.userlist()
       Channel:refreshTabs()
     elseif b == 2 then
+      sound.cancel:play()
       if not self.parent.isServer then
-        sound.cancel:play()
         self.parent.display = false
-        if self.parent == Channel.active then Channel.active = Channel.s[next(Channel.s)] end
+        if self.parent == Channel.active then Channel.active = Channel.s[next(Channel.s, Channel.active.title)] end
         Channel:refreshTabs()
       end
     end

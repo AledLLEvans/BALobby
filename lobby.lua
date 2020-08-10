@@ -9,28 +9,69 @@ local address, port = "springfightclub.com", 8200
 lobby.MOTD = {}
 lobby.canvas = {}
 lobby.render = {}
-
+local draggable = require "draggable"
 lobby.options = require "options"
 lobby.userlist = require "userlist"
 lobby.battlelist = require "battlelist"
 function lobby.enter()
+  love.window.updateMode( lobby.width, lobby.height, {minwidth = 800, minheight = 600, borderless = true})
+  lobby.width = 800
+  lobby.height = 600
   state = STATE_LOBBY
   sound.intro:play()
-  Channel.textbox = Textbox:new()
   lg.setBackgroundColor(colors.bg)
   lobby.launchOnGameStart = true
   lobby.fixturePoint = {
     {x = 0, y = 2*lobby.height/3},
     {x = 3*lobby.width/4, y = 2*lobby.height/3}
   } 
+
+  lobby.close = Button:new()
+  :setPosition(lobby.width-30, 0)
+  :setDimensions(30,30)
+  :setFunction(function() love.event.quit() end)
+  lobby.maximize = Button:new()
+  :setPosition(lobby.width-60, 0)
+  :setDimensions(30,30)
+  :setFunction(function()
+      print("max button click")
+      if love.window.isMaximized() then
+        lobby.resize(800, 600)
+        love.window.updateMode(800, 600)
+      else 
+        love.window.maximize()
+        local _, _, flags = love.window.getMode() 
+        lobby.resize(love.window.getDesktopDimensions( flags.display )) 
+      end
+    end)
+  lobby.minimize = Button:new()
+  :setPosition(lobby.width-90, 0)
+  :setDimensions(30,30)
+  :setFunction(function()
+      if love.window.isMinimized() then
+        love.window.restore( )
+      else 
+        love.window.minimize()
+      end
+    end)
+  
+  function lobby.close:draw()
+    lg.print("X", self.x + self.w/2, self.y)
+  end
+  function lobby.maximize:draw()
+    lg.print("| |", self.x + self.w/2, self.y)
+  end
+  function lobby.minimize:draw()
+    lg.print("_", self.x + self.w/2, self.y)
+  end
+  
+  lobby.clickables[lobby.close] = true
+  lobby.clickables[lobby.maximize] = true
+  lobby.clickables[lobby.minimize] = true
   
   lobby.userlist.initialize()
   lobby.battlelist.initialize()
   lobby.options.initialize()
-  
-  lobby.serverChannel = Channel.s["server"]
-
-  Channel.active = lobby.serverChannel
   
   lobby.resize( lobby.width, lobby.height )
   lobby.timeSinceLastPong = 0
@@ -81,6 +122,10 @@ function lobby.resize( w, h )
     }
   }
   
+  lobby.close:setPosition(lobby.width-30, 0)
+  lobby.maximize:setPosition(lobby.width-60, 0)
+  lobby.minimize:setPosition(lobby.width-90, 0)
+  
   lobby.canvas.battlelist = lg.newCanvas(lobby.width, lobby.height)
   lobby.canvas.background = lg.newCanvas(lobby.width, lobby.height)
   lobby.canvas.foreground = lg.newCanvas(lobby.width, lobby.height)
@@ -104,6 +149,7 @@ end
 
 lobby.battleTabHoverTimer = 0
 function lobby.mousemoved( x, y, dx, dy, istouch )
+  draggable.move(dx, dy)
   lobby.pickCursor(x, y)
   local Ymin = 90*3 + 70 + 40
   local Ymax = lobby.height - 100
@@ -138,12 +184,8 @@ end
 
 lobby.clickables = {}
 
-local function mrexit( ) 
-  lobby.clickedBattleID = 0
-  lobby.render.background()
-end
-
 function lobby.mousepressed(x,y,b)
+  if draggable.start(x, y) then return end
   if math.abs(y - lobby.fixturePoint[1].y) < 10 and x > lobby.fixturePoint[1].x and x < lobby.fixturePoint[2].x  then
     lobby.dragY = true
   end
@@ -159,7 +201,13 @@ function lobby.mousepressed(x,y,b)
   if bool then lobby.renderOnUpdate = true end
 end
 
+local function mrexit( )
+  lobby.clickedBattleID = 0
+  lobby.render.background()
+end
+
 function lobby.mousereleased(x,y,b)
+  if draggable.stop() then return end
   if lobby.dropDown then
     lobby.dropDown:click(x,y)
     lobby.dropDown = nil
@@ -547,6 +595,9 @@ function lobby.render.background()
   
   lobby.renderFunction[lobby.state]()
   
+  lobby.close:draw()
+  lobby.minimize:draw()
+  lobby.maximize:draw()
   
   if Channel:getActive() then
     Channel:getActive():render()

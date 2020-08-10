@@ -21,3 +21,4 @@ Known 'bugs':
 ~~- server will disconnect if you idle at login screen~~
 
 ![Battle](/screenies/battle.jpg?raw=true "Battle Screenie")
+![Battle](/screenies/Battle.png?raw=true "Battle Screenie")

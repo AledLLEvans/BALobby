@@ -395,6 +395,7 @@ function settings.pack()
   local str = "return {"
   for i, k in pairs(settings) do
     if type(k) == "string" then
+      k = string.gsub(k, "\"", "\\\"")
       str = str .. i .. " = \"" .. k .. "\","
     elseif type(k) == "number" then
       str = str .. i .. " = " .. k .. ","

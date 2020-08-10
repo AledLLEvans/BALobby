@@ -38,26 +38,28 @@ return {
     Channel:getTextbox():backspace()
   end,
   ["return"] = function()
-    if Channel:getTextbox():isActive() then
-      if Channel:getTextbox():getText() == "" then return end
-      if Channel:getActive():getName() == "server" then
-        lobby.send(Channel:getActive():getText())
-        return
+    if Channel.active then
+      if Channel:getTextbox():isActive() then
+        if Channel:getTextbox():getText() == "" then return end
+        if Channel:getActive().isServer then
+          lobby.send(Channel:getActive():getText())
+          return
+        end
+        local cmd = "SAY"
+        local to = " " .. Channel:getActive():getName() .. " "
+        if string.find(Channel:getActive():getName(), "Battle") then
+          cmd = cmd .. "BATTLE"
+          to = " "
+        elseif Channel:getActive():isUser() then
+          cmd = cmd .. "PRIVATE"
+        end
+        local text, sub = string.gsub(Channel:getActive():getText(), "^/me ", "", 1)
+        if sub == 1 then cmd = cmd .. "EX" end
+        lobby.send(cmd .. to .. text)
+        lobby.channelMessageHistoryID = false
+        table.insert(Channel:getActive().sents, Channel:getTextbox():getText())
+        Channel:getTextbox():clearText()
       end
-      local cmd = "SAY"
-      local to = " " .. Channel:getActive():getName() .. " "
-      if string.find(Channel:getActive():getName(), "Battle") then
-        cmd = cmd .. "BATTLE"
-        to = " "
-      elseif Channel:getActive():isUser() then
-        cmd = cmd .. "PRIVATE"
-      end
-      local text, sub = string.gsub(Channel:getActive():getText(), "^/me ", "", 1)
-      if sub == 1 then cmd = cmd .. "EX" end
-      lobby.send(cmd .. to .. text)
-      lobby.channelMessageHistoryID = false
-      table.insert(Channel:getActive().sents, Channel:getTextbox():getText())
-      Channel:getTextbox():clearText()
     end
   end,
   ["tab"] = function() 

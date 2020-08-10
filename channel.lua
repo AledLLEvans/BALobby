@@ -8,6 +8,7 @@ Channel.y = 0
 Channel.w = 10
 Channel.h = 10
 Channel.scrollBar = ScrollBar:new():setScrollBarLength(-20):setScrollSpeed(fonts.latosmall:getHeight())
+Channel.textbox = Textbox:new()
 
 Channel.addButton = Button:new():setFunction(
   function()
@@ -38,6 +39,8 @@ end
 ServerChannel = Channel:new({title = "server", isServer = true})
 BattleChannel = Channel:new({title = "battle"}, true)
 BattleChannel.mt = {__index = BattleChannel}
+lobby.serverChannel = Channel.s["server"]
+Channel.active = lobby.serverChannel
 
 function BattleChannel:new(o)
   o = Channel:new(o)
@@ -144,6 +147,7 @@ function Channel:refreshTabs()
   end
   Channel.addButton:setPosition(self.x + totalWidth + 4, self.y + 3):setDimensions(35, 35):setText("+")
   lobby.render.background()
+  lobby.render.userlist()
   lobby.render.foreground()
 end
 
@@ -177,7 +181,7 @@ function Channel:render()
   :setOffsetMax(sbOffsetMax(#self.lines, self.h, fontHeight)):draw()
 
   lg.setColor(colors.text)
-  local i = #self.lines 
+  local i = #self.lines
   local y = 20 - self.scrollBar:getOffset()
   while i > 0 do
     while y < 20 do

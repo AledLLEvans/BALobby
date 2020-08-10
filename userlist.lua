@@ -19,7 +19,7 @@ function userlist:initialize()
   userlist.bar.openspeed = function() return lobby.width/32 end
   userlist.bar.shutspeed = function() return lobby.width/25 end
 
-  userlist.bar:setPosition(userlist.bar.shutx(), 2)
+  userlist.bar:setPosition(userlist.bar.shutx(), 32)
 
   function userlist.bar:shut()
     if self.state ~= "open" then return end
@@ -27,6 +27,7 @@ function userlist:initialize()
     self.w = userlist.bar.shutw
     self.h = userlist.bar.shuth
     lobby.fixturePoint[2].x = lobby.width - userlist.bar.shutw
+    if lobby.state == "battle" then Battle:getActive():resetButtons() end
     self.func = self.shutfunc
     self.state = "shutting"
     lobby.clickables[userlist] = nil
@@ -39,6 +40,7 @@ function userlist:initialize()
     self.w = userlist.bar.openw
     self.h = userlist.bar.openh
     lobby.fixturePoint[2].x = 3*lobby.width/4
+    if lobby.state == "battle" then Battle:getActive():resetButtons() end
     self.func = self.openfunc
     self.state = "opening"
     lobby.clickables[userlist] = true
@@ -160,12 +162,12 @@ end
 function userlist.resize()
   if userlist.bar.state == "open" then
     lobby.fixturePoint[2].x = 3*lobby.width/4
-    userlist.bar:setPosition(userlist.bar.shutx(), 2)
+    userlist.bar:setPosition(userlist.bar.shutx(), 32)
     userlist.bar.state = "shut"
     userlist.bar:open()
   elseif userlist.bar.state == "shut" then
     lobby.fixturePoint[2].x = lobby.width - userlist.bar.shutw
-    userlist.bar:setPosition(userlist.bar.shutx(), 2)
+    userlist.bar:setPosition(userlist.bar.shutx(), 32)
   end
   lobby.render.userlist()
 end

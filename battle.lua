@@ -23,30 +23,30 @@ function Battle:joined(id)
   end
   self.buttons = {
     ["autolaunch"] = Checkbox:new()
-    :resetPosition(function() return lobby.fixturePoint[2].x - 160, lobby.fixturePoint[2].y - 40 end)
+    :resetPosition(function() return lobby.fixturePoint[2].x - 85, lobby.fixturePoint[2].y - 65 end)
     :setDimensions(20,20)
     :setText("Auto-launch")
     :setToggleVariable(function() return lobby.launchOnGameStart end)
     :onClick(function() lobby.launchOnGameStart = not lobby.launchOnGameStart end),
     ["exit"] = BattleButton:new()
-    :resetPosition(function() return lobby.fixturePoint[2].x - 370, lobby.fixturePoint[2].y - 50 end)
+    :resetPosition(function() return (Battle:getActive().midpoint or 0) - (lobby.fixturePoint[1].x + 25) + 20, lobby.fixturePoint[2].y - 35 end)
     :setDimensions(40, 40)
     :setText("Exit")
     :onClick(function() Battle.exit() end),
     ["ready"] = Checkbox:new()
-    :resetPosition(function() return lobby.fixturePoint[2].x - 230 , lobby.fixturePoint[2].y - 40 end)
+    :resetPosition(function() return lobby.fixturePoint[2].x - 160 , lobby.fixturePoint[2].y - 65 end)
     :setDimensions(20, 20)
     :setText("Ready")
     :setToggleVariable(function() return User.s[lobby.username].ready end)
     :onClick(function() if not User.s[lobby.username].spectator then lobby.setReady(not User.s[lobby.username].ready) end end),
     ["spectate"] = Checkbox:new()
-    :resetPosition(function() return lobby.fixturePoint[2].x - 315, lobby.fixturePoint[2].y - 40 end)
+    :resetPosition(function() return lobby.fixturePoint[2].x - 250, lobby.fixturePoint[2].y - 65 end)
     :setDimensions(20, 20)
     :setText("Spectate")
     :setToggleVariable(function() return User.s[lobby.username].spectator end)
     :onClick(function() lobby.setSpectator(not User.s[lobby.username].spectator) end),
     ["launch"] = BattleButton:new()
-    :resetPosition(function() return lobby.fixturePoint[2].x - 55, lobby.fixturePoint[2].y - 50 end)
+    :resetPosition(function() return lobby.fixturePoint[2].x - 55, lobby.fixturePoint[2].y - 35 end)
     :setDimensions(60, 40)
     :setText("Launch")
     :onClick(function()
@@ -87,6 +87,12 @@ function Battle:joined(id)
   Battle.showMap = "minimap"
   
   self:getChannel().infoBoxScrollBar:setOffset(0)
+end
+
+function Battle:resetButtons()
+  for _, button in pairs(self.buttons) do
+    button:resetPosition()
+  end
 end
 
 function Battle.exit()
@@ -531,7 +537,7 @@ function Battle:drawSpectators(y)
   for username, user in pairs(self.users) do
     if user.isSpectator and user.battleStatus then
       t = t + 1
-      if y >= ymin + fontHeight and y <= ymax - 40 then
+      if y >= ymin + fontHeight and y <= ymax - 60 then
         c = c + 1
         if drawBackRect then
           lg.setColor(colors.bb)
