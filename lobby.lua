@@ -1,4 +1,4 @@
-lobby = {}
+
 local lg = love.graphics
 local lk = love.keyboard
 local base64 = require("base64")
@@ -15,6 +15,7 @@ lobby.userlist = require "userlist"
 lobby.battlelist = require "battlelist"
 function lobby.enter()
   state = STATE_LOBBY
+  sound.intro:play()
   Channel.textbox = Textbox:new()
   lg.setBackgroundColor(colors.bg)
   lobby.launchOnGameStart = true
@@ -82,6 +83,7 @@ function lobby.resize( w, h )
   
   lobby.canvas.battlelist = lg.newCanvas(lobby.width, lobby.height)
   lobby.canvas.background = lg.newCanvas(lobby.width, lobby.height)
+  lobby.canvas.foreground = lg.newCanvas(lobby.width, lobby.height)
   lobby.canvas.userlist = lg.newCanvas(lobby.width, lobby.height)
   
   resize[lobby.state]()
@@ -131,13 +133,12 @@ function lobby.mousemoved( x, y, dx, dy, istouch )
     Channel:getActive():render()
   end
   lobby.render.background()
+  lobby.render.foreground()
 end
 
 lobby.clickables = {}
 
 local function mrexit( ) 
-  lobby.dropDown = nil
-  lobby.renderOnUpdate = false
   lobby.clickedBattleID = 0
   lobby.render.background()
 end
@@ -161,6 +162,8 @@ end
 function lobby.mousereleased(x,y,b)
   if lobby.dropDown then
     lobby.dropDown:click(x,y)
+    lobby.dropDown = nil
+    lobby.renderOnUpdate = false
     return mrexit()
   end
   if lobby.dragY then
@@ -179,26 +182,18 @@ function lobby.mousereleased(x,y,b)
     sb.held = false
   end
   if not lobby.loginInfoEnd then return end
-  if b == 1 then
-    for v, b in pairs(lobby.clickables) do
-      if b then if v:click(x, y) then return mrexit() end end
-    end
-    if lobby.state == "landing" and y > 40 and y < lobby.fixturePoint[1].y then
-      for id, bt in pairs(BattleTab.s) do
-        if lobby.clickedBattleID == id then
-          bt:click(x, y)
-        end
+  for v, bool in pairs(lobby.clickables) do
+    if bool then if v:click(x, y, b) then return mrexit() end end
+  end
+  if lobby.state == "landing" and y > 40 and y < lobby.fixturePoint[1].y then
+    for id, bt in pairs(BattleTab.s) do
+      if lobby.clickedBattleID == id then
+        bt:click(x, y)
       end
     end
-    lobby.clickedBattleID = 0
-    Channel:getTextbox():click(x, y)
-    --[[for h in pairs(Hyperlink.s) do
-      h:click(x,y)
-    end]]
   end
-  --[[for button in pairs(UserButton.s) do
-    button:click(x, y, b)
-  end]]
+  lobby.clickedBattleID = 0
+  Channel:getTextbox():click(x, y)
   return mrexit()
 end
 
@@ -224,7 +219,6 @@ function lobby.wheelmoved(x, y)
   end
   lobby.render.background()
 end
-
 
 ---- Courtesy of https://springrts.com/phpbb/viewtopic.php?t&t=32643 ----
 local function writeScript()
@@ -373,7 +367,7 @@ end
 
 function lobby.receiveData(dt)
   if lobby.timer > 30 then
-    lobby.send("PING" .. "\n")
+    lobby.send("PING")
     lobby.timer = 0
   end
   lobby.timeSinceLastPong = lobby.timeSinceLastPong + dt
@@ -403,7 +397,6 @@ function lobby.receiveData(dt)
     if responses[cmd] then
       responses[cmd].respond(words, sentences, data)
     end
-    lobby.render.background()
   end
 end
 
@@ -472,11 +465,6 @@ lobby.state = "landing"
 
 lobby.renderFunction = {
   ["landing"] = function()
-    --for _, k in pairs(BattleTab.s) do
-    --  k:draw()
-    --end
-    --
-    
     lg.setColor(colors.bb)
     lg.rectangle("fill",
                 0,
@@ -495,23 +483,10 @@ lobby.renderFunction = {
                 lobby.fixturePoint[2].x,
                 38)
     lg.setColor(colors.bt)
-    --lg.line(0, 90, lobby.fixturePoint[2].x, 90)
-    --lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.height)
-    --lg.line(0, lobby.fixturePoint[1].y, lobby.fixturePoint[2].x, lobby.fixturePoint[1].y)
-    --
-    --lobby.battleTabScrollBar:draw()
-    --
-    --lg.setColor(colors.bt)
-    --lg.setFont(fonts.notable)
-    --lg.print(lobby.battleTabHeadText, 50, 10)
-    local h = fonts.notable:getHeight()
+
     lg.setFont(fonts.latosmall)
-    lg.print(lobby.battleTabSubText, 50, h - 15)
-    lg.setColor(1,1,1)  
-    for button in pairs(UserButton.s) do
-      --button:draw()
-    end
-    
+    lg.print(lobby.battleTabSubText, 50, 25)
+    lg.setColor(1,1,1)
   end,
   
   ["battle"] = function() 
@@ -528,8 +503,6 @@ lobby.renderFunction = {
                 lobby.width,
                 38)
     lg.setColor(colors.bt)
-    --lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.fixturePoint[2].y)
-    --lg.line(0, lobby.fixturePoint[1].y, lobby.width, lobby.fixturePoint[1].y)
     lg.setColor(1,1,1)
     Battle:getActive():draw()
   end,
@@ -561,10 +534,7 @@ lobby.renderFunction = {
       tab:draw()
     end
   
-    lg.setColor(1,1,1)  
-    for button in pairs(UserButton.s) do
-      --button:draw()
-    end
+    lg.setColor(1,1,1)
   end,
   
   
@@ -575,23 +545,11 @@ function lobby.render.background()
   lg.setCanvas(lobby.canvas.background)
   lg.clear()
   
-  Hyperlink.s = {}
-  
   lobby.renderFunction[lobby.state]()
   
-  Channel.textbox:draw()
-  --lobby.userListScrollBar:draw()
   
   if Channel:getActive() then
     Channel:getActive():render()
-  end
-  
-  for i, k in pairs(Channel:getTabs()) do
-    k:draw()
-  end
-  
-  for h in pairs(Hyperlink.s) do
-    h:draw()
   end
 
   lobby.options.button:draw()
@@ -604,7 +562,6 @@ function lobby.render.background()
       login.drawDownloadBars()
     end
   end
-  if lobby.dropDown then lobby.dropDown:draw() end
   if lobby.battleTabHoverWindow then lobby.battleTabHoverWindow:draw() end
   lg.setColor(1,1,1)
   lg.setCanvas()
@@ -627,10 +584,31 @@ function lobby.render.userlist()
   lg.setCanvas()
 end
 
+function lobby.render.foreground()
+  lg.setCanvas(lobby.canvas.foreground)
+  lg.clear()
+  for _, channel in pairs(Channel.s) do
+    if channel.display then channel.tab:draw() end
+  end
+ Channel.addButton:draw() 
+  
+  
+  --[[Hyperlink.s = {}
+  for h in pairs(Hyperlink.s) do
+    h:draw()
+  end]]
+  
+  Channel.textbox:draw()
+  
+  if lobby.dropDown then lobby.dropDown:draw() end
+  lg.setCanvas()
+end
+
 function lobby.draw()
   if not love.window.isVisible() then return end
   if lobby.state == "landing" then lg.draw(lobby.canvas.battlelist) end
   lg.draw(lobby.canvas.background)
   lg.draw(lobby.canvas.userlist)
+  lg.draw(lobby.canvas.foreground)
   Channel.textbox:renderText()
 end

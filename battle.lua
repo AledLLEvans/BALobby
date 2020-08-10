@@ -93,7 +93,7 @@ function Battle.exit()
   Channel.active = Channel.s[next(Channel.s, Battle:getActive():getChannel().title)]
   Battle:getActive().display = false
   Battle:getActive():getChannel().display = false
-  lobby.send("LEAVEBATTLE" .. "\n")
+  lobby.send("LEAVEBATTLE")
   lobby.state = "landing"
   Battle.modoptionsScrollBar = nil
   --lobby.clickables[Battle.sideButton] = nil
@@ -218,7 +218,7 @@ function lobby.sendMyBattleStatus()
   }
   local newstatus = b[1] * 2 + b[2] * 2 ^ 10 + 2 ^ (23 - b[3])
   local color = user.color
-  lobby.send("MYBATTLESTATUS " .. newstatus .. " " .. color .. "\n")
+  lobby.send("MYBATTLESTATUS " .. newstatus .. " " .. color)
 end
 
 function Battle:update(dt)
@@ -327,16 +327,15 @@ function Battle:drawMap()
   lg.setFont(fonts.robotoitalic)
   lg.setColor(colors.text)
   
-  lg.printf(self.mapName, self.midpoint, 10 + fontHeight, lobby.width - self.midpoint, "center")
   lg.setColor(1,1,1)
   local w, h
+  local xmin = self.midpoint + 20
+  local xmax = lobby.fixturePoint[2].x - 50
+  local ymin = 20 + 2*fontHeight
+  local ymax = lobby.fixturePoint[2].y - 60 - (math.floor(lobby.height/100))*fonts.latoitalic:getHeight() - 10
+  -- couldnt find a better way to do this
+  local aw, ah = xmax - xmin, ymax - ymin
   if self.minimap then
-    local xmin = self.midpoint + 20
-    local xmax = lobby.fixturePoint[2].x - 50
-    local ymin = 20 + 2*fontHeight
-    local ymax = lobby.fixturePoint[2].y - 60 - (math.floor(lobby.height/100))*fonts.latoitalic:getHeight() - 10
-    -- couldnt find a better way to do this
-    local aw, ah = xmax - xmin, ymax - ymin
     if self.mapW > self.mapH then
       w = aw
       h = w / self.mapWidthHeightRatio
@@ -383,6 +382,7 @@ function Battle:drawMap()
       0, 2*w/self.mapW, 2*h/self.mapH)
       lg.setShader( )
     end
+    lg.printf(self.mapName, self.midpoint + 5, 10 + fontHeight, aw, "center")
     --
     self.mapScrollBar:getZone():setPosition(x, ymin):setDimensions(w, h)
     local myAllyTeam = 0

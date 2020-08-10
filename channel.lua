@@ -3,17 +3,28 @@ Channel.mt =  {__index = Channel}
 local lg = love.graphics
 
 Channel.s = {}
-Channel.tabs = {}
 Channel.x = 0
 Channel.y = 0
 Channel.w = 10
 Channel.h = 10
+Channel.scrollBar = ScrollBar:new():setScrollBarLength(-20):setScrollSpeed(fonts.latosmall:getHeight())
 
+Channel.addButton = Button:new():setFunction(
+  function()
+    lobby.channels = {}
+    lobby.send("CHANNELS")
+  end)
+Channel.addButton.colors.background = colors.bg
+lobby.clickables[Channel.addButton] = true
+  
 function Channel:new(o, bool)
+  o = o or {}
   setmetatable(o, Channel.mt)
   
+  o.tab = ChannelTab:new()
+  o.tab.parent = o
+  
   o.font = fonts.latosmall
-  o.scrollBar = ScrollBar:new():setScrollBarLength(-20):setScrollSpeed(o.font:getHeight())
   o.lines = {}
   o.users = {} 
   o.sents = {}
@@ -24,7 +35,7 @@ function Channel:new(o, bool)
   return o
 end
 
-ServerChannel = Channel:new({title = "server"})
+ServerChannel = Channel:new({title = "server", isServer = true})
 BattleChannel = Channel:new({title = "battle"}, true)
 BattleChannel.mt = {__index = BattleChannel}
 
@@ -112,39 +123,28 @@ end
 function Channel:refreshTabs()
   local i = 1
   local totalWidth = 0
-  for i, k in pairs(self.tabs) do
-    lobby.clickables[k] = nil
-  end
-  self.tabs = {}
-  for chanName, channel in pairs(self.s) do
+  for name, channel in pairs(self.s) do
+    lobby.clickables[channel.tab] = nil
     if channel.display then
-      local showChanName = chanName
-      if string.find(chanName, "Battle") then
-        showChanName = "Battle"
+      local tab_name = name
+      if channel.isBattle then
+        tab_name = "Battle"
+      elseif channel.isServer then
+        tab_name = "server"
       end
-      local textWidth = fonts.latochantab:getWidth("#" .. chanName)
-      self.tabs[chanName] = ChannelTab:new(self.x + totalWidth + 4,
-        self.y + 3,
-        3 + textWidth + 16,
-        35,
-        showChanName,
-        function()
-          if Channel:getActive() then
-            Channel:getActive().newMessage = false
-          end
-          self.active = channel
-          Channel.textbox.active = true
-          channel.newMessage = false
-          lobby.channelMessageHistoryID = false
-          lobby.render.userlist()
-        end)
-      lobby.clickables[self.tabs[chanName]] = true
+      local textWidth = fonts.latochantab:getWidth("#" .. tab_name)
+      channel.tab:setPosition(self.x + totalWidth + 4, self.y + 3)
+      :setDimensions(3 + textWidth + 16, 35)
+      channel.tab.title = name
+      channel.tab.text = tab_name
+      lobby.clickables[channel.tab] = true
       i = i + 1
       totalWidth = totalWidth + textWidth + 16
     end
   end
-  Channel.addChannelButton = Button:new():setPosition(self.x + totalWidth + 4, self.y + 3):setDimensions(30, 30):setText("+"):setFunction(function() print("chanbuttonaddclick") end)
+  Channel.addButton:setPosition(self.x + totalWidth + 4, self.y + 3):setDimensions(35, 35):setText("+")
   lobby.render.background()
+  lobby.render.foreground()
 end
 
 function Channel:getText()

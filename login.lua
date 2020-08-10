@@ -21,28 +21,11 @@ function login.enter()
   login.video:play()
   login.log = {}
 
-  settings.unpack()
-  if settings.mode then
-    if settings.mode == "light" then
-      setLightMode()
-      lobby.darkMode = false
-      lobby.lightMode = true
-    elseif settings.mode == "dark" then
-      setDarkMode()
-      lobby.darkMode = true
-      lobby.lightMode = false
-    end
-  else
-    settings.add({mode = "dark"})
-    setDarkMode()
-    lobby.darkMode = true
-    lobby.lightMode = false
-  end
   login.savePass = settings.savePass or false
   
   function lobby.send(msg)
     table.insert(lobby.serverChannel.lines, {time = os.date("%X"), to = true, msg = msg})
-    return tcp:send(msg)
+    return tcp:send(msg .. "\n")
   end
   
   lobby.width, lobby.height = lg.getDimensions()
@@ -196,49 +179,6 @@ function login.updateUnpack(dt)
     end
     unpacker_update = unpacker_channel:pop()
   end
-end
-
-settings = {}
-function settings.unpack()
-  local path = love.filesystem.getSaveDirectory( ) .. "/settings.lua"
-  if lfs.getInfo( "settings.lua" ) then
-    t = require "settings"
-  end
-  if t then
-    for i, k in pairs(t) do
-      settings[i] = k
-    end
-  end
-  return settings
-end
-
-function settings.pack()
-  local str = "return {"
-  for i, k in pairs(settings) do
-    if type(k) == "string" then
-      str = str .. i .. " = \"" .. k .. "\","
-    elseif type(k) == "number" then
-      str = str .. i .. " = " .. k .. ","
-    elseif type(k) == "boolean" then
-      str = str .. i .. " = " .. tostring(k) .. ","
-    end
-  end
-  str = str .. "}"
-  return lfs.write( "settings.lua", str)
-end
-
-function settings.add(t)
-  for i, k in pairs(t) do
-    settings[i] = k
-  end
-  return settings.pack()
-end
-
-function settings.remove(t)
-  for i, _ in pairs(t) do
-    settings[i] = nil
-  end
-  return settings.pack()
 end
 
 local function connect()

@@ -39,6 +39,7 @@ function battlelist.refresh()
   for rank = 1, #BattleIDsByPlayerCount do
     Battle.s[BattleIDsByPlayerCount[rank]].rankByPlayerCount = rank
   end
+  local bth = 100
   local i = 1
   local y = 40 - battlelist.scrollbar:getOffset()
   local x = 0
@@ -53,7 +54,7 @@ function battlelist.refresh()
     if y >= ymin then
       BattleTab.s[BattleIDsByPlayerCount[i]]
       :setPosition(x+8, y+5)
-      :setDimensions(w - 16, 100)
+      :setDimensions(w - 16, bth)
       BattleTab.s[BattleIDsByPlayerCount[i]].visible = true
     end
     i = i + 1
@@ -62,21 +63,21 @@ function battlelist.refresh()
     if c > lobby.battleTabDisplayCols then
       c = 1
       x = xmin
-      y = y + 110
+      y = y + bth + 10
     end
   end
   lobby.battleTabSubText = "Showing " .. #BattleIDsByPlayerCount .. " battles."
   if not lobby.loginInfoEnd then
     lobby.battleTabSubText = lobby.battleTabSubText .. "(Loading .. )"
   end
-  lobby.battleTabDisplayRows = math.floor((ymax-ymin)/110) - 1
-  local len = lobby.fixturePoint[2].y - 90
+  lobby.battleTabDisplayRows = math.floor((ymax-ymin)/(bth + 10)) - 1
+  local len = lobby.fixturePoint[2].y - 40
   local sblen = math.max(0, math.ceil(#BattleIDsByPlayerCount/lobby.battleTabDisplayCols) - lobby.battleTabDisplayRows)
   lobby.battlelist.scrollbar
-  :setPosition(lobby.fixturePoint[2].x - 3, 90)
+  :setPosition(lobby.fixturePoint[2].x - 3, 40)
   :setLength(len)
-  :setScrollBarLength(len/sblen)
-  :setOffsetMax(sblen * 110)
+  :setScrollBarLength((len - 100)/sblen)
+  :setOffsetMax(sblen * (bth + 10))
   
   lobby.render.battlelist()
 end

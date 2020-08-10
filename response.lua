@@ -219,7 +219,7 @@ function AGREEMENT.respond(words, sentences)
   table.insert(login.log, {from = true, msg = sentences[1] })
 end
 function AGREEMENTEND.respond(words, sentences)
-  lobby.send("CONFIRMAGREEMENT" .. "\n")
+  lobby.send("CONFIRMAGREEMENT")
   lobby.send(lobby.loginString)
   table.insert(login.log, {from = true, msg = reason })
 end
@@ -268,6 +268,7 @@ end
 function CHANGEEMAILREQUESTDENIED.respond(words, sentences)
 end
 function CHANNEL.respond(words, sentences)
+  table.insert(lobby.channels, {name = words[1], users = words[2], topic = words[3]})
 end
 function CHANNELMESSAGE.respond(words, sentences)
 end
@@ -399,6 +400,11 @@ end
 function ENABLEUNITS.respond(words, sentences)
 end
 function ENDOFCHANNELS.respond(words, sentences)
+  local text = "Index Name Users\n"
+  for id, channel in pairs(lobby.channels) do
+    text = text .. id .. ". #" .. channel.name .. ", " .. channel.users .. "\n"
+  end
+  lw.showMessageBox("Channel List", text, "info" )
 end
 function FAILED.respond(words, sentences)
 end
@@ -440,6 +446,7 @@ function JOINBATTLE.respond(words, sentences)
   else
     Battle.active.channel.display = true
   end
+  sound.down:play()
   Battle.active:joined(id)
   --lobby.refreshUserButtons()
   Battle.enter()
@@ -509,9 +516,9 @@ end
 function LEFTFROM.respond(words, sentences)
 end
 function LOGININFOEND.respond(words, sentences)
-  lobby.send("JOIN main" .. "\n")
-  lobby.send("JOIN en" .. "\n")
-  lobby.send("JOIN newbies" .. "\n")
+  lobby.send("JOIN main")
+  lobby.send("JOIN en")
+  lobby.send("JOIN newbies")
   lobby.loginInfoEnd = true
   lobby.refreshBattleTabs()
   lobby.render.background()

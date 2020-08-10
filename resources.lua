@@ -1,6 +1,7 @@
 img = {}
 
 local lg = love.graphics
+local lfs = love.filesystem
 
 local flag_codes ={
 "AF",
@@ -309,8 +310,32 @@ fonts.latoboldbig = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 16)
 fonts.latoboldbigger = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 24)
 fonts.latoboldbiggest = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 48)
 fonts.latobolditalic = lg.newFont("data/fonts/Lato/Lato-BoldItalic.ttf", 12)
+fonts.latobolditalicmedium = lg.newFont("data/fonts/Lato/Lato-BoldItalic.ttf", 16)
 
 sound = {}
+
+sound.up = love.audio.newSource("data/sounds/sfx_09a.ogg", "static")
+sound.down = love.audio.newSource("data/sounds/sfx_09b.ogg", "static")
+
+sound.check = love.audio.newSource("data/sounds/sfx_20a.ogg", "static")
+
+sound.woosh = love.audio.newSource("data/sounds/sfx_06.ogg", "static")
+sound.woosh:setVolume(0.5)
+sound.woosh:setPitch(5)
+
+sound.intro = love.audio.newSource("data/sounds/sfx_18a.ogg", "static")
+sound.intro:setVolume(0.5)
+sound.intro:setPitch(4)
+
+sound.userlist = love.audio.newSource("data/sounds/sfx_10a.ogg", "static")
+
+sound.tab = love.audio.newSource("data/sounds/sfx_04a.ogg", "static")
+sound.tab:setPitch(5)
+
+sound.cancel = love.audio.newSource("data/sounds/sfx_05c.ogg", "static")
+sound.cancel:setPitch(1)
+
+
 sound.ring = love.audio.newSource("data/sounds/doorbell-old-tring.ogg", "static")
 sound.ring:setVolume(0.5)
 sound.ding = love.audio.newSource("data/sounds/bell_02.ogg", "static")
@@ -352,4 +377,64 @@ function setDarkMode()
   lg.setBackgroundColor(colors.bg)
 end
 
-setDarkMode()
+settings = {}
+function settings.unpack()
+  local path = love.filesystem.getSaveDirectory( ) .. "/settings.lua"
+  if lfs.getInfo( "settings.lua" ) then
+    t = require "settings"
+  end
+  if t then
+    for i, k in pairs(t) do
+      settings[i] = k
+    end
+  end
+  return settings
+end
+
+function settings.pack()
+  local str = "return {"
+  for i, k in pairs(settings) do
+    if type(k) == "string" then
+      str = str .. i .. " = \"" .. k .. "\","
+    elseif type(k) == "number" then
+      str = str .. i .. " = " .. k .. ","
+    elseif type(k) == "boolean" then
+      str = str .. i .. " = " .. tostring(k) .. ","
+    end
+  end
+  str = str .. "}"
+  return lfs.write( "settings.lua", str)
+end
+
+function settings.add(t)
+  for i, k in pairs(t) do
+    settings[i] = k
+  end
+  return settings.pack()
+end
+
+function settings.remove(t)
+  for i, _ in pairs(t) do
+    settings[i] = nil
+  end
+  return settings.pack()
+end
+
+lobby = {}
+settings.unpack()
+if settings.mode then
+  if settings.mode == "light" then
+    setLightMode()
+    lobby.darkMode = false
+    lobby.lightMode = true
+  elseif settings.mode == "dark" then
+    setDarkMode()
+    lobby.darkMode = true
+    lobby.lightMode = false
+  end
+else
+  settings.add({mode = "dark"})
+  setDarkMode()
+  lobby.darkMode = true
+  lobby.lightMode = false
+end

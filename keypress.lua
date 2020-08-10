@@ -41,7 +41,7 @@ return {
     if Channel:getTextbox():isActive() then
       if Channel:getTextbox():getText() == "" then return end
       if Channel:getActive():getName() == "server" then
-        lobby.send(Channel:getActive():getText() .. "\n")
+        lobby.send(Channel:getActive():getText())
         return
       end
       local cmd = "SAY"
@@ -54,7 +54,7 @@ return {
       end
       local text, sub = string.gsub(Channel:getActive():getText(), "^/me ", "", 1)
       if sub == 1 then cmd = cmd .. "EX" end
-      lobby.send(cmd .. to .. text .. "\n")
+      lobby.send(cmd .. to .. text)
       lobby.channelMessageHistoryID = false
       table.insert(Channel:getActive().sents, Channel:getTextbox():getText())
       Channel:getTextbox():clearText()

@@ -33,8 +33,8 @@ function ScrollBar:new()
   new.horizontal = not new.vertical
   
   new.colors = {
-    main = {112/255, 112/255, 112/255},
-    inner = {28/255, 252/255, 139/255}
+    main = colors.bt,
+    inner = colors.bargreen
   }
   
   lobby.scrollBars[new] = true
@@ -255,8 +255,10 @@ end
 
 function Button:click(x, y)
   if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
-    --sound[self.clickSound]:stop()
-    --sound[self.clickSound]:play()
+    if self.sound then
+      self.sound:stop()
+      self.sound:play()
+    end
     self.func()
     return true
   end
@@ -290,6 +292,7 @@ Checkbox.s = {}
 function Checkbox:new()
   local o = Button:new()
   setmetatable(o, Checkbox.mt)
+  o.sound = sound.check
   o.font = fonts.latoitalic
   o.text = lg.newText( o.font )
   o.ticked = false
@@ -365,31 +368,53 @@ ChannelTab = Button:new()
 ChannelTab.mt =  {__index = ChannelTab}
 ChannelTab.s = {}
 
-function ChannelTab:new(x,y,w,h,text,func)
-  local o = {}
+function ChannelTab:new()
+  local o = Button:new()
   setmetatable(o, ChannelTab.mt)
-  o.type = "default"
-  o.x = x or 0
-  o.y = y or 0
-  o.w = w or 160
-  o.h = h or 100
-  o.text = text or ""
-  o.visible = false
-  
-  o.func = func or function() end
-  
-  self.s[o.text] = o
-  
   return o
+end
+
+function ChannelTab:click(x,y,b)
+  if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
+    if b == 1 then
+      sound.tab:play()
+      if Channel:getActive() then
+        Channel:getActive().newMessage = false
+      end
+      Channel.active = self.parent
+      Channel.textbox.active = true
+      self.parent.newMessage = false
+      lobby.channelMessageHistoryID = false
+      lobby.render.userlist()
+      Channel:refreshTabs()
+    elseif b == 2 then
+      if not self.parent.isServer then
+        sound.cancel:play()
+        self.parent.display = false
+        if self.parent == Channel.active then Channel.active = Channel.s[next(Channel.s)] end
+        Channel:refreshTabs()
+      end
+    end
+    return true
+  end
+  return false
+  
+end
+
+function ChannelTab:setDimensions(w,h)
+  self.w = w or self.w
+  self.h = h or self.h
+  return self
 end
 
 function ChannelTab:draw()
   local h = 0
   local channel = self.text
+  local text = "#" .. self.text
   if channel == "Battle" then
     channel = Battle:getActiveBattle():getChannel().title
+    text = "Battle"
   end
-  local text = "#" .. self.text
   if Channel:getActive() and (channel == Channel:getActive().title) then
     lg.setColor(colors.bb)
     lg.rectangle("fill", self.x, self.y-1, self.w, self.h + h+1)
@@ -421,6 +446,8 @@ function BattleTab:new(id)
   local new = Button:new()
   setmetatable(new, BattleTab.mt)
   
+  new.sound = sound.up
+  
   new.colors = {
     background = {
       default = colors.bb,
@@ -431,12 +458,12 @@ function BattleTab:new(id)
   new.battleid = id
   new.func = function()
     if Battle:getActive() then
-      tcp:send("LEAVEBATTLE" .. "\n")
+      lobby.send("LEAVEBATTLE")
       Battle:getActive():getChannel().display = false
     end
     local sp = string.match(love.math.random(), "0%.(.*)")
     Battle.s[id].myScriptPassword = sp
-    tcp:send("JOINBATTLE " .. id .. " EMPTY " .. sp .."\n")
+    lobby.send("JOINBATTLE " .. id .. " EMPTY " .. sp)
   end
   new.visible = false
   self.s[id] = new

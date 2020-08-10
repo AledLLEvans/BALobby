@@ -7,6 +7,7 @@ function options.initialize()
   :setPosition(0, 0)
   :setDimensions(36,36)
   :onClick(function()
+    sound.tab:play()
     options.expanded = not options.expanded
     lobby.clickables[options.panel] = not lobby.clickables[options.panel]
     lobby.render.background()
@@ -44,47 +45,37 @@ function options.initialize()
             lobby.darkMode = false
             lobby.lightMode = true
             settings.add({mode = "light"})
-            Channel.textbox.colors.background = colors.bg
-            Channel.textbox.colors.text = colors.text
-            local battle = Battle:getActive()
-            if battle then
-              for i, k in pairs(battle.buttons) do
-                k.colors.background = colors.bb
-                k.colors.text = colors.text
-              end
-            end
-            for k in pairs(options.panel.buttons) do
-              k.colors.background = colors.bb
-              k.colors.text = colors.text
-            end
-            for id, bt in pairs(BattleTab.s) do
-              bt.colors.background.default = colors.bb
-              bt.colors.background.highlight = colors.bd
-            end
           else
             setDarkMode()
             lobby.darkMode = true
             lobby.lightMode = false
             settings.add({mode = "dark"})
-            Channel.textbox.colors.background = colors.bg
-            Channel.textbox.colors.text = colors.text
-            local battle = Battle:getActive()
-            if battle then
-              for i, k in pairs(battle.buttons) do
-                k.colors.background = colors.bb
-                k.colors.text = colors.text
-              end
-            end
-            for k in pairs(options.panel.buttons) do
+          end
+          Channel.textbox.colors.background = colors.bg
+          Channel.textbox.colors.text = colors.text
+          local battle = Battle:getActive()
+          if battle then
+            for i, k in pairs(battle.buttons) do
               k.colors.background = colors.bb
               k.colors.text = colors.text
             end
-            for id, bt in pairs(BattleTab.s) do
-              bt.colors.background.default = colors.bb
-              bt.colors.background.highlight = colors.bd
-            end
           end
+          for k in pairs(options.panel.buttons) do
+            k.colors.background = colors.bb
+            k.colors.text = colors.text
+          end
+          for id, bt in pairs(BattleTab.s) do
+            bt.colors.background.default = colors.bb
+            bt.colors.background.highlight = colors.bd
+          end
+          lobby.battlelist.scrollbar.colors.main = colors.bt
+          lobby.battlelist.scrollbar.colors.inner = colors.bargreen
+          Channel:getActive().scrollBar.colors.main = colors.bt
+          Channel:getActive().scrollBar.colors.inner = colors.bargreen
+          Channel.addButton.colors.background = colors.bg
+          Channel.addButton.colors.text = colors.text
           lobby.refreshBattleTabs()
+          lobby.render.userlist()
         end))
     
     options.panel:addButton(Button:new():setText("Replays")
