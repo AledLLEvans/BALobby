@@ -1,8 +1,7 @@
-
 local lg = love.graphics
 local lk = love.keyboard
-local base64 = require("base64")
-local md5 = require("md5")
+local base64 = require("lib/base64")
+local md5 = require("lib/md5")
   
 local address, port = "springfightclub.com", 8200
 
@@ -10,10 +9,11 @@ lobby.MOTD = {}
 lobby.canvas = {}
 lobby.render = {}
 local draggable = require "draggable"
-lobby.options = require "options"
-lobby.userlist = require "userlist"
-lobby.battlelist = require "battlelist"
+lobby.options = require "gui/options"
+lobby.userlist = require "gui/userlist"
+lobby.battlelist = require "gui/battlelist"
 function lobby.enter()
+  login.video = nil
   love.window.updateMode( lobby.width, lobby.height, {minwidth = 800, minheight = 600, borderless = true})
   lobby.width = 800
   lobby.height = 600
@@ -34,7 +34,6 @@ function lobby.enter()
   :setPosition(lobby.width-60, 0)
   :setDimensions(30,30)
   :setFunction(function()
-      print("max button click")
       if love.window.isMaximized() then
         lobby.resize(800, 600)
         love.window.updateMode(800, 600)
@@ -56,13 +55,25 @@ function lobby.enter()
     end)
   
   function lobby.close:draw()
-    lg.print("X", self.x + self.w/2, self.y)
+    lg.setColor(colors.bargreen)
+    lg.rectangle("fill", self.x, self.y, self.w, self.y)
+    lg.setColor(colors.text)
+    lg.setFont(fonts.latoboldbig)
+    lg.print("X", self.x + self.w/4, self.y + self.h/4)
   end
   function lobby.maximize:draw()
-    lg.print("| |", self.x + self.w/2, self.y)
+    lg.setColor(colors.bt)
+    lg.rectangle("fill", self.x, self.y, self.w, self.y)
+    lg.setColor(colors.text)
+    lg.setFont(fonts.latoboldbig)
+    lg.print("| |", self.x + self.w/4, self.y + self.h/4)
   end
   function lobby.minimize:draw()
-    lg.print("_", self.x + self.w/2, self.y)
+    lg.setColor(colors.bt)
+    lg.rectangle("fill", self.x, self.y, self.w, self.y)
+    lg.setColor(colors.text)
+    lg.setFont(fonts.latoboldbig)
+    lg.print("__", self.x + self.w/4, self.y + self.h/4)
   end
   
   lobby.clickables[lobby.close] = true
@@ -184,6 +195,11 @@ end
 
 lobby.clickables = {}
 
+local function mrexit( )
+  lobby.clickedBattleID = 0
+  lobby.render.background()
+end
+
 function lobby.mousepressed(x,y,b)
   if draggable.start(x, y) then return end
   if math.abs(y - lobby.fixturePoint[1].y) < 10 and x > lobby.fixturePoint[1].x and x < lobby.fixturePoint[2].x  then
@@ -199,11 +215,6 @@ function lobby.mousepressed(x,y,b)
     bool = sb:mousepressed(x,y) or bool
   end
   if bool then lobby.renderOnUpdate = true end
-end
-
-local function mrexit( )
-  lobby.clickedBattleID = 0
-  lobby.render.background()
 end
 
 function lobby.mousereleased(x,y,b)
@@ -241,7 +252,11 @@ function lobby.mousereleased(x,y,b)
     end
   end
   lobby.clickedBattleID = 0
-  Channel:getTextbox():click(x, y)
+  if y > lobby.fixturePoint[1].y then
+    Channel:getTextbox().active = true
+  else
+    Channel:getTextbox().active = false
+  end
   return mrexit()
 end
 
@@ -324,21 +339,6 @@ function lobby.launchSpring()
   lobby.springThread:start( exec )
 end
 
-local updateFunc = {
-  ["landing"] = function(dt)
-    --battle tab hovering
-    lobby.battleTabHoverTimer = lobby.battleTabHoverTimer - dt
-    if lobby.battleTabHoverTimer < 0 then
-      if lobby.battleTabHover and not lobby.battleTabHoverWindow then
-        lobby.battleTabHoverWindow = BattleTabHoverWindow:new(lobby.battleTabHover.battleid)
-        lobby.render.background()
-      end
-    end
-  end,
-  ["replays"] = function(dt) end,
-  ["battle"] = function(dt) end
-}
-
 lobby.events = {}
 lobby.reeltimer = 0
 lobby.timer = 0
@@ -371,13 +371,6 @@ function lobby.update( dt )
   end
   --
   
-  if login.downloading then
-    login.updateDownload(dt)
-  end
-  if login.unpacking then
-    login.updateUnpack(dt)
-  end
-  
   local bool = false
   for event in pairs(lobby.events) do
     bool = event:update(dt) or bool
@@ -386,8 +379,6 @@ function lobby.update( dt )
     lobby.render.userlist()
     lobby.battlelist.refresh()
   end
-
-  updateFunc[lobby.state](dt)
   
   --scrollbars
   if lobby.renderOnUpdate then
@@ -424,6 +415,7 @@ function lobby.receiveData(dt)
     local txt = "Disconnected from server, last PONG over two minutes ago."
     table.insert(lobby.serverChannel.lines, {time = os.date("%X"), msg = txt})
     Channel:broadcast(txt)
+    love.event.quit("restart")
   end
   local data = tcp:receive()
   if data then
@@ -443,7 +435,7 @@ function lobby.receiveData(dt)
       i = i + 1
     end
     if responses[cmd] then
-      responses[cmd].respond(words, sentences, data)
+      responses[cmd](words, sentences, data)
     end
   end
 end
@@ -519,16 +511,18 @@ lobby.renderFunction = {
                 0,
                 lobby.fixturePoint[2].x,
                 40)
+              
     lg.rectangle("fill",
                 0,
                 lobby.fixturePoint[1].y,
-                lobby.fixturePoint[2].x,
+                lobby.width,
                 lobby.height - lobby.fixturePoint[1].y)
+              
     lg.setColor(colors.bg)
     lg.rectangle("fill",
                 0,
                 lobby.fixturePoint[1].y,
-                lobby.fixturePoint[2].x,
+                lobby.width,
                 38)
     lg.setColor(colors.bt)
 
@@ -575,8 +569,8 @@ lobby.renderFunction = {
                 38)
               
     lg.setColor(colors.bt)
-    lg.setFont(fonts.notable)
-    lg.print("Your Demos", 50, 10)
+    lg.setFont(fonts.latoboldbig)
+    lg.print("Your Demos", 50, 15)
     
     for _, tab in pairs(ReplayTab.s) do
       tab:draw()
@@ -608,11 +602,6 @@ function lobby.render.background()
     lobby.options.panel:draw()
   end
   
-  if login.dl_status or login.unpackerCount > 0 then
-    if not settings.engine_downloaded or not settings.engine_unpacked then
-      login.drawDownloadBars()
-    end
-  end
   if lobby.battleTabHoverWindow then lobby.battleTabHoverWindow:draw() end
   lg.setColor(1,1,1)
   lg.setCanvas()
@@ -642,7 +631,6 @@ function lobby.render.foreground()
     if channel.display then channel.tab:draw() end
   end
  Channel.addButton:draw() 
-  
   
   --[[Hyperlink.s = {}
   for h in pairs(Hyperlink.s) do

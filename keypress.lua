@@ -66,7 +66,11 @@ return {
   end,
   ["escape"] = function()
     if lobby.state == "replays" then
-      lobby.state = "landing"
+      if Battle:getActive() then
+        lobby.state = "battle"
+      else
+        lobby.state = "landing"
+      end
       ReplayTab:clean()
     elseif Battle:getActive() then
       Battle.exit()

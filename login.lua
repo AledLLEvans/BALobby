@@ -1,9 +1,8 @@
 local utf8 = require("utf8")
 login = {}
-local base64 = require("base64")
-local md5 = require("md5")
- 
-local nfs = require "nativefs"
+local base64 = require("lib/base64")
+local md5 = require("lib/md5")
+local nfs = require "lib/nativefs"
 
 local lg = love.graphics
 local lfs = love.filesystem
@@ -115,7 +114,7 @@ local progress_channel = love.thread.getChannel("progress_login")
 function login.startEngineDownload()
   local url = "https://springrts.com/dl/buildbot/default/master/103.0/win64/spring_103.0_win64-minimal-portable.7z"
   
-  local download_thread = love.thread.newThread("downloader.lua")
+  local download_thread = love.thread.newThread("thread/downloader.lua")
   download_thread:start(url, "spring_103.0_win64-minimal-portable.7z", lobby.springFilePath .. "engine", "login")
   login.downloading = true
   login.dl_status = {finished = false, downloaded = 0, file_size = 0}
@@ -126,10 +125,10 @@ function login.startEngineUnpack()
   login.unpacking = true
   login.downloadText = "Unpacking .."
   nfs.createDirectory(lobby.springFilePath .. "engine\\103.0")
-  local unpacker_thread = love.thread.newThread("unpacker.lua")
+  local unpacker_thread = love.thread.newThread("thread/unpacker.lua")
   unpacker_thread:start(
     lobby.engineFolder .. "spring_103.0_win64-minimal-portable.7z",
-    lobby.springFilePath .. "engine\\103.0")
+    lobby.springFilePath .. "engine\\103")
   nfs.createDirectory(lobby.mapFolder)
   nfs.createDirectory(lobby.gameFolder)
 end
@@ -205,7 +204,6 @@ end
 
 login.stls = false
 function login.handleResponse(k, v)
-  print(k, v)
   if k == "tass" then
     if login.stls then
       tcp:send("STLS".."\n")
@@ -285,7 +283,6 @@ function login.update( dt )
   end
   local data = tcp:receive()
   if data then
-    print("data", data)
     love.filesystem.append( "log.txt", data .. "\n" )
     local cmd = string.match(data, "^%u+")
     local words = {}
@@ -302,7 +299,7 @@ function login.update( dt )
     end
     table.insert(login.log, {receive = true, msg = data})
     if responses[cmd] then
-      responses[cmd].respond(words, sentances, data)
+      responses[cmd](words, sentances, data)
     end
   end
 end
@@ -350,6 +347,7 @@ local keypress = {
     login.passBox:backspace()
   end,
   ["return"] = function()
+    if not lobby.gotEngine then return end
     if login.delay > 0 then return end
     login.delay = 0.5
     --if login.mode == "login" then
@@ -410,7 +408,6 @@ end
 
 function login.draw()
   lg.setColor(1,1,1)
-  local as = 
   lg.draw(login.video, 0, 0, 0, 1/3, 1/3)--lobby.width/2, lobby.height/2, 0, lobby.width/1920, (lobby.height)/1080, 1920/2, 1080/2)
   login.drawLoginBox()
   if not lobby.gotEngine then
@@ -450,7 +447,7 @@ function login.drawDownloadText()
   local fontHeight = fonts.robotosmall:getHeight()
   if login.dl_status then
     if login.dl_status.file_size > 0 then
-      local perc = math.floor(login.dl_status.downloaded / login.dl_status.file_size * 100)/100
+      local perc = math.floor(login.dl_status.downloaded / login.dl_status.file_size * 100)
       lg.print(perc .."%",  lobby.width/2-20, 20 + fontHeight)
     end
     if login.dl_status.err then

@@ -10,7 +10,7 @@ function Download:new(o)
   o.id = Download.s
   Download.s = Download.s + 1
 
-  o.thread = love.thread.newThread("downloader.lua")
+  o.thread = love.thread.newThread("thread/downloader.lua")
   o.channel = love.thread.getChannel("progress_" .. o.id)
   
   o.downloading = false

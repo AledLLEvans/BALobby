@@ -1,10 +1,111 @@
 Replay = {}
 
 local lg = love.graphics
+local lfs = love.filesystem
+local ld = love.data
   
 local replayMirror = "http://replays.springfightclub.com/"
 
-local nfs = require "nativefs"
+local nfs = require "lib/nativefs"
+
+local function get(path)
+  print(path)
+  local info = nfs.getInfo(path)
+  local gzip, size = nfs.read(path)
+  local decomp = ld.decompress( "string", "gzip", gzip )
+    
+  --[[if not info then return end
+  if not ((info.type == "file") and (info.size > 0)) then return end
+  local fd = nfs.newFileData(path)]]
+  
+  local magic,
+  version,
+  headerSize,
+  versionString,
+  gameID,
+  unixTime,
+  scriptSize,
+  demoStreamSize,
+  gameTime,
+  wallclockTime,
+  numPlayers,
+  playerStatSize,
+  playerStatElemSize,
+  numTeams,
+  teamStatSize,
+  teamStatElemSize,
+  teamStatPeriod,
+  winningAllyTeamsSize,
+  _ =
+  love.data.unpack("c16 i i c256 I I8 i i i i i i i i i i i", decomp)
+  
+  --local script = love.data.unpack("c" .. scriptSize, decomp, headerSize)
+  --local demo = love.data.unpack("c" .. demoStreamSize, decomp, headerSize + scriptSize)
+  --print(script)
+   -- print(demo)
+
+ local t = {
+    {name = "magic", val = magic},
+    {name = "version", val = version},
+    {name = "headerSize", val = headerSize},
+    {name = "versionString", val = versionString},
+    {name = "gameID", val = gameID},
+    {name = "unixTime", val = unixTime},
+    {name = "scriptSize", val = scriptSize},
+    {name = "demoStreamSize", val = demoStreamSize},
+    {name = "gameTime", val = gameTime},
+    {name = "wallclockTime", val = wallclockTime},
+    {name = "numPlayers", val = numPlayers},
+    {name = "playerStatSize", val = playerStatSize},
+    {name = "playerStatElemSize", val = playerStatElemSize},
+    {name = "numTeams", val = numTeams},
+    {name = "teamStatSize", val = teamStatSize},
+    {name = "teamStatElemSize", val = teamStatElemSize},
+    {name = "teamStatPeriod", val = teamStatPeriod},
+    {name = "winningAllyTeamsSize", val = winningAllyTeamsSize},
+    {name = "script", val = script},
+  }
+--[[    ["magic"] = magic,
+    ["version"] = version,
+    ["headerSize"] = headerSize,
+    ["versionString"] = versionString,
+    ["gameID"] = gameID,
+    ["unixTime"] = unixTime,
+    ["scriptSize"] = scriptSize,
+    ["demoStreamSize"] = demoStreamSize,
+    ["gameTime"] = gameTime,
+    ["wallclockTime"] = wallclockTime,
+    ["numPlayers"] = numPlayers,
+    ["playerStatSize"] = playerStatSize,
+    ["playerStatElemSize"] = playerStatElemSize,
+    ["numTeams"] = numTeams,
+    ["teamStatSize"] = teamStatSize,
+    ["teamStatElemSize"] = teamStatElemSize,
+    ["teamStatPeriod"] = teamStatPeriod,
+    ["winningAllyTeamsSize"] = winningAllyTeamsSize
+  }]]
+
+  --[[print("magic", magic)
+  print("version", version)
+  print("headerSize", headerSize)
+  print("versionString", versionString)
+  print("gameID", gameID)
+  print("unixTime", unixTime)  
+  print("scriptSize", scriptSize)
+  print("demoStreamSize", demoStreamSize)
+  print("gameTime", gameTime)
+  print("wallclockTime", wallclockTime)
+  print("numPlayers", numPlayers)
+  print("playerStatSize", playerStatSize)
+  print("playerStatElemSize", playerStatElemSize)
+  print("numTeams", numTeams)
+  print("teamStatSize", teamStatSize)
+  print("teamStatElemSize", teamStatElemSize)
+  print("teamStatPeriod", teamStatPeriod)
+  print("winningAllyTeamsSize", winningAllyTeamsSize)]]
+  
+  return t
+end
 
 function Replay.fetchLocalReplays()
   Replay.local_demos = {
@@ -68,7 +169,7 @@ function Replay.refresh()
     if c > cols then
       c = 1
       x = xmin
-      y = y + 35
+      y = y + 400--35
     end
   end
 end
@@ -154,7 +255,7 @@ local launchCode = [[
 ReplayTab = Button:new()
 ReplayTab.mt = {__index = ReplayTab}
 ReplayTab.s = {}
-function ReplayTab:new(id, filename, date, time, mapName, version)
+function ReplayTab:new(id, filename, date, time, mapName, eversion)
   local new = Button:new()
   setmetatable(new, ReplayTab.mt)
   
@@ -172,13 +273,15 @@ function ReplayTab:new(id, filename, date, time, mapName, version)
   new.date = date
   new.time = time
   new.mapName = mapName
-  new.version = version
+  new.eversion = eversion
   
   new.year = date:match("(%d%d%d%d)%d%d%d%d")
   new.month = date:match("%d%d%d%d(%d%d)%d%d")
   new.day = date:match("%d%d%d%d%d%d(%d%d)")
   
   new.dateStr = new.day .. " " .. month[tonumber(new.month)] .. ", " .. new.year
+  
+  new.header = get(lobby.replayFolder .. filename)
   
   new.highlighted = false
   
@@ -232,8 +335,13 @@ function ReplayTab:draw()
   
   -- BATTLE TITLE
   lg.setColor(colors.text)
-  lg.printf(self.mapName, x + h + 10, y+5, w, "left")
-  lg.printf(self.dateStr, x + h + 10, y+5, w-40, "right")
+  --lg.printf(self.mapName, x + h + 10, y+5, w, "left")
+  --lg.printf(self.dateStr, x + h + 10, y+5, w-40, "right")
+  
+  for i, k in pairs(self.header) do
+    lg.printf(k.name, x + h + 190, y + 15 * i, w, "left")
+    lg.printf((k.val) or "nil", x + h + 350, y + 15 * i, w, "left")
+  end
   
   -- IMAGES
   lg.setColor(colors.bd)

@@ -1,7 +1,7 @@
 local lg = love.graphics
 local utf8 = require("utf8")
-local base64 = require("base64")
-local md5 = require("md5")
+local base64 = require("lib/base64")
+local md5 = require("lib/md5")
 
 ScrollBar = {}
 ScrollBar.mt = {__index = ScrollBar}
@@ -386,7 +386,6 @@ function ChannelTab:click(x,y,b)
       Channel.textbox.active = true
       self.parent.newMessage = false
       lobby.channelMessageHistoryID = false
-      lobby.render.userlist()
       Channel:refreshTabs()
     elseif b == 2 then
       sound.cancel:play()
@@ -399,7 +398,6 @@ function ChannelTab:click(x,y,b)
     return true
   end
   return false
-  
 end
 
 function ChannelTab:setDimensions(w,h)

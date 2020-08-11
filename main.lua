@@ -1,6 +1,6 @@
 require("resources")
 require("user")
-require("textbox")
+require("gui/textbox")
 require("download")
 require("menu")
 require("lobby")
@@ -14,12 +14,12 @@ STATE_LAUNCHPAD, STATE_LOGIN, STATE_LOBBY = 0,1,2
 gamestates = {[0]=launchpad, [1]=login, [2]=lobby}
 
 local lfs = love.filesystem
-local nfs = require "nativefs"
+local nfs = require "lib/nativefs"
 local lg = love.graphics
 
 local function checkOS()
   local os = love.system.getOS()
-  local engine = "103.0"
+  local engine = "103"
   if os == "Windows" then
     lobby.springFilePath = lfs.getUserDirectory() .. 'Documents\\My Games\\Spring\\'
     lobby.engineFolder = lobby.springFilePath .. "engine\\"
