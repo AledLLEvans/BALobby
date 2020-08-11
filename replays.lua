@@ -37,7 +37,7 @@ local function get(path)
   teamStatPeriod,
   winningAllyTeamsSize,
   _ =
-  love.data.unpack("c16 i i c256 I I8 i i i i i i i i i i i", decomp)
+  love.data.unpack("c16 i i c256 c16 I8 i i i i i i i i i i i", decomp)
   
   --local script = love.data.unpack("c" .. scriptSize, decomp, headerSize)
   --local demo = love.data.unpack("c" .. demoStreamSize, decomp, headerSize + scriptSize)
@@ -49,8 +49,8 @@ local function get(path)
     {name = "version", val = version},
     {name = "headerSize", val = headerSize},
     {name = "versionString", val = versionString},
-    {name = "gameID", val = gameID},
-    {name = "unixTime", val = unixTime},
+    --{name = "gameID", val = gameID},
+    --{name = "unixTime", val = unixTime},
     {name = "scriptSize", val = scriptSize},
     {name = "demoStreamSize", val = demoStreamSize},
     {name = "gameTime", val = gameTime},
@@ -335,8 +335,8 @@ function ReplayTab:draw()
   
   -- BATTLE TITLE
   lg.setColor(colors.text)
-  --lg.printf(self.mapName, x + h + 10, y+5, w, "left")
-  --lg.printf(self.dateStr, x + h + 10, y+5, w-40, "right")
+  lg.printf(self.mapName, x + h + 10, y+5, w, "left")
+  lg.printf(self.dateStr, x + h + 10, y+5, w-40, "right")
   
   for i, k in pairs(self.header) do
     lg.printf(k.name, x + h + 190, y + 15 * i, w, "left")
