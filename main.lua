@@ -45,7 +45,24 @@ local function checkOS()
   end
 end
 
+local version = {1, 1, 8}
+local versionString = "alpha-v"
+.. version[1] .. "."
+.. version[2] .. "."
+.. version[3]
+
+local function checkVersion()
+  local http = require "socket.http"
+  local url = "https://springrts.com/dl/buildbot/default/master/103.0/"
+  local data, err = http.request(url)
+  print(data, err)
+  for line in data:gmatch("[^\n]+") do
+    print(line)
+  end
+end
+
 function love.load()
+  --checkVersion()
   checkOS()
   if not lfs.getInfo("chatlogs") then
     lfs.createDirectory("chatlogs")
