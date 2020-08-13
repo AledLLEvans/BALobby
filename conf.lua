@@ -13,6 +13,9 @@ function love.conf(t)
   
   --t.window.vsync = 2
 
+  t.window.highdpi = true
+  t.window.usedpiscale = true
+
   t.modules.audio = true
   t.modules.data = true
   t.modules.event = true

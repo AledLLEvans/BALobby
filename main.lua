@@ -53,7 +53,7 @@ local versionString = "alpha-v"
 
 local function checkVersion()
   local http = require "socket.http"
-  local url = "https://springrts.com/dl/buildbot/default/master/103.0/"
+  local url = "https://www.springfightclub.com/data/lobbies/balobby/"
   local data, err = http.request(url)
   print(data, err)
   for line in data:gmatch("[^\n]+") do
@@ -62,7 +62,7 @@ local function checkVersion()
 end
 
 function love.load()
-  --checkVersion()
+  checkVersion()
   checkOS()
   if not lfs.getInfo("chatlogs") then
     lfs.createDirectory("chatlogs")
