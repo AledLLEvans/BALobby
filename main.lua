@@ -53,7 +53,7 @@ local versionString = "alpha-v"
 
 local function checkVersion()
   local http = require "socket.http"
-  local url = "https://www.springfightclub.com/data/lobbies/balobby/"
+  local url = "https://balancedannihilation.com/data/lobbies/balobby/"
   local data, err = http.request(url)
   print(data, err)
   for line in data:gmatch("[^\n]+") do
@@ -61,8 +61,24 @@ local function checkVersion()
   end
 end
 
+local function makeColorWheel()
+  local imageData = love.image.newImageData(4096, 4096)
+  local i = 16777216
+  for r = 0, 255 do
+    for g = 0, 255 do
+      for b = 0, 255 do
+        i = i - 1
+        local x = i % 4096
+        local y = math.floor(i / 4096)
+        imageData:setPixel(x, y, r/255, g/255, b/255)
+      end
+    end
+  end
+  return lg.newImage(imageData)
+end
+
 function love.load()
-  checkVersion()
+  --checkVersion()
   checkOS()
   if not lfs.getInfo("chatlogs") then
     lfs.createDirectory("chatlogs")

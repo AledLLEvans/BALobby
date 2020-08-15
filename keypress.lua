@@ -65,7 +65,10 @@ return {
   ["tab"] = function() 
   end,
   ["escape"] = function()
-    if lobby.state == "replays" then
+    if lobby.state ~= "landing" then
+      lobby.enter()
+    end
+    --[[if lobby.state == "replays" then
       if Battle:getActive() then
         lobby.state = "battle"
       else
@@ -74,7 +77,7 @@ return {
       ReplayTab:clean()
     elseif Battle:getActive() then
       Battle.exit()
-    end
+    end]]
   end,
   ["left"] = function()
     if Channel:getActive() and Channel:getActive():getTextbox():isActive() then

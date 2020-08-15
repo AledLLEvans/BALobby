@@ -11,22 +11,24 @@ function Download:new(o)
   Download.s = Download.s + 1
 
   o.thread = love.thread.newThread("thread/downloader.lua")
-  o.channel = love.thread.getChannel("progress_" .. o.id)
+  o.channel_string = "download_" .. o.id
+  o.channel = love.thread.getChannel(o.channel_string)
   
   o.downloading = false
   o.finished = false
   o.downloaded = 0
   o.file_size = 0
   o.filename = ""
-
+  
+  lobby.events[o] = true
 	return o
 end
 
 function Download:push(url, filename, filepath)
   self.downloading = true
   self.filename = filename
-  self.thread:start(url, filename, filepath, self.id)
-  print(url, filename, filepath, self.id)
+  self.thread:start(url, filename, filepath, self.channel_string)
+  print(url, filename, filepath, self.channel_string)
 end
 
 function Download:update(dt)
@@ -35,16 +37,20 @@ function Download:update(dt)
     if update.finished then
       self.finished = true
       self.downloading = false
+      lobby.events[self] = nil
     end
     if update.file_size then
+      print(update.file_size)
       self.file_size = update.file_size
     end
     if update.chunk then
       self.downloaded = self.downloaded + update.chunk
     end
     if update.error then
+      print(update.error)
       self.error = update.error
       self.downloading = false
+      lobby.events[self] = nil
     end
     update = self.channel:pop()
   end

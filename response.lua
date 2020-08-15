@@ -6,7 +6,7 @@ local function ACCEPTED(words, sentences)
   login.nameBox.active = false
   login.passBox.active = false
   lobby.connected = true
-  lobby.enter()
+  lobby.initialize()
 end
 local function ADDBOT(words, sentences)
 end
@@ -58,6 +58,10 @@ local function AGREEMENTEND(words, sentences)
 end
 local function BATTLECLOSED(words, sentences)
   local id = words[1]
+  local active_battle = Battle:getActive()
+  if active_battle and active_battle.id == id then
+    active_battle:leave()
+  end
   Battle.s[id] = nil
   Battle.count = Battle.count - 1
   lobby.refreshBattleTabs()
@@ -78,10 +82,10 @@ local function BATTLEOPENED(words, sentences)
   battle.engineName = sentences[2]
   battle.engineVersion = sentences[2]
   
-  battle.mapName = words[11]
-  for i = 12, #words do
+  battle.mapName = ""
+  --[[for i = 12, #words do
     battle.mapName = battle.mapName .. " " .. words[i]
-  end
+  end]]
   battle.title = string.gsub(string.gsub(sentences[2], "%a+ ", "", 1), "%b() ", "", 1)
   battle.gameName = sentences[#sentences] or "gameName"
   
@@ -242,12 +246,13 @@ end
 local function FAILED(words, sentences)
 end
 local function FORCEQUITBATTLE(words, sentences)
-  Battle:getActiveBattle():getChannel():addMessage("You were kicked from the battle!")
+  local battle = Battle:getActive()
+  if battle then battle:leave() end
   lw.showMessageBox("For your information", "You were kicked from the battle!", "info" )
 end
 local function HOSTPORT(words, sentences)
   local port = words[1]
-  Battle:getActiveBattle().hostport = port
+  Battle:getActive().hostport = port
 end
 local function IGNORE(words, sentences)
 end
@@ -282,7 +287,7 @@ local function JOINBATTLE(words, sentences)
   sound.down:play()
   Battle.active:joined(id)
   --lobby.refreshUserButtons()
-  Battle.enter()
+  Battle.enter(true)
 end
 local function JOINBATTLEFAILED(words, sentences)
   Channel:broadcast(" REQUEST TO JOIN BATTLE FAILED, REASON: " .. string.gsub(sentences[1], "%S+ ", "", 1))
@@ -619,24 +624,37 @@ local function UNIGNORE(words, sentences)
 end
 local function UPDATEBATTLEINFO(words, sentences)
   local id = words[1]
-  if not Battle.s[id] then return end
+  local battle = Battle.s[id]
+  if not battle then return end
   local spectatorCount = words[2] or 0
   local locked = words[3]
   local mapHash = words[4]
   local mapName = string.gsub(string.gsub(sentences[1], "%a+ ", "", 1), "-*%d+ ", "", 4)
-  Battle.s[id].locked = locked
-  Battle.s[id].mapHash = mapHash
-  Battle.s[id].spectatorCount = spectatorCount
-  Battle.s[id].mapName = mapName
-  if Battle:getActive() and Battle:getActive() == Battle.s[id] and Battle.s[id]:mapHandler() and Battle.s[id]:modHandler() then
-    lobby.setSynced(true)
+  battle.locked = locked
+  battle.mapHash = mapHash
+  battle.spectatorCount = spectatorCount
+  if battle.mapName == "" then
+    battle.mapName = mapName
+    battle:getMinimap()
+  elseif battle.mapName ~= mapName then
+    battle.minimap = nil
+    battle.metalmap = nil
+    battle.heightmap = nil
+    battle.mapWidthHeightRatio = nil
+    battle.mapW = nil
+    battle.mapH = nil
+    battle.mapName = mapName
+    local active_battle = Battle:getActive()
+    if active_battle and active_battle.id == id then
+      if battle:mapHandler() then
+        lobby.setSynced(true)
+      end
+    end
   end
-  Battle.s[id]:getMinimap()
   lobby.refreshBattleTabs()
 end
 local function UPDATEBOT(words, sentences)
 end
-
 local responses = {
   ["ACCEPTED"] = ACCEPTED,
   ["ADDBOT"] = ADDBOT,

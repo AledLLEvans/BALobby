@@ -12,6 +12,9 @@ function User:new(o)
   new.battleid = 0
   self.count = self.count + 1
   
+  if new.name == lobby.username then
+    lobby.user = new
+  end
   self.s[new.name] = new
 	return new
 end

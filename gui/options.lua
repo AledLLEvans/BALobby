@@ -80,8 +80,7 @@ function options.initialize()
     
     options.panel:addButton(Button:new():setText("Replays")
     :setFunction(function()
-          Replay.fetchLocalReplays()
-          lobby.state = "replays"
+          Replay.enter()
         end))
     
     options.panel:addButton(Button:new():setText("Open Spring Dir")

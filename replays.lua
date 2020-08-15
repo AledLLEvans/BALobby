@@ -1,5 +1,7 @@
 Replay = {}
 
+local spring = require "spring"
+
 local lg = love.graphics
 local lfs = love.filesystem
 local ld = love.data
@@ -7,6 +9,11 @@ local ld = love.data
 local replayMirror = "http://replays.springfightclub.com/"
 
 local nfs = require "lib/nativefs"
+
+function Replay.enter()
+  lobby.state = "replays"
+  Replay.fetchLocalReplays()
+end
 
 function Replay.fetchLocalReplays()
   Replay.local_demos = {
@@ -249,7 +256,6 @@ function ReplayTab:parse(path)
       tbl = script["game"]
     end
     local k, v = line:match("(.+)=(.+);")
-    print(key,k,v)
     if tbl and k and v then
       tbl[k] = v
     end
@@ -258,7 +264,6 @@ function ReplayTab:parse(path)
   self.script = script
   
   local mapName = self.script["game"].mapname
-  print(mapName)
   if mapName then
     self:getMinimap(mapName)
   end
@@ -369,13 +374,11 @@ function ReplayTab:draw()
   lg.printf(str, x + h + 10, y+5, w, "left")
   if self.script then
     local str = "Duel"
-    if self.script["game"].numallyteams then
-      if tonumber(self.script["game"].numallyteams) > 2 then
-        if self.script["modoptions"].mo_ffa then
-          str = "FFA"
-        else
-          str = "Teamfight"
-        end
+    if tonumber(self.script["game"].numallyteams) > 2 then
+      if tonumber(self.script["modoptions"].mo_ffa) == 1 then
+        str = "FFA"
+      else
+        str = "Teamfight"
       end
     end
     lg.printf(str, x + h + 150, y+5, w, "left")
@@ -435,74 +438,14 @@ function ReplayTab:updateDownload(dt)
   end
 end
 
-local function hasMap(mapName)
-  for i, k in pairs(nfs.getDirectoryItems(lobby.mapFolder)) do
-    if k == mapName .. ".sdz" or k == mapName .. ".sd7" then return k end
-  end
-  return false
-end
-
-local function getSMF(dir)
-  for i, k in pairs(lfs.getDirectoryItems( dir )) do
-    local path = dir .. "/" .. k
-    if lfs.getInfo(path).type == "directory" then
-      local smf = getSMF(path)
-      if smf then return smf end
-    elseif string.find(k, ".smf") then
-      return path
-    end
-  end
-  return false
-end
-
 function ReplayTab:getMinimap(mapName)
-  mapName = string.gsub(mapName:lower(), " ", "_")
-  local mapArchive = hasMap(mapName)
-  if not mapArchive or not nfs.mount(lobby.mapFolder .. mapArchive, "map") then self.minimap = nil self.metalmap = nil return end
-  local mapData = lfs.read(getSMF("map"))
-  if not mapData then self.minimap = nil self.metalmap = nil return end
-  nfs.unmount(lobby.mapFolder .. mapArchive, "map")
-  
-  local  _, _, _, mapWidth, mapHeight, _, _, _, _, _, heightmapOffset, tm, ti, minimapOffset, metalmapOffset, _ = 
-  love.data.unpack("c16 i4 I4 i4 i4 i4 i4 i4 f f i4 i4 i4 i4 i4 i4", mapData)
-
-  self.mapW = mapWidth
-  self.mapH = mapHeight
-  self.mapWidthHeightRatio = mapWidth/mapHeight
-  
-  --Mini Map
-  local minimapData = love.data.unpack("c699048", mapData, minimapOffset + 1)
-  minimapData = Battle.DDSheader .. minimapData
-  local bytedata = love.data.newByteData( minimapData )
-  local compdata = love.image.newCompressedData(bytedata)
-  self.minimap = lg.newImage(compdata)
-end
-
-  local header = {}
-  header[1] = 'DDS ' -- magic... technically not part of the header
-  header[2] = love.data.pack('string', 'I4', 124) -- headersize
-  header[3] = love.data.pack('string', 'I4', 8+4096+4194304) --1+2+4+0x1000+0x20000) -- flags
-  header[4] = love.data.pack('string', 'I4', 1024) -- height
-  header[5] = love.data.pack('string', 'I4', 1024) -- width
-  header[6] = love.data.pack('string', 'I4', 8*0x10000) -- pitch
-  header[7] = love.data.pack('string', 'I4', 0) -- depth
-  header[8] = love.data.pack('string', 'I4', 8) -- mipmapcount
-  for i=1,11 do
-    header[8+i] = love.data.pack('string', 'I4', 0) -- reserved
+  local data = spring.getMapData(mapName)
+  if data then
+    self.minimap = data.minimap
+    self.metalmap = data.metalmap
+    self.heightmap = data.heightmap
+    self.mapWidthHeightRatio = data.widthHeightRatio
+    self.mapW = data.mapwidth
+    self.mapH = data.mapheight
   end
-  -- pixelformat here
-  header[20] = love.data.pack('string', 'I4', 32) -- structure size
-  header[21] = love.data.pack('string', 'I4', 4) -- flags
-  header[22] = love.data.pack('string', 'c4', 'DXT1') -- format... technically DWORD but easier to convert from string
-  header[23] = love.data.pack('string', 'I4', 0) -- bits in uncompressed, unused
-  header[24] = love.data.pack('string', 'I4', 0) -- 4 masks, unused
-  header[25] = love.data.pack('string', 'I4', 0) --
-  header[26] = love.data.pack('string', 'I4', 0) --
-  header[27] = love.data.pack('string', 'I4', 0) --
-  -- pixelformat structure end
-  header[28] = love.data.pack('string', 'I4', 0x401008) -- surface is texture
-  header[29] = love.data.pack('string', 'I4', 0) -- 4 unused from here
-  header[30] = love.data.pack('string', 'I4', 0) --
-  header[31] = love.data.pack('string', 'I4', 0) --
-  header[32] = love.data.pack('string', 'I4', 0) --
-  Battle.DDSheader = table.concat(header)
+end

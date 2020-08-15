@@ -85,9 +85,11 @@ function userlist:initialize()
       if channel then 
         if channel.title == "server" then
           list = User.s
-        elseif string.find(channel.title, "Battle_%d+") then
+        elseif channel.isBattle then
           headtext = "Users in Battle"
-          list = Battle:getActiveBattle():getUsers()
+          if Battle:getActive() then
+            list = Battle:getActive():getUsers()
+          end
         else
           headtext = "Users in #" .. channel.title
           list = channel.users
@@ -136,8 +138,10 @@ function userlist:initialize()
     if channel then 
       if channel.title == "server" then
         list = User.s
-      elseif string.find(channel.title, "Battle_%d+") then
-        list = Battle:getActiveBattle():getUsers()
+      elseif channel.isBattle then
+        if Battle:getActive() then
+          list = Battle:getActive():getUsers()
+        end
       else
         list = channel.users
       end
@@ -154,9 +158,7 @@ function userlist:initialize()
     end
     return false
   end
-  
   lobby.clickables[userlist] = true
-  
 end
 
 function userlist.resize()
@@ -164,22 +166,24 @@ function userlist.resize()
     lobby.fixturePoint[2].x = lobby.width - userlist.bar.shutw
     userlist.bar:setPosition(lobby.fixturePoint[2].x, 32)
   else
+    
     lobby.fixturePoint[2].x = 3*lobby.width/4
-    userlist.bar:setPosition(userlist.bar.shutx(), 32)
-    userlist.bar.state = "shut"
-    userlist.bar:open()
+    userlist.bar:setPosition(3*lobby.width/4, 32)
+    --lobby.fixturePoint[2].x = 3*lobby.width/4
+    --userlist.bar:setPosition(userlist.bar.shutx(), 32)
+    --userlist.bar.state = "shut"
+    --userlist.bar:open()
   end
   lobby.render.userlist()
 end
 
 local function something()
-  lobby.useristScrollBar = ScrollBar:new()
+  useristScrollBar = ScrollBar:new()
   :setScrollSpeed(15)
   :setRenderFunction(function() lobby.refreshUserButtons() end)
   lobby.userListScrollBar:getZone()
   :setPosition(lobby.fixturePoint[2].x, 0)
   :setDimensions(lobby.width - lobby.fixturePoint[2].x, lobby.height)
-
 end
 
 return userlist

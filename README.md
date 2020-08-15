@@ -19,6 +19,7 @@ With BALobby you can:
 
 Known 'bugs':
 ~~- server will disconnect if you idle at login screen~~
+closed playerlist bar is not drawn if you downsize the window
 
 ![Battle](/screenies/battle.jpg?raw=true "Battle Screenie")
 ![Battle](/screenies/Battle.png?raw=true "Battle Screenie")

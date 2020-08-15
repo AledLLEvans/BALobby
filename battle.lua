@@ -3,6 +3,7 @@ Battle.mt =  {__index = Battle}
 local lg = love.graphics
 local lfs = love.filesystem
 local nfs = require("lib/nativefs")
+local spring = require "spring"
 
 Battle.s = {}
 
@@ -17,11 +18,8 @@ local shader = lg.newShader[[
 }
 ]]
 
-function Battle:joined(id)
-  if self:mapHandler() and self:modHandler() then
-    lobby.setSynced(true)
-  end
-  self.buttons = {
+function Battle.initialize()
+    Battle.buttons = {
     ["autolaunch"] = Checkbox:new()
     :resetPosition(function() return lobby.fixturePoint[2].x - 90, lobby.fixturePoint[2].y - 65 end)
     :setDimensions(20,20)
@@ -32,7 +30,7 @@ function Battle:joined(id)
     :resetPosition(function() return lobby.fixturePoint[2].x - 255, lobby.fixturePoint[2].y - 35 end)
     :setDimensions(100, 40)
     :setText("Exit Battle")
-    :onClick(function() Battle.exit() end),
+    :onClick(function() Battle:getActive():leave() end),
     ["ready"] = Checkbox:new()
     :resetPosition(function() return lobby.fixturePoint[2].x - 165 , lobby.fixturePoint[2].y - 65 end)
     :setDimensions(20, 20)
@@ -57,17 +55,18 @@ function Battle:joined(id)
       end
     end)
   }
+  for _, button in pairs(Battle.buttons) do
+    lobby.clickables[button] = false
+  end
   
-  Channel.active = Channel.s["Battle_" .. id]
-  self.display = true
+  Battle.showMapScroll = 1
   
-  self.showMapScroll = 1
   Battle.mapScrollBar = ScrollBar:new():setOffset(0)
   :setRenderFunction(function(y)
         if y > 0 then
-          self.showMapScroll = math.min(2, self.showMapScroll + 1)
+          Battle.showMapScroll = math.min(2, Battle.showMapScroll + 1)
         elseif y < 0 then
-          self.showMapScroll = math.max(0, self.showMapScroll - 1)
+          Battle.showMapScroll = math.max(0, Battle.showMapScroll - 1)
         end
       end)
   
@@ -85,6 +84,15 @@ function Battle:joined(id)
   :setScrollSpeed(fonts.latosmall:getHeight())
   
   Battle.showMap = "minimap"
+end
+
+function Battle:joined(id)
+  if self:mapHandler() and self:modHandler() then
+    lobby.user.synced = true
+  end
+
+  Channel.active = Channel.s["Battle_" .. id]
+  self.display = true
   
   self:getChannel().infoBoxScrollBar:setOffset(0)
 end
@@ -95,29 +103,39 @@ function Battle:resetButtons()
   end
 end
 
-function Battle.exit()
-  lobby.events[battlelist] = true
-  lobby.battlelist.scrollbar:setOffset(0)
-  Channel.active = Channel.s[next(Channel.s, Battle:getActive():getChannel().title)]
-  Battle:getActive().display = false
-  Battle:getActive():getChannel().display = false
-  lobby.send("LEAVEBATTLE")
-  lobby.state = "landing"
-  Battle.modoptionsScrollBar = nil
+function Battle:leave()
+  for _, button in pairs(Battle.buttons) do
+    lobby.clickables[button] = false
+  end
+  Channel.active = Channel.s[next(Channel.s, self:getChannel().title)]
+  self.display = false
+  self:getChannel().display = false
+  lobby.enter()
+  --Battle.modoptionsScrollBar = nil
   --lobby.clickables[Battle.sideButton] = nil
   --Battle.sideButton = nil
-  Battle.modoptionsScrollBar = nil
+  --[[Battle.modoptionsScrollBar = nil
   Battle.spectatorsScrollBar = nil
-  Battle.mapScrollBar = nil
+  Battle.mapScrollBar = nil]]
+  lobby.send("LEAVEBATTLE")
+  Battle.active = nil
   lobby.resize(lobby.width, lobby.height)
 end
 
-function Battle.enter()
-  lobby.userlist.bar:shut()
-  lobby.events[battlelist] = nil
-  lobby.state = "battle"
-  lobby.fixturePoint[1].x = 0
-  
+function Battle.enter(fromJoined)
+  lobby.events[lobby.battlelist] = nil
+  if fromJoined then
+    lobby.state = "battle"
+    lobby.resize(lobby.width, lobby.height)
+  else
+    lobby.battleMiniWindow:initialize("maximize")
+  end
+  for _, button in pairs(Battle.buttons) do
+    lobby.clickables[button] = true
+  end
+  lobby.scrollBars[Battle.mapScrollBar] = true
+  lobby.scrollBars[Battle.spectatorsScrollBar] = true
+  lobby.scrollBars[Battle.modoptionsScrollBar] = true
   --Battle.sideButton = Button:new():setPosition(1, lobby.height/2 - 20):setDimensions(20-2, 40):onClick(function() Battle.enterWithList() end)
   
   --[[function Battle.sideButton:draw()
@@ -128,7 +146,6 @@ function Battle.enter()
               15, self.y + self.h/2)
   end]]
   --lobby.clickables[Battle.sideButton] = true
-  lobby.resize(lobby.width, lobby.height)
 end
 
 function Battle:new(battle)
@@ -220,42 +237,46 @@ end
 function Battle:update(dt)
   --Mod
   if self.modDownload then
-    self.modDownload:update(dt)
-    if self.modDownload.finished then
-      if (not self.mapDownload) or self.mapDownload.finished then lobby.setSynced(true) end
-      self.modDownload.thread:release()
+    local err = self.modDownload.error
+    local finished = self.modDownload.finished
+    if finished then
+      self.hasMod = true
+      if self.hasMap then lobby.events[self] = nil lobby.setSynced(true) end
       self.modDownload = nil
+      lobby.refreshBattleTabs()
       return
-    end
-    if self.modDownload.error then
+    elseif err then
       self.modMirrorID = self.modMirrorID + 1
       if self.modMirrorID > #self.modMirrors then
-        love.window.showMessageBox("Error auto-downloading game", "\n" .. self.modDownload.error .. "\nTry installing manually", "error" )
+        table.insert(self:getChannel().lines, {time = os.date("%X"), msg = "Error auto-downloading game\n" .. self.modDownload.error .. "\nYou Could try installing manually"})
         self.modDownload:release()
         self.modDownload = nil
+        if self.hasMap or (not self.mapDownload) then lobby.events[self] = nil end
         return
       end
       local filename = string.match(self.modMirrors[self.modMirrorID], ".*/(.*)")
       self.modDownload:push(self.modMirrors[self.modMirrorID], filename, lobby.modFolder)
     end
   end
-  --Map
+  -- Map
   if self.mapDownload then
-    self.mapDownload:update(dt)
-    if self.mapDownload.finished then
+    local err = self.mapDownload.error
+    local finished = self.mapDownload.finished
+    if finished then
+      self.hasMap = true
       self:getMinimap()
-      --self.mapDownload:release()
       self.mapDownload = nil
-      if (not self.modDownload) or self.modDownload.finished then lobby.setSynced(true) end
+      if self.hasMod then lobby.events[self] = nil lobby.setSynced(true) end
       lobby.refreshBattleTabs()
       return
-    end
-    if self.mapDownload.error then
+    elseif err then
       self.mapMirrorID = self.mapMirrorID + 1
       if self.mapMirrorID > #self.mapMirrors then
-        love.window.showMessageBox("Auto Map Downloader", "\nFailed to find URL for map\nTry installing manually\n(Type !maplink, click on the hyperlink and place the file in your spring/maps/ directory)", "error" )
+        table.insert(self:getChannel().lines, {time = os.date("%X"), msg = "Failed to find URL for map " .. self.mapName .. "\n".. self.mapDownload.error .. "\nTry downloading manually\n(Type !maplink, click on the hyperlink and place the file in your spring/maps/ directory)"})
+        --love.window.showMessageBox("Auto Map Downloader", "\nFailed to find URL for map\nTry installing manually\n(Type !maplink, click on the hyperlink and place the file in your spring/maps/ directory)", "error" )
         self.mapDownload:release()
         self.mapDownload = nil
+        if self.hasMod or (not self.modDownload) then lobby.events[self] = nil end
         return
       end
       local filename = string.match(self.mapMirrors[self.mapMirrorID], ".*/(.*)")
@@ -331,6 +352,7 @@ function Battle:drawMap()
   local ymax = lobby.fixturePoint[2].y - 60 - (math.floor(lobby.height/100))*fonts.latoitalic:getHeight() - 10
   -- couldnt find a better way to do this
   local aw, ah = xmax - xmin, ymax - ymin
+  lg.printf(self.mapName, self.midpoint + 5, 15 + fontHeight, aw, "center")
   if self.minimap then
     if self.mapW > self.mapH then
       w = aw
@@ -353,13 +375,11 @@ function Battle:drawMap()
     local x = xmin + aw/2 - w/2
     --local y = ymin + ah/2 - h/2
     if self.showMapScroll == 0 then
-      lg.setShader(shader)
       lg.setColor(1,1,1)
       lg.draw(self.heightmap,
       x, -- (modx-1)*w,
       ymin, -- (mody-1)*h,
-      0, 2*w/self.mapW, 2*h/self.mapH)
-      lg.setShader()
+      0, w/self.mapW, h/self.mapH)
     elseif self.showMapScroll == 1 then
       lg.draw(self.minimap,
       x, -- (modx-1)*w,
@@ -379,7 +399,6 @@ function Battle:drawMap()
       lg.setShader( )
     end
     lg.setColor(colors.text)
-    lg.printf(self.mapName, self.midpoint + 5, 15 + fontHeight, aw, "center")
     --
     self.mapScrollBar:getZone():setPosition(x, ymin):setDimensions(w, h)
     local myAllyTeam = 0
@@ -578,31 +597,11 @@ function Battle:drawSpectators(y)
   self.spectatorsScrollBar:setLength(ymax - ymin - 70):setOffsetMax(math.max(0, t - c) * fontHeight):setScrollSpeed(fontHeight):draw()
 end
 
-local function hasMap(mapName)
-  for i, k in pairs(nfs.getDirectoryItems(lobby.mapFolder)) do
-    if k == mapName .. ".sdz" or k == mapName .. ".sd7" then return k end
-  end
-  return false
-end
-
-local function hasMod(gameName)
-  for i, k in pairs(nfs.getDirectoryItems(lobby.gameFolder)) do
-    if k == gameName .. ".sdz" or k == gameName .. ".sd7" then return k end
-  end
-  return false
-end
-
-function Battle:downloadHandler()
-  if self:mapHandler() and self:modHandler() then
-    return true
-  end
-end
-
 function Battle:modHandler()
   local gameName = string.gsub(self.gameName:lower(), " ", "_", 1)
   gameName = string.gsub(gameName, " ", "-", 1)
   gameName = string.gsub(gameName, " ", "_")
-  if hasMod(gameName) then return true end
+  if spring.hasMod(gameName) then self.hasMod = true return true end
   self.modMirrors = {
     "https://www.springfightclub.com/data/" .. gameName .. ".sdz"
   }
@@ -610,109 +609,36 @@ function Battle:modHandler()
   self.modDownload = Download:new()
   local filename = string.match(self.modMirrors[self.modMirrorID], ".*/(.*)")
   self.modDownload:push(self.modMirrors[self.modMirrorID], filename, lobby.gameFolder)
+  lobby.events[self] = true
   return false
 end
 
 function Battle:mapHandler()
   local mapName = string.gsub(self.mapName:lower(), " ", "_")
-  if hasMap(mapName) then return true end
+  if spring.hasMap(mapName) then self.hasMap = true return true end
   self.mapMirrors = {
-    "https://api.springfiles.com/files/maps/" .. mapName .. ".sd7",
-    "https://api.springfiles.com/files/maps/" .. mapName .. ".sdz",
-    "https://springfightclub.com/data/maps/" .. mapName .. ".sd7",
-    "https://springfightclub.com/data/maps/" .. mapName .. ".sdz"
+    --"https://api.springfiles.com/files/maps/" .. mapName .. ".sd7",
+    --"https://api.springfiles.com/files/maps/" .. mapName .. ".sdz",
+    "https://www.springfightclub.com/data/maps/" .. mapName .. ".sd7",
+    "https://www.springfightclub.com/data/maps/" .. mapName .. ".sdz"
   }
   self.mapDownload = Download:new()
   self.mapMirrorID = 1
   local filename = string.match(self.mapMirrors[self.mapMirrorID], ".*/(.*)")
   self.mapDownload:push(self.mapMirrors[self.mapMirrorID], filename, lobby.mapFolder)
-  return false
-end
-
-local function getSMF(dir)
-  for i, k in pairs(lfs.getDirectoryItems( dir )) do
-    local path = dir .. "/" .. k
-    if lfs.getInfo(path).type == "directory" then
-      local smf = getSMF(path)
-      if smf then return smf end
-    elseif string.find(k, ".smf") then
-      return path
-    end
-  end
+  lobby.events[self] = true
   return false
 end
 
 function Battle:getMinimap()
-  local mapName = string.gsub(self.mapName:lower(), " ", "_")
-  local mapArchive = hasMap(mapName)
-  if not mapArchive or not nfs.mount(lobby.mapFolder .. mapArchive, "map") then self.minimap = nil self.metalmap = nil return end
-  local mapData = lfs.read(getSMF("map"))
-  if not mapData then self.minimap = nil self.metalmap = nil return end
-  nfs.unmount(lobby.mapFolder .. mapArchive, "map")
-  
-  local  _, _, _, mapWidth, mapHeight, _, _, _, _, _, heightmapOffset, tm, ti, minimapOffset, metalmapOffset, _ = 
-  love.data.unpack("c16 i4 I4 i4 i4 i4 i4 i4 f f i4 i4 i4 i4 i4 i4", mapData)
-
-  self.mapW = mapWidth
-  self.mapH = mapHeight
-  self.mapWidthHeightRatio = mapWidth/mapHeight
-  
-  --Mini Map
-  local minimapData = love.data.unpack("c699048", mapData, minimapOffset + 1)
-  minimapData = Battle.DDSheader .. minimapData
-  local bytedata = love.data.newByteData( minimapData )
-  local compdata = love.image.newCompressedData(bytedata)
-  self.minimap = lg.newImage(compdata)
-  
-  --Metal Map
-  local bytes = (mapWidth/2) * (mapHeight/2)
-  local metalmapData = love.data.unpack("c"..tostring(bytes), mapData, metalmapOffset + 1)
-  local imageData = love.image.newImageData( (mapWidth)/2, (mapHeight)/2, "r8", metalmapData )
-
-  self.metalmap =  lg.newImage(imageData)
-  
-  --HeightMap
- --[[bytes = (mapWidth + 1) * (mapHeight + 1)
- local heightmapDataString = mapData:sub(heightmapOffset+1)
- local heightMap
-  for i = 1, bytes, 2 do
-    local a, b = heightmapDataString:byte(i, i+1)
-    heightMap = a * 256
-  end]]
-  --local heightmapData = love.data.unpack("H", mapData, heightmapOffset+1)
-  --local heightMap = love.data.newByteData(heightmapData)-- heightmapOffset + 1, bytes )
-  --imageData = love.image.newImageData( 2, 2, "r8", heightMap)
-  --metalmapData = Battle.DDSheader .. metalmapData
-  --local mbytedata = love.data.newByteData( metalmapData )
-  --local mcompdata = love.image.newCompressedData(mbytedata)
-  self.heightmap = lg.newImage(imageData)
-end
-
-  local header = {}
-  header[1] = 'DDS ' -- magic... technically not part of the header
-  header[2] = love.data.pack('string', 'I4', 124) -- headersize
-  header[3] = love.data.pack('string', 'I4', 8+4096+4194304) --1+2+4+0x1000+0x20000) -- flags
-  header[4] = love.data.pack('string', 'I4', 1024) -- height
-  header[5] = love.data.pack('string', 'I4', 1024) -- width
-  header[6] = love.data.pack('string', 'I4', 8*0x10000) -- pitch
-  header[7] = love.data.pack('string', 'I4', 0) -- depth
-  header[8] = love.data.pack('string', 'I4', 8) -- mipmapcount
-  for i=1,11 do
-    header[8+i] = love.data.pack('string', 'I4', 0) -- reserved
+  local data = spring.getMapData(self.mapName)
+  if data then
+    self.minimap = data.minimap
+    self.metalmap = data.metalmap
+    self.heightmap = data.heightmap
+    self.mapWidthHeightRatio = data.widthHeightRatio
+    self.mapW = data.mapwidth
+    self.mapH = data.mapheight
   end
-  -- pixelformat here
-  header[20] = love.data.pack('string', 'I4', 32) -- structure size
-  header[21] = love.data.pack('string', 'I4', 4) -- flags
-  header[22] = love.data.pack('string', 'c4', 'DXT1') -- format... technically DWORD but easier to convert from string
-  header[23] = love.data.pack('string', 'I4', 0) -- bits in uncompressed, unused
-  header[24] = love.data.pack('string', 'I4', 0) -- 4 masks, unused
-  header[25] = love.data.pack('string', 'I4', 0) --
-  header[26] = love.data.pack('string', 'I4', 0) --
-  header[27] = love.data.pack('string', 'I4', 0) --
-  -- pixelformat structure end
-  header[28] = love.data.pack('string', 'I4', 0x401008) -- surface is texture
-  header[29] = love.data.pack('string', 'I4', 0) -- 4 unused from here
-  header[30] = love.data.pack('string', 'I4', 0) --
-  header[31] = love.data.pack('string', 'I4', 0) --
-  header[32] = love.data.pack('string', 'I4', 0) --
-  Battle.DDSheader = table.concat(header)
+end
+  

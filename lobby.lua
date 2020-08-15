@@ -12,7 +12,7 @@ local draggable = require "Draggable"
 lobby.options = require "gui/options"
 lobby.userlist = require "gui/userlist"
 lobby.battlelist = require "gui/battlelist"
-function lobby.enter()
+function lobby.initialize()
   login.video = nil
   love.window.updateMode( lobby.width, lobby.height, {minwidth = 800, minheight = 600, borderless = true})
   lobby.width = 800
@@ -89,7 +89,73 @@ function lobby.enter()
   cursor[1] = love.mouse.getCursor( )
   
   --Channel.textbox:setPosition(1, lobby.height - 21):setDimensions(lobby.fixturePoint[2].x - 2, 20)
-  
+  Battle.initialize()
+end
+
+lobby.battleMiniWindow = {}
+
+function lobby.battleMiniWindow:initialize(direction)
+  sound.dwoosh:stop()
+  sound.dwoosh:play()
+  if direction == "minimize" then
+    self.state = "minimizing"
+    self.x, self.y = 0, 0
+    self.w, self.h = lobby.width, lobby.height
+    self.dx, self.dy = 2*lobby.width/3, lobby.fixturePoint[2].y + 35
+    self.sw, self.sh = self.dx/12, self.dy/12
+    lobby.scrollBars[Battle.mapScrollBar] = false
+    lobby.scrollBars[Battle.spectatorsScrollBar] = false
+    lobby.scrollBars[Battle.modoptionsScrollBar] = false
+  elseif direction == "maximize" then
+    lobby.clickables[self] = nil
+    self.state = "maximizing"
+    self.x, self.y = 2*lobby.width/3, lobby.fixturePoint[2].y + 35
+    self.w, self.h = lobby.width - 2*lobby.width/3 , lobby.height - lobby.fixturePoint[2].y + 35
+    self.dx, self.dy = 0, 0
+    self.sw, self.sh = (-self.x)/10, (-self.y)/10
+  end
+  lobby.events[self] = true
+end
+
+function lobby.battleMiniWindow:update(dt)
+  self.x = self.x + self.sw
+  self.y = self.y + self.sh
+  self.w = self.w - self.sw
+  self.h = self.h - self.sh
+  if self.state == "minimizing" and (self.x > self.dx or self.y > self.dy) then
+    self.x = self.dx
+    self.y = self.dy 
+    self.w = lobby.width - self.x
+    self.h = lobby.height - self.y
+    lobby.events[self] = nil
+    lobby.clickables[self] = true
+  elseif self.state == "maximizing" and (self.x < 0 or self.y < 0) then
+    self.x = 0
+    self.y = 0
+    self.w = lobby.width
+    self.h = lobby.height
+    lobby.state = "battle"
+    lobby.events[self] = nil
+    lobby.resize(lobby.width, lobby.height)
+  end
+end
+
+function lobby.battleMiniWindow:click(x, y, b)
+  if b ~= 1 then return false end
+  if x > self.dx and y > self.dy then
+    Battle.enter()
+    return true
+  end
+  return false
+end
+
+function lobby.enter()
+  if lobby.state == "battle" then
+    lobby.battleMiniWindow:initialize("minimize")
+  end
+  lobby.battlelist.scrollbar:setOffset(0)
+  lobby.events[lobby.battlelist] = true
+  lobby.state = "landing"
 end
 
 function lobby.refreshBattleTabs()
@@ -104,7 +170,7 @@ local resize = {
   end,
   ["battle"] = function()
               lobby.fixturePoint[1].x = 0
-              for _, b in pairs(Battle:getActiveBattle().buttons) do
+              for _, b in pairs(Battle:getActive().buttons) do
                 b:resetPosition()
               end
               lobby.battlelist.scrollbar:getZone()
@@ -137,6 +203,7 @@ function lobby.resize( w, h )
   lobby.maximize:setPosition(lobby.width-60, 0)
   lobby.minimize:setPosition(lobby.width-90, 0)
   
+  lobby.canvas.battlemini = lg.newCanvas(lobby.width, lobby.height)
   lobby.canvas.battlelist = lg.newCanvas(lobby.width, lobby.height)
   lobby.canvas.background = lg.newCanvas(lobby.width, lobby.height)
   lobby.canvas.foreground = lg.newCanvas(lobby.width, lobby.height)
@@ -148,6 +215,8 @@ function lobby.resize( w, h )
   
   lobby.userlist.resize()
   lobby.battlelist.resize()
+  lobby.render.background()
+  lobby.render.foreground()
 end
 
 function lobby.pickCursor(x,y)
@@ -158,7 +227,6 @@ function lobby.pickCursor(x,y)
   end
 end
 
-lobby.battleTabHoverTimer = 0
 function lobby.mousemoved( x, y, dx, dy, istouch )
   draggable.move(dx, dy)
   lobby.pickCursor(x, y)
@@ -170,13 +238,13 @@ function lobby.mousemoved( x, y, dx, dy, istouch )
     for _, chantab in pairs(ChannelTab.s) do
       chantab.y = chantab.y + dy
     end 
-    if Battle:getActive() then
+    if lobby.state == "battle" then
       for _, button in pairs(Battle:getActive().buttons) do
         button.y = button.y + dy
       end
     end
   end
-  battlelist.refresh()
+  lobby.battlelist.refresh()
   local bool = false
   for _, bt in pairs(BattleTab.s) do
     bool = bt:isOver(x, y) or bool or false
@@ -263,8 +331,8 @@ end
 lobby.scrollBars = {}
 function lobby.wheelmoved(x, y)
   local msx, msy = love.mouse.getPosition()
-  for sb in pairs(lobby.scrollBars) do
-    if sb:getZone():isOver(msx, msy) then
+  for sb, on in pairs(lobby.scrollBars) do
+    if on and sb:getZone():isOver(msx, msy) then
       sb:scroll(y)
       sb:doRender(y)
     end
@@ -583,11 +651,26 @@ lobby.renderFunction = {
   ["options"] = function() end
 }
 
+
 function lobby.render.background()
   lg.setCanvas(lobby.canvas.background)
   lg.clear()
   
   lobby.renderFunction[lobby.state]()
+  if Battle:getActive() and lobby.state ~= "battle" then
+    lg.setCanvas(lobby.canvas.battlemini)
+    lg.clear()
+    --[[lg.setColor(colors.bd)
+    lg.rectangle("fill", lobby.fixturePoint[2].x, lobby.fixturePoint[2].y, lobby.width - lobby.fixturePoint[2].x, lobby.height - lobby.fixturePoint[2].y)
+    lg.setColor(colors.text)
+    lg.rectangle("line", lobby.fixturePoint[2].x, lobby.fixturePoint[2].y, lobby.width - lobby.fixturePoint[2].x, lobby.height - lobby.fixturePoint[2].y)]]
+    lobby.renderFunction["battle"]()
+    if Channel:getActive() then
+      Channel:getActive():render()
+    end
+    lobby.userlist.bar:draw()
+    lg.setCanvas(lobby.canvas.background)
+  end
   
   lobby.close:draw()
   lobby.minimize:draw()
@@ -645,9 +728,17 @@ end
 
 function lobby.draw()
   if not love.window.isVisible() then return end
-  if lobby.state == "landing" then lg.draw(lobby.canvas.battlelist) end
+  if lobby.state == "landing" then
+    lg.draw(lobby.canvas.battlelist)
+  end
   lg.draw(lobby.canvas.background)
   lg.draw(lobby.canvas.userlist)
   lg.draw(lobby.canvas.foreground)
+  if lobby.state ~= "battle" and Battle:getActive() then
+    lg.setFont(fonts.latoitalicmedium)
+    lg.printf("Battle", 2*lobby.width/3 + 20, lobby.fixturePoint[2].y + 10, lobby.width - lobby.fixturePoint[2].y, "left")
+    lg.draw(lobby.canvas.battlemini, lobby.battleMiniWindow.x, lobby.battleMiniWindow.y, 0, lobby.battleMiniWindow.w/lobby.width, lobby.battleMiniWindow.h/lobby.height)
+    lg.draw(lobby.canvas.foreground, lobby.battleMiniWindow.x, lobby.battleMiniWindow.y, 0, lobby.battleMiniWindow.w/lobby.width, lobby.battleMiniWindow.h/lobby.height)
+  end
   Channel.textbox:renderText()
 end

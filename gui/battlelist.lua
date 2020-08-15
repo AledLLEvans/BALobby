@@ -83,14 +83,26 @@ function battlelist.refresh()
   lobby.render.battlelist()
 end
 
+local timer = 0
 function battlelist:update(dt)
-  lobby.battleTabHoverTimer = lobby.battleTabHoverTimer - dt
-  if lobby.battleTabHoverTimer < 0 then
+  timer = timer - dt
+  if timer < 0 then
     if lobby.battleTabHover and not lobby.battleTabHoverWindow then
       lobby.battleTabHoverWindow = BattleTabHoverWindow:new(lobby.battleTabHover.battleid)
       lobby.render.background()
     end
   end
+end
+
+function BattleTab:isOver(x,y)
+  if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
+    lobby.battleTabHover = self
+    timer = 0.5
+    self.highlighted = true
+    return true
+  end
+  self.highlighted = false
+  return false
 end
 
 function battlelist.initialize()
@@ -104,9 +116,8 @@ function battlelist.initialize()
   battlelist.refresh()
 end
 
-
-
 function battlelist.resize()
+  lobby.battlelist.scrollbar:setOffset(0)
   lobby.render.battlelist()
 end
 

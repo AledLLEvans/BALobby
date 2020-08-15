@@ -1,9 +1,10 @@
 local http = require("socket.http")
 local nativefs = require "lib/nativefs"
+local download_finished = false
 
-local url, filename, filepath, pid = ...
+local url, filename, filepath, channel_string = ...
 
-local progress_channel = love.thread.getChannel("progress_" .. pid)
+local progress_channel = love.thread.getChannel(channel_string)
 
 local function love_file_sink(filename, filepath)
   if filepath then

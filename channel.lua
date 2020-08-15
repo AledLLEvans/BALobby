@@ -160,7 +160,7 @@ local drawFunc = {
   ["mention"] = function(u, t) lg.setColor(1,0,0) return  "<" .. u .. ">" .. t  end,
   ["ingame"] = function(u, t) lg.setColor(colors.mo) return  "[" .. u .. "]" .. t end,
   ["ex"] = function(u, t) lg.setColor(colors.yellow) return  "*" .. u .. "*" .. t  end,
-  ["system"] = function(u, t) lg.setColor(1,0,0) return  "! SYSTEM : ".. t .. "!" end,
+  ["system"] = function(u, t) lg.setColor(1,0,0) return  "::: ".. t .. " :::" end,
   ["green"] = function(u, t) lg.setColor(0,1,0) return "*" .. t .. "*" end
 }
 
@@ -250,34 +250,37 @@ function BattleChannel:render()
   local w = 2*tw/3
   local ow = tw/3
   
-  -- "Info" Box
-  lg.setColor(colors.text)
-  self.infoBoxScrollBar
-  :setPosition(sbPosX(), sbPosY())
-  :setLength(sbLength())
-  :setOffsetMax(sbOffsetMax(#self.lines, self.h, fontHeight)):draw()
-  lg.setColor(colors.bt)
-  --lg.line(self.x + w, self.y, self.x + w, self.y + self.h - 21)
-  lg.setColor(colors.yellow)
-  lg.printf(battle.founder, self.x + w + 10, self.y + fontHeight + 10, ow - 5, "center")  
-  local i = #self.infolines
-  local ymin = 20
-  local y = ymin - self.infoBoxScrollBar:getOffset()
-  while i > 0 do
-    while y < ymin do
-      y = y + fontHeight
+  if lobby.state == "battle" then
+    -- "Info" Box
+    lg.setColor(colors.text)
+    self.infoBoxScrollBar
+    :setPosition(sbPosX(), sbPosY())
+    :setLength(sbLength())
+    :setOffsetMax(sbOffsetMax(#self.lines, self.h, fontHeight)):draw()
+    lg.setColor(colors.bt)
+    --lg.line(self.x + w, self.y, self.x + w, self.y + self.h - 21)
+    lg.setColor(colors.yellow)
+    lg.printf(battle.founder, self.x + w + 10, self.y + fontHeight + 10, ow - 5, "center")  
+    local i = #self.infolines
+    local ymin = 20
+    local y = ymin - self.infoBoxScrollBar:getOffset()
+    while i > 0 do
+      while y < ymin do
+        y = y + fontHeight
+        i = i - 1
+      end
+      if i <= 0 then break end
+      local text = self.infolines[i].msg
+      local _, wt = self.font:getWrap(text, ow - 5)
+      local j = #wt
+      repeat
+        lg.printf(wt[j], self.x + w + 10, self.y + self.h - y - 21, ow - 5, "left")
+        y = y + fontHeight
+        j = j - 1
+      until self.h < y + 21 + 30 + fontHeight or j == 0
+      if self.h < y + 21 + 30 + fontHeight then break end
       i = i - 1
     end
-    local text = self.infolines[i].msg
-    local _, wt = self.font:getWrap(text, ow - 5)
-    local j = #wt
-    repeat
-      lg.printf(wt[j], self.x + w + 10, self.y + self.h - y - 21, ow - 5, "left")
-      y = y + fontHeight
-      j = j - 1
-    until self.h < y + 21 + 30 + fontHeight or j == 0
-    if self.h < y + 21 + 30 + fontHeight then break end
-    i = i - 1
   end
   --
   

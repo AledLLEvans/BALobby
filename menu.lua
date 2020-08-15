@@ -456,9 +456,15 @@ function BattleTab:new(id)
   new.highlighted = false
   new.battleid = id
   new.func = function()
-    if Battle:getActive() then
-      lobby.send("LEAVEBATTLE")
-      Battle:getActive():getChannel().display = false
+    local battle = Battle:getActive()
+    if battle then
+      if battle.id == id then
+        Battle.enter()
+        return
+      else
+        lobby.send("LEAVEBATTLE")
+        battle:getChannel().display = false
+      end
     end
     local sp = string.match(love.math.random(), "0%.(.*)")
     Battle.s[id].myScriptPassword = sp
@@ -467,17 +473,6 @@ function BattleTab:new(id)
   new.visible = false
   self.s[id] = new
   return new
-end
-
-function BattleTab:isOver(x,y)
-  if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
-    lobby.battleTabHover = self
-    lobby.battleTabHoverTimer = 0.5
-    self.highlighted = true
-    return true
-  end
-  self.highlighted = false
-  return false
 end
 
 function BattleTab:draw()
@@ -560,6 +555,7 @@ function BattleTabHoverWindow:new(battleid)
 end
 
 function BattleTabHoverWindow:draw()
+  if not lobby.state == "landing" then return end
   local battle = self.battle
   if battle.userCount == 0 then
     return

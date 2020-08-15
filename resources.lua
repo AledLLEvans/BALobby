@@ -325,6 +325,10 @@ sound.woosh = love.audio.newSource("data/sounds/sfx_06.ogg", "static")
 sound.woosh:setVolume(0.5)
 sound.woosh:setPitch(5)
 
+sound.dwoosh = love.audio.newSource("data/sounds/sfx_10a.ogg", "static")
+sound.dwoosh:setVolume(0.7)
+sound.dwoosh:setPitch(0.7)
+
 sound.intro = love.audio.newSource("data/sounds/sfx_18a.ogg", "static")
 sound.intro:setVolume(0.5)
 sound.intro:setPitch(4)
