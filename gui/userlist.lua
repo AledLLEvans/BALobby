@@ -108,6 +108,7 @@ function userlist:initialize()
         if user.icon then lg.draw(img[user.icon], x + 40, 10 + m, 0, 1/4) end
         lg.setColor(colors.text)
         lg.printf(username, x + 60, 10 + m, lobby.width - lobby.fixturePoint[2].x - 20)
+        if m > lobby.fixturePoint[2].y - fontHeight then break end
       end
     end
   end
@@ -158,6 +159,7 @@ function userlist:initialize()
     end
     return false
   end
+  
   lobby.clickables[userlist] = true
 end
 

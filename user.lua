@@ -20,10 +20,12 @@ function User:new(o)
 end
 
 function User:openChannel()
-  if self.channel then self.channel.display = true return self.channel end
-  self.channel = Channel:new({title = self.name, user = true, display = true})
-  self.channel.users = {[self.name] = self, [lobby.username] = User.s[lobby.username]}
-  Channel.s[self.name] = self.channel
+  if not self.channel then
+    self.channel = Channel:new({title = self.name, user = true, display = true})
+    self.channel.users = {[self.name] = self, [lobby.username] = User.s[lobby.username]}
+    Channel.s[self.name] = self.channel
+  end
+  self.channel.display = true 
   Channel.active = self.channel
   Channel:refreshTabs()
   self.channel:getTextbox().active = true

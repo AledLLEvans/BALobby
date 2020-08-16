@@ -61,14 +61,35 @@ function spring.hasMod(gameName)
   return false
 end
 
-function spring.getMapData(mapName)
-  local data = {}
+local function getMapData(mapName)
   mapName = string.gsub(mapName:lower(), " ", "_")
   local mapArchive = spring.hasMap(mapName)
   if not mapArchive or not nfs.mount(lobby.mapFolder .. mapArchive, "map") then return false end
   local mapData = lfs.read(getSMF("map"))
   if not mapData then return false end
   nfs.unmount(lobby.mapFolder .. mapArchive, "map")
+  return mapData
+end
+
+function spring.getMinimap(mapName)
+  local mapData = getMapData(mapName)
+  if not mapData then return false end
+  
+  local  _, _, _, mapWidth, mapHeight, _, _, _, _, _, _, _, _, minimapOffset, _, _ = 
+  ld.unpack("c16 i4 I4 i4 i4 i4 i4 i4 f f i4 i4 i4 i4 i4 i4", mapData)
+  
+  local minimapData = ld.unpack("c699048", mapData, minimapOffset + 1)
+  minimapData = headerStr .. minimapData
+  local bytedata = ld.newByteData( minimapData )
+  local compdata = li.newCompressedData(bytedata)
+  return lg.newImage(compdata), mapWidth, mapHeight
+end
+
+function spring.getMapData(mapName)
+  local data = {}
+  
+  local mapData = getMapData(mapName)
+  if not mapData then return false end
   
   local  _, _, _, mapWidth, mapHeight, _, _, _, _, _, heightmapOffset, _, _, minimapOffset, metalmapOffset, _ = 
   ld.unpack("c16 i4 I4 i4 i4 i4 i4 i4 f f i4 i4 i4 i4 i4 i4", mapData)
@@ -89,7 +110,7 @@ function spring.getMapData(mapName)
     local bytes = (mapWidth/2) * (mapHeight/2)
     local metalmapData = ld.unpack("c"..tostring(bytes), mapData, metalmapOffset + 1)
     local imageData = li.newImageData( (mapWidth)/2, (mapHeight)/2, "r8", metalmapData )
-    data.metalmap =  lg.newImage(imageData)
+    data.metalmap = lg.newImage(imageData)
   end
   
   do --HeightMap

@@ -211,7 +211,7 @@ function lobby.setSpectator(b)
 end
 
 function lobby.setReady(b)
-  User.s[lobby.username].ready = b
+  User.s[lobby.username].ready = settings.autoready or b
   lobby.sendMyBattleStatus()
 end
 

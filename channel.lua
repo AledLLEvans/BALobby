@@ -319,7 +319,7 @@ function BattleChannel:render()
       y = y + fontHeight
       j = j - 1
     until self.h < y + 21 + 20 or j == 0
-    if self.h < y + 21 + 20 then break end
+    if self.h < y + 21 + 30 then break end
     i = i - 1
     lg.setColor(colors.text)
   end

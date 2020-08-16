@@ -648,6 +648,7 @@ local function UPDATEBATTLEINFO(words, sentences)
     if active_battle and active_battle.id == id then
       if battle:mapHandler() then
         lobby.setSynced(true)
+        battle:getMinimap()
       end
     end
   end

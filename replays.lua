@@ -438,14 +438,17 @@ function ReplayTab:updateDownload(dt)
   end
 end
 
+local minimaps = {}
+local widths = {}
+local heights = {}
+
 function ReplayTab:getMinimap(mapName)
-  local data = spring.getMapData(mapName)
-  if data then
-    self.minimap = data.minimap
-    self.metalmap = data.metalmap
-    self.heightmap = data.heightmap
-    self.mapWidthHeightRatio = data.widthHeightRatio
-    self.mapW = data.mapwidth
-    self.mapH = data.mapheight
+  if not minimaps[mapName] then
+    local minimap, width, height = spring.getMinimap(mapName)
+    if not minimap then return false end
+    minimaps[mapName] = minimap
+    widths[mapName] = width
+    heights[mapName] = height
   end
+  return minimaps[mapName]
 end
