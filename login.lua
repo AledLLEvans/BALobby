@@ -97,6 +97,34 @@ function login.enter()
     lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2 + 1)
   end
   
+  local simg = settings.sound and img.musicOn or img.musicOff
+  login.buttons.sound = ImageButton:new()
+  :setImage(simg)
+  :setPosition(15, 15)
+  :setFunction(
+    function()
+      if settings.sound then
+        settings.add("sound", false)
+        login.buttons.sound:setImage(img.musicOff)
+        for _, snd in pairs(sound) do
+          snd:setVolume(0)
+        end
+      else
+        settings.add("sound", true)
+        login.buttons.sound:setImage(img.musicOn)
+        for _, snd in pairs(sound) do
+          snd:setVolume(1)
+        end
+        setSoundVolumes()
+        sound.click:stop()
+        sound.click:play()
+      end
+    end)
+  if not settings.sound then
+    settings.sound = true
+    login.buttons.sound.func()
+  end
+  
   if not lobby.gotEngine then
     if settings.engine_downloaded then
       if settings.engine_unpacked then

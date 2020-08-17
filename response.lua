@@ -264,7 +264,7 @@ local function IGNORELISTEND(words, sentences)
 end
 local function JOIN(words, sentences)
   local chan = words[1]
-  Channel:new({title = chan})
+  Channel:new({title = chan, isChannel = true})
   if chan == "main" then
     Channel.active = Channel.s[chan]
     for i = 1, #lobby.MOTD do

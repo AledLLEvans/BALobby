@@ -221,7 +221,7 @@ function Button:new()
     text = colors.text
   }
   
-  o.func = function() end
+  --o.func = function() end
   
   return o
 end
@@ -252,7 +252,6 @@ function Button:draw()
   lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
 end
 
-
 function Button:click(x, y)
   if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
     if self.sound then
@@ -269,6 +268,10 @@ function Button:setFunction(func)
   self.func = func
   return self
 end
+function Button:onClick(func)
+  self.func = func
+  return self
+end
 
 function Button:setBackgroundColor(c)
   self.colors.background = c
@@ -280,11 +283,27 @@ function Button:setTextColor(c)
   return self
 end
 
-function Button:onClick(func)
-  self.func = func
+ImageButton = Button:new()
+ImageButton.mt =  {__index = ImageButton}
+
+function ImageButton:new()
+  local o = Button:new()
+  setmetatable(o, ImageButton.mt)
+  o.clickSound = "click"
+  return o
+end
+
+function ImageButton:setImage(img)
+  self.image = img
+  self.w = img:getWidth()
+  self.h = img:getHeight()
   return self
 end
 
+function ImageButton:draw()
+  lg.draw(self.image, self.x, self.y)
+end
+  
 Checkbox = Button:new()
 Checkbox.mt =  {__index = Checkbox}
 Checkbox.s = {}
@@ -301,8 +320,6 @@ function Checkbox:new()
     outline = colors.bt,
     inside = colors.bt
   }
-  
-  self.func = function() self.ticked = not self.ticked end
   
   lobby.clickables[o] = true
   
@@ -398,12 +415,6 @@ function ChannelTab:click(x,y,b)
     return true
   end
   return false
-end
-
-function ChannelTab:setDimensions(w,h)
-  self.w = w or self.w
-  self.h = h or self.h
-  return self
 end
 
 function ChannelTab:draw()

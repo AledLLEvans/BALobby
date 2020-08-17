@@ -26,10 +26,10 @@ function lobby.initialize()
     {x = 3*lobby.width/4, y = 2*lobby.height/3}
   } 
 
-  lobby.backbutton = Button:new()
+  lobby.backbutton = ImageButton:new()
   :setPosition(0, 0)
+  :setImage(img.back)
   :setDimensions(36,36)
-  :setText("<-")
   :onClick(function()
       sound.tab:play()
       lobby.enter()

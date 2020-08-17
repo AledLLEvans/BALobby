@@ -263,18 +263,21 @@ local IMAGE_FILES = {
   "playerslist_closed_light",
   "playerslist_closed",
   "playerslist_light",
-  "playerslist"
+  "playerslist",
+  "musicOn",
+  "musicOff",
+  "back"
 }
 
 --success = love.system.openURL( url )
 
 ranks = {}
-for i=1,8 do
+for i=1, 8 do
   ranks[i] = lg.newImage("data/images/ranks/rank"..i..".png")
 end
 
 local function loadImages()
-  	for i,v in ipairs(IMAGE_FILES) do
+  for i,v in ipairs(IMAGE_FILES) do
 		img[v] = lg.newImage("data/images/"..v..".png")
 	end
 end
@@ -322,15 +325,12 @@ sound.down = love.audio.newSource("data/sounds/sfx_09b.ogg", "static")
 sound.check = love.audio.newSource("data/sounds/sfx_20a.ogg", "static")
 
 sound.woosh = love.audio.newSource("data/sounds/sfx_06.ogg", "static")
-sound.woosh:setVolume(0.5)
 sound.woosh:setPitch(5)
 
 sound.dwoosh = love.audio.newSource("data/sounds/sfx_10a.ogg", "static")
-sound.dwoosh:setVolume(0.7)
 sound.dwoosh:setPitch(0.7)
 
 sound.intro = love.audio.newSource("data/sounds/sfx_18a.ogg", "static")
-sound.intro:setVolume(0.5)
 sound.intro:setPitch(4)
 
 sound.userlist = love.audio.newSource("data/sounds/sfx_10a.ogg", "static")
@@ -342,11 +342,18 @@ sound.cancel = love.audio.newSource("data/sounds/sfx_05c.ogg", "static")
 sound.cancel:setPitch(1)
 
 sound.ring = love.audio.newSource("data/sounds/doorbell-old-tring.ogg", "static")
-sound.ring:setVolume(0.5)
 sound.ding = love.audio.newSource("data/sounds/bell_02.ogg", "static")
 sound.click = love.audio.newSource("data/sounds/metal_02.ogg", "static")
-sound.click:setVolume(0.5)
 sound.click:setPitch(0.5)
+
+function setSoundVolumes()
+  sound.ring:setVolume(0.5)
+  sound.click:setVolume(0.5)
+  sound.intro:setVolume(0.5)
+  sound.dwoosh:setVolume(0.7)
+  sound.woosh:setVolume(0.5)
+end
+setSoundVolumes()
 
 colors = {}
 
@@ -412,9 +419,13 @@ function settings.pack()
   return lfs.write( "settings.lua", str)
 end
 
-function settings.add(t)
-  for i, k in pairs(t) do
-    settings[i] = k
+function settings.add(t, v)
+  if type(t) == "table" then
+    for i, k in pairs(t) do
+      settings[i] = k
+    end
+  else
+    settings[t] = v
   end
   return settings.pack()
 end

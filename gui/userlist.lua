@@ -83,15 +83,18 @@ function userlist:initialize()
       lg.setColor(colors.bt)
       local headtext = "Users online " .. User.count
       if channel then 
-        if channel.title == "server" then
+        if channel.isServer then
           list = User.s
         elseif channel.isBattle then
           headtext = "Users in Battle"
           if Battle:getActive() then
             list = Battle:getActive():getUsers()
           end
-        else
+        elseif channel.isChannel then
           headtext = "Users in #" .. channel.title
+          list = channel.users
+        else
+          headtext = "Private"
           list = channel.users
         end
       end

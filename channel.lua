@@ -27,7 +27,7 @@ function Channel:new(o, bool)
     title = "Server"
   elseif o.isBattle then
     title = "Battle"
-  elseif not o.isUser then
+  elseif o.isChannel then
     title = "#" .. title
   end
   o.tab = ChannelTab:new()
@@ -48,7 +48,7 @@ function Channel:new(o, bool)
 end
 
 ServerChannel = Channel:new({title = "server", isServer = true})
-BattleChannel = Channel:new({title = "battle"}, true)
+BattleChannel = Channel:new({title = "battle", isBattle = true}, true)
 BattleChannel.mt = {__index = BattleChannel}
 lobby.serverChannel = Channel.s["server"]
 Channel.active = lobby.serverChannel
