@@ -389,7 +389,7 @@ function ChannelTab:click(x,y,b)
       Channel:refreshTabs()
     elseif b == 2 then
       sound.cancel:play()
-      if not self.parent.isServer then
+      if not self.parent.isServer and not self.parent.isBattle then
         self.parent.display = false
         if self.parent == Channel.active then Channel.active = Channel.s[next(Channel.s, Channel.active.title)] end
         Channel:refreshTabs()
@@ -408,31 +408,29 @@ end
 
 function ChannelTab:draw()
   local h = 0
-  local channel = self.text
-  local text = "#" .. self.text
-  if channel == "Battle" then
-    channel = Battle:getActiveBattle():getChannel().title
-    text = "Battle"
-  end
-  if Channel:getActive() and (channel == Channel:getActive().title) then
+  local channel = self.parent
+  if Channel:getActive() and channel == Channel:getActive() then
     lg.setColor(colors.bb)
     lg.rectangle("fill", self.x, self.y-1, self.w, self.h + h+1)
     lg.setColor(colors.text)
     lg.setFont(fonts.latochantabbold)
-    lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latochantabbold:getHeight()/2, self.w, "center")
-  elseif Channel.s[channel].newMessage then
+    lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
+    --lg.printf(, self.x, self.y + self.h/2 + h - fonts.latochantabbold:getHeight()/2, self.w, "center")
+  elseif channel.newMessage then
     --h = 3
     lg.setColor(colors.bg)
     lg.setFont(fonts.latochantabbold)
     lg.rectangle("fill", self.x, self.y, self.w, self.h + h)
     lg.setColor(colors.bt)
-    lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latochantabbold:getHeight()/2, self.w, "center")
+    lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
+    --lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latochantabbold:getHeight()/2, self.w, "center")
   else
     lg.setFont(fonts.latochantab)
     lg.setColor(colors.bg)
     lg.rectangle("fill", self.x, self.y, self.w, self.h + h)
     lg.setColor(colors.bt)
-    lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latochantab:getHeight()/2, self.w, "center")
+    lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
+    --lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latochantab:getHeight()/2, self.w, "center")
   end
   lg.setFont(fonts.robotosmall)
   lg.setColor(1,1,1)

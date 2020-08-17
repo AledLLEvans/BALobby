@@ -22,8 +22,19 @@ function Channel:new(o, bool)
   o = o or {}
   setmetatable(o, Channel.mt)
   
+  local title = o.title
+  if o.isServer then
+    title = "Server"
+  elseif o.isBattle then
+    title = "Battle"
+  elseif not o.isUser then
+    title = "#" .. title
+  end
   o.tab = ChannelTab:new()
+  o.tab.textWidth = fonts.latochantab:getWidth(title)
+  o.tab.w = fonts.latochantab:getWidth(title)
   o.tab.parent = o
+  o.tab:setText(title):setFont(fonts.latochantab)
   
   o.font = fonts.latosmall
   o.lines = {}
@@ -127,22 +138,16 @@ function Channel:refreshTabs()
   local i = 1
   local totalWidth = 0
   for name, channel in pairs(self.s) do
-    lobby.clickables[channel.tab] = nil
+    local tab = channel.tab
+    lobby.clickables[tab] = nil
     if channel.display then
-      local tab_name = name
-      if channel.isBattle then
-        tab_name = "Battle"
-      elseif channel.isServer then
-        tab_name = "server"
-      end
-      local textWidth = fonts.latochantab:getWidth("#" .. tab_name)
-      channel.tab:setPosition(self.x + totalWidth + 4, self.y + 3)
-      :setDimensions(3 + textWidth + 16, 35)
-      channel.tab.title = name
-      channel.tab.text = tab_name
-      lobby.clickables[channel.tab] = true
+      tab:setPosition(self.x + totalWidth + 4, self.y + 3)
+      :setDimensions(3 + tab.textWidth + 16, 35)
+      --channel.tab.title = name
+      --channel.tab.text = tab_name
+      lobby.clickables[tab] = true
       i = i + 1
-      totalWidth = totalWidth + textWidth + 16
+      totalWidth = totalWidth + tab.textWidth + 16
     end
   end
   Channel.addButton:setPosition(self.x + totalWidth + 4, self.y + 3):setDimensions(35, 35):setText("+")

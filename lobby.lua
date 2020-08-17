@@ -26,6 +26,15 @@ function lobby.initialize()
     {x = 3*lobby.width/4, y = 2*lobby.height/3}
   } 
 
+  lobby.backbutton = Button:new()
+  :setPosition(0, 0)
+  :setDimensions(36,36)
+  :setText("<-")
+  :onClick(function()
+      sound.tab:play()
+      lobby.enter()
+  end)
+
   lobby.close = Button:new()
   :setPosition(lobby.width-30, 0)
   :setDimensions(30,30)
@@ -153,6 +162,8 @@ function lobby.enter()
   if lobby.state == "battle" then
     lobby.battleMiniWindow:initialize("minimize")
   end
+  lobby.clickables[lobby.backbutton] = false
+  lobby.clickables[lobby.options.button] = true
   lobby.battlelist.scrollbar:setOffset(0)
   lobby.events[lobby.battlelist] = true
   lobby.state = "landing"
@@ -680,9 +691,13 @@ function lobby.render.background()
     Channel:getActive():render()
   end
 
-  lobby.options.button:draw()
-  if lobby.options.expanded then
-    lobby.options.panel:draw()
+  if lobby.state == "landing" then
+    lobby.options.button:draw()
+    if lobby.options.expanded then
+      lobby.options.panel:draw()
+    end
+  else
+    lobby.backbutton:draw()
   end
   
   if lobby.battleTabHoverWindow then lobby.battleTabHoverWindow:draw() end

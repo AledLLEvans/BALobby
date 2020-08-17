@@ -21,7 +21,7 @@ end
 
 function User:openChannel()
   if not self.channel then
-    self.channel = Channel:new({title = self.name, user = true, display = true})
+    self.channel = Channel:new({title = self.name, isUser = true, display = true})
     self.channel.users = {[self.name] = self, [lobby.username] = User.s[lobby.username]}
     Channel.s[self.name] = self.channel
   end

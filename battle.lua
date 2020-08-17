@@ -123,6 +123,8 @@ function Battle:leave()
 end
 
 function Battle.enter(fromJoined)
+  lobby.clickables[lobby.backbutton] = true
+  lobby.clickables[lobby.options.button] = false
   lobby.events[lobby.battlelist] = nil
   if fromJoined then
     lobby.state = "battle"
