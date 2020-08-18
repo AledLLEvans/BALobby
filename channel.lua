@@ -10,10 +10,13 @@ Channel.h = 10
 Channel.scrollBar = ScrollBar:new():setScrollBarLength(-20):setScrollSpeed(fonts.latosmall:getHeight())
 Channel.textbox = Textbox:new()
 
+lobby.channels = {}
+lobby.channel_topics = {}
 Channel.addButton = Button:new():setFunction(
   function()
-    lobby.channels = {}
     lobby.send("CHANNELS")
+    Channel.active = nil
+    Channel:refreshTabs()
   end)
 Channel.addButton.colors.background = colors.bg
 lobby.clickables[Channel.addButton] = true
@@ -98,6 +101,12 @@ end
 
 function Channel:getTextbox()
   return self.textbox
+end
+
+function Channel:open()
+  Channel.active = self
+  self.display = true
+  Channel:refreshTabs()
 end
 
 function Channel:addMessage(msg)

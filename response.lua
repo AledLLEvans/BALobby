@@ -105,7 +105,10 @@ end
 local function CHANGEEMAILREQUESTDENIED(words, sentences)
 end
 local function CHANNEL(words, sentences)
-  table.insert(lobby.channels, {name = words[1], users = words[2], topic = words[3]})
+  local chan = words[1]
+  lobby.channels[chan] = words[2]
+  lobby.channel_topics[chan] = words[3]
+  lobby.render.userlist()
 end
 local function CHANNELMESSAGE(words, sentences)
 end
@@ -193,6 +196,7 @@ local function CLIENTS(words, sentences)
   for i = 2, #words do
     Channel.s[chan].users[words[i]] = User.s[words[i]]
   end
+  lobby.render.userlist()
 end
 local function CLIENTSFROM(words, sentences)
 end
@@ -237,11 +241,13 @@ end
 local function ENABLEUNITS(words, sentences)
 end
 local function ENDOFCHANNELS(words, sentences)
-  local text = "Index Name Users\n"
+  
+  lobby.render.userlist()
+  --[[local text = "Index Name Users\n"
   for id, channel in pairs(lobby.channels) do
     text = text .. id .. ". #" .. channel.name .. ", " .. channel.users .. "\n"
   end
-  lw.showMessageBox("Channel List", text, "info" )
+  lw.showMessageBox("Channel List", text, "info" )]]
 end
 local function FAILED(words, sentences)
 end
@@ -264,15 +270,18 @@ local function IGNORELISTEND(words, sentences)
 end
 local function JOIN(words, sentences)
   local chan = words[1]
-  Channel:new({title = chan, isChannel = true})
-  if chan == "main" then
-    Channel.active = Channel.s[chan]
-    for i = 1, #lobby.MOTD do
-      table.insert(Channel.s[chan].lines, lobby.MOTD[i])
+  if not Channel.s[chan] then
+    Channel:new({title = chan, isChannel = true})
+    if lobby.channel_topics[chan] then
+      table.insert(Channel.s[chan].lines, lobby.channel_topics[chan])
+    end
+    if chan == "main" then
+      for i = 1, #lobby.MOTD do
+        table.insert(Channel.s[chan].lines, lobby.MOTD[i])
+      end
     end
   end
-  lobby.render.userlist()
-  Channel:refreshTabs()
+  Channel.s[chan]:open()
 end
 local function JOINBATTLE(words, sentences)
   local id = words[1]
@@ -354,9 +363,9 @@ end
 local function LEFTFROM(words, sentences)
 end
 local function LOGININFOEND(words, sentences)
-  lobby.send("JOIN main")
   lobby.send("JOIN en")
   lobby.send("JOIN newbies")
+  lobby.send("JOIN main")
   lobby.loginInfoEnd = true
   lobby.refreshBattleTabs()
   lobby.render.background()

@@ -406,7 +406,8 @@ function ChannelTab:click(x,y,b)
       Channel:refreshTabs()
     elseif b == 2 then
       sound.cancel:play()
-      if not self.parent.isServer and not self.parent.isBattle then
+      if self.parent.isChannel and not self.parent.isServer and not self.parent.isBattle then
+        lobby.send("LEAVE " .. self.parent.title)
         self.parent.display = false
         if self.parent == Channel.active then Channel.active = Channel.s[next(Channel.s, Channel.active.title)] end
         Channel:refreshTabs()

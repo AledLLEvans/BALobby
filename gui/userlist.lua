@@ -66,6 +66,22 @@ function userlist:initialize()
     return true
   end
   
+  function userlist.bar:drawChannelList()
+    lg.printf("Channel List", self.x + 30, self.y, self.w, "left")
+    local fontHeight = fonts.latosmall:getHeight()
+    local x = self.x
+    lg.setFont(fonts.latosmall)
+    local m = 36
+    for channel_name, users in pairs(lobby.channels) do
+      m = m + fontHeight
+      if m > lobby.width - 36 then return end
+      lg.setColor(colors.text)
+      lg.printf("#" .. channel_name, x + 60, 10 + m, lobby.width - lobby.fixturePoint[2].x - 20)
+      lg.printf(users, x + 40, 10 + m, lobby.width - lobby.fixturePoint[2].x - 20)
+      if m > lobby.fixturePoint[2].y - fontHeight then break end
+    end
+  end
+  
   function userlist.bar:draw()
     if self.state == "shut" then
       if lobby.darkMode then lg.draw(img["playerslist_closed"], self.x, self.y, 0, 1, lobby.fixturePoint[2].y/userlist.bar.shuth)
@@ -97,6 +113,9 @@ function userlist:initialize()
           headtext = "Private"
           list = channel.users
         end
+      else
+        self:drawChannelList()
+        return
       end
       lg.printf(headtext, self.x + 30, self.y, self.w, "left")
       local x = self.x
@@ -140,7 +159,7 @@ function userlist:initialize()
     local list = User.s
     local channel = Channel:getActive()
     if channel then 
-      if channel.title == "server" then
+      if channel.isServer then
         list = User.s
       elseif channel.isBattle then
         if Battle:getActive() then
@@ -149,6 +168,8 @@ function userlist:initialize()
       else
         list = channel.users
       end
+    else
+      return self:channel_click(x, y)
     end
     local fontHeight = fonts.latosmall:getHeight()
     local m = 36
@@ -156,6 +177,25 @@ function userlist:initialize()
       m = m + fontHeight
       if y > m + fontHeight and y < m + 2*fontHeight and x > lobby.fixturePoint[2].x + 60 and x < lobby.fixturePoint[2].x + 60 + fonts.latosmall:getWidth(username) then
         button[b](username, x, y)
+        return true
+      end
+      if m > lobby.width - 36 - fontHeight then return false end
+    end
+    return false
+  end
+  
+  function userlist:channel_click(x, y)
+    local fontHeight = fonts.latosmall:getHeight()
+    local m = 36
+    for channel_name in pairs(lobby.channels) do
+      m = m + fontHeight
+      if y > m + fontHeight and y < m + 2*fontHeight and x > lobby.fixturePoint[2].x + 60 and x < lobby.fixturePoint[2].x + 70 + fonts.latosmall:getWidth(channel_name)  then
+        if Channel.s[channel_name] then
+          Channel.s[channel_name]:open()
+          Channel:refreshTabs()
+        else
+          lobby.send("JOIN " .. channel_name)
+        end
         return true
       end
       if m > lobby.width - 36 - fontHeight then return false end
