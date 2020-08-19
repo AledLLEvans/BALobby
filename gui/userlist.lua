@@ -20,7 +20,14 @@ function userlist:initialize()
   userlist.bar.shutspeed = function() return lobby.width/25 end
 
   userlist.bar:setPosition(userlist.bar.shutx(), 32)
-
+  
+  userlist.scrollBar = ScrollBar:new()
+  :setScrollSpeed(15)
+  :setRenderFunction(function() lobby.refreshUserButtons() end)
+  userlist.scrollBar:getZone()
+  :setPosition(lobby.width - lobby.fixturePoint[2].x, 32)
+  :setDimensions(lobby.fixturePoint[2].x, lobby.fixturePoint[2].y - 32)
+    
   function userlist.bar:shut()
     if self.state ~= "open" then return end
     sound.userlist:play()
@@ -32,6 +39,7 @@ function userlist:initialize()
     self.state = "shutting"
     lobby.clickables[userlist] = nil
     lobby.events[self] = true
+    lobby.scrollBars[userlist.scrollBar] = nil
   end
   
   function userlist.bar:open()
@@ -45,6 +53,7 @@ function userlist:initialize()
     self.state = "opening"
     lobby.clickables[userlist] = true
     lobby.events[self] = true
+    lobby.scrollBars[userlist.scrollBar] = true
   end
   
   function userlist.bar:update(dt)
@@ -88,6 +97,7 @@ function userlist:initialize()
       else lg.draw(img["playerslist_closed_light"], self.x, self.y, 0, 1, lobby.fixturePoint[2].y/userlist.bar.shuth) end
       return
     end
+    userlist.scrollBar:draw()
     if lobby.darkMode then lg.draw(img["playerslist"], self.x, self.y)
     else lg.draw(img["playerslist_light"], self.x, self.y) end
     if self.state == "open" then
@@ -220,15 +230,6 @@ function userlist.resize()
     --userlist.bar:open()
   end
   lobby.render.userlist()
-end
-
-local function something()
-  useristScrollBar = ScrollBar:new()
-  :setScrollSpeed(15)
-  :setRenderFunction(function() lobby.refreshUserButtons() end)
-  lobby.userListScrollBar:getZone()
-  :setPosition(lobby.fixturePoint[2].x, 0)
-  :setDimensions(lobby.width - lobby.fixturePoint[2].x, lobby.height)
 end
 
 return userlist

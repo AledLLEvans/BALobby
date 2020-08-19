@@ -106,6 +106,7 @@ local function CHANGEEMAILREQUESTDENIED(words, sentences)
 end
 local function CHANNEL(words, sentences)
   local chan = words[1]
+  print(words[3])
   lobby.channels[chan] = words[2]
   lobby.channel_topics[chan] = words[3]
   lobby.render.userlist()

@@ -10,6 +10,10 @@ local replayMirror = "http://replays.springfightclub.com/"
 
 local nfs = require "lib/nativefs"
 
+local minimaps = {}
+local widths = {[false] = 0}
+local heights = {[false] = 0}
+
 function Replay.enter()
   lobby.state = "replays"
   Replay.fetchLocalReplays()
@@ -160,6 +164,17 @@ local launchCode = [[
   love.window.restore( )
 ]]
 
+local function launchReplay(filename)
+    --new:startDownload()
+    local exec = "\"" .. lobby.exeFilePath .. " " .. lobby.replayFolder .. filename .. "\""
+    print(exec)
+    if not lobby.springThread then
+      lobby.springThread = love.thread.newThread( launchCode )
+    end
+    love.window.minimize( )
+    lobby.springThread:start( exec )
+  end
+
 ReplayTab = Button:new()
 ReplayTab.mt = {__index = ReplayTab}
 ReplayTab.s = {}
@@ -193,22 +208,12 @@ function ReplayTab:new(id, filename, date, time, mapName, eversion)
   
   new.highlighted = false
   
-  new.func = function()
-    --new:startDownload()
-    local exec = "\"" .. lobby.exeFilePath .. " " .. lobby.replayFolder .. filename .. "\""
-    print(exec)
-    if not lobby.springThread then
-      lobby.springThread = love.thread.newThread( launchCode )
-    end
-    love.window.minimize( )
-    lobby.springThread:start( exec )
-  end
+  new.func = launchReplay
  
   self.s[id] = new
   lobby.clickables[new] = true
   return new
 end
-
 
 function ReplayTab:parse(path)
   local info = nfs.getInfo(path)
@@ -265,7 +270,10 @@ function ReplayTab:parse(path)
   
   local mapName = self.script["game"].mapname
   if mapName then
-    self:getMinimap(mapName)
+    mapName = string.gsub(mapName:lower(), " ", "_")
+    local minimap = self:getMinimap(mapName)
+    self.minimap = minimap
+    self.mapWidthHeightRatio = widths[mapName]/heights[mapName]
   end
   
   self.header = {
@@ -437,10 +445,6 @@ function ReplayTab:updateDownload(dt)
     progress_update = progress_channel:pop()
   end
 end
-
-local minimaps = {}
-local widths = {}
-local heights = {}
 
 function ReplayTab:getMinimap(mapName)
   if not minimaps[mapName] then

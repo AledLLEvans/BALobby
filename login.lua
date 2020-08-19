@@ -109,6 +109,7 @@ function login.enter()
         for _, snd in pairs(sound) do
           snd:setVolume(0)
         end
+        sound["ring"]:setVolume(1)
       else
         settings.add("sound", true)
         login.buttons.sound:setImage(img.musicOn)

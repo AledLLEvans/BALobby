@@ -14,6 +14,7 @@ lobby.channels = {}
 lobby.channel_topics = {}
 Channel.addButton = Button:new():setFunction(
   function()
+    lobby.userlist:open()
     lobby.send("CHANNELS")
     Channel.active = nil
     Channel:refreshTabs()
@@ -28,8 +29,6 @@ function Channel:new(o, bool)
   local title = o.title
   if o.isServer then
     title = "Server"
-  elseif o.isBattle then
-    title = "Battle"
   elseif o.isChannel then
     title = "#" .. title
   end
@@ -59,6 +58,7 @@ Channel.active = lobby.serverChannel
 function BattleChannel:new(o)
   o = Channel:new(o)
   o.isBattle = true
+  o.tab:setText("Battle")
   o.infolines = {}
   o.infoBoxScrollBar = ScrollBar:new():setScrollBarLength(-20):setScrollSpeed(o.font:getHeight())
   setmetatable(o, BattleChannel.mt)
@@ -248,8 +248,8 @@ function ServerChannel:render()
       lg.printf(wt[j], self.x + 5, self.y + self.h - y - 21, self.w - 10, align)
       y = y + fontHeight
       j = j - 1
-    until self.h < y + 21 + 20 or j == 0
-    if self.h < y + 21 + 20 then break end
+    until self.h < y + 21 + 40 or j == 0
+    if self.h < y + 21 + 40 then break end
     i = i - 1
     lg.setColor(colors.text)
   end
