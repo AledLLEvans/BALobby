@@ -14,7 +14,7 @@ lobby.channels = {}
 lobby.channel_topics = {}
 Channel.addButton = Button:new():setFunction(
   function()
-    lobby.userlist:open()
+    lobby.userlist.bar:open()
     lobby.send("CHANNELS")
     Channel.active = nil
     Channel:refreshTabs()

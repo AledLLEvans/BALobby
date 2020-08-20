@@ -50,7 +50,7 @@ return {
         if string.find(Channel:getActive():getName(), "Battle") then
           cmd = cmd .. "BATTLE"
           to = " "
-        elseif Channel:getActive():isUser() then
+        elseif Channel:getActive().isUser then
           cmd = cmd .. "PRIVATE"
         end
         local text, sub = string.gsub(Channel:getActive():getText(), "^/me ", "", 1)

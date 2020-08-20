@@ -393,6 +393,7 @@ end
 
 function ChannelTab:click(x,y,b)
   if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
+    userlist.scrollBar:setOffsetMax(0):setOffset(0)
     if b == 1 then
       sound.tab:play()
       if Channel:getActive() then
@@ -406,7 +407,7 @@ function ChannelTab:click(x,y,b)
       Channel:refreshTabs()
     elseif b == 2 then
       sound.cancel:play()
-      if self.parent.isChannel and not self.parent.isServer and not self.parent.isBattle then
+      if (self.parent.isChannel or self.parent.isUser) and not self.parent.isServer and not self.parent.isBattle then
         lobby.send("LEAVE " .. self.parent.title)
         self.parent.display = false
         if self.parent == Channel.active then Channel.active = Channel.s[next(Channel.s, Channel.active.title)] end

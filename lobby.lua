@@ -180,6 +180,7 @@ local resize = {
               :setDimensions(lobby.fixturePoint[2].x, lobby.fixturePoint[2].y - 90)
   end,
   ["battle"] = function()
+              if not Battle:getActive() then return end
               lobby.fixturePoint[1].x = 0
               for _, b in pairs(Battle:getActive().buttons) do
                 b:resetPosition()

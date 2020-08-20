@@ -22,11 +22,15 @@ function userlist:initialize()
   userlist.bar:setPosition(userlist.bar.shutx(), 32)
   
   userlist.scrollBar = ScrollBar:new()
-  :setScrollSpeed(15)
-  :setRenderFunction(function() lobby.refreshUserButtons() end)
+  :setPosition(lobby.width - 5, 54)
+  :setLength(lobby.fixturePoint[2].y - 54)
+  :setScrollBarLength(30)
+  :setRenderFunction(function() lobby.render.userlist() end)
   userlist.scrollBar:getZone()
-  :setPosition(lobby.width - lobby.fixturePoint[2].x, 32)
-  :setDimensions(lobby.fixturePoint[2].x, lobby.fixturePoint[2].y - 32)
+  :setPosition(lobby.fixturePoint[2].x, 32)
+  :setDimensions(lobby.width - lobby.fixturePoint[2].x, lobby.fixturePoint[2].y - 32)
+  
+  lobby.scrollBars[userlist.scrollBar] = true
     
   function userlist.bar:shut()
     if self.state ~= "open" then return end
@@ -80,7 +84,7 @@ function userlist:initialize()
     local fontHeight = fonts.latosmall:getHeight()
     local x = self.x
     lg.setFont(fonts.latosmall)
-    local m = 36
+    local m = 36 - userlist.scrollBar:getOffset()
     for channel_name, users in pairs(lobby.channels) do
       m = m + fontHeight
       if m > lobby.width - 36 then return end
@@ -97,7 +101,6 @@ function userlist:initialize()
       else lg.draw(img["playerslist_closed_light"], self.x, self.y, 0, 1, lobby.fixturePoint[2].y/userlist.bar.shuth) end
       return
     end
-    userlist.scrollBar:draw()
     if lobby.darkMode then lg.draw(img["playerslist"], self.x, self.y)
     else lg.draw(img["playerslist_light"], self.x, self.y) end
     if self.state == "open" then
@@ -130,18 +133,23 @@ function userlist:initialize()
       lg.printf(headtext, self.x + 30, self.y, self.w, "left")
       local x = self.x
       lg.setFont(fonts.latosmall)
-      local m = 36
+      local m = 36 - userlist.scrollBar:getOffset()
+      local t = 0
+      local c = 0
       for username, user in pairs(list) do
         m = m + fontHeight
-        if m > lobby.width - 36 then return end
-        lg.setColor(1,1,1)
-        lg.draw(user.flag, x + 6, 12 + m)
-        lg.draw(user.insignia, x + 25, 10 + m, 0, 1/5, 1/4)
-        if user.icon then lg.draw(img[user.icon], x + 40, 10 + m, 0, 1/4) end
-        lg.setColor(colors.text)
-        lg.printf(username, x + 60, 10 + m, lobby.width - lobby.fixturePoint[2].x - 20)
-        if m > lobby.fixturePoint[2].y - fontHeight then break end
+        t = t + 1
+        if m < lobby.fixturePoint[2].y - fontHeight and m > 36 then
+          c = c + 1
+          lg.setColor(1,1,1)
+          lg.draw(user.flag, x + 6, 12 + m)
+          lg.draw(user.insignia, x + 25, 10 + m, 0, 1/5, 1/4)
+          if user.icon then lg.draw(img[user.icon], x + 40, 10 + m, 0, 1/4) end
+          lg.setColor(colors.text)
+          lg.printf(username, x + 60, 10 + m, lobby.width - lobby.fixturePoint[2].x - 20)
+        end
       end
+      userlist.scrollBar:setScrollSpeed(fontHeight):setOffsetMax(math.max(0, t - c) * fontHeight):draw()
     end
   end
 
@@ -182,7 +190,7 @@ function userlist:initialize()
       return self:channel_click(x, y)
     end
     local fontHeight = fonts.latosmall:getHeight()
-    local m = 36
+    local m = 36 - userlist.scrollBar:getOffset()
     for username, user in pairs(list) do
       m = m + fontHeight
       if y > m + fontHeight and y < m + 2*fontHeight and x > lobby.fixturePoint[2].x + 60 and x < lobby.fixturePoint[2].x + 60 + fonts.latosmall:getWidth(username) then
@@ -196,7 +204,7 @@ function userlist:initialize()
   
   function userlist:channel_click(x, y)
     local fontHeight = fonts.latosmall:getHeight()
-    local m = 36
+    local m = 36 - userlist.scrollBar:getOffset()
     for channel_name in pairs(lobby.channels) do
       m = m + fontHeight
       if y > m + fontHeight and y < m + 2*fontHeight and x > lobby.fixturePoint[2].x + 60 and x < lobby.fixturePoint[2].x + 70 + fonts.latosmall:getWidth(channel_name)  then
