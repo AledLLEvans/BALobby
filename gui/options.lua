@@ -18,6 +18,7 @@ function options.initialize()
   :setDimensions(163, 174)
   
   options.expanded = false
+  lobby.clickables[options.button] = true
   lobby.clickables[options.panel] = false
   
   function options.panel:click(x,y)
@@ -93,8 +94,6 @@ function options.initialize()
           love.window.showMessageBox("FYI", "Coming Soon", "info")
           lobby.render.background()
         end))
-  
-  lobby.clickables[options.button] = true
 end
 
 return options

@@ -17,17 +17,6 @@ function Draggable.move(dx, dy)
     local display_w, display_h = love.window.getDesktopDimensions(display_index)
     local win_w, win_h = love.window.getMode()
     
-    if start_x+dx < 0.1 * win_w then
-      dragging.zone = "left"
-    elseif start_x+dx > 0.9 * win_w then
-      dragging.zone = "right"
-    else
-      dragging.zone = "center"
-    end
-    if start_y + dy < 0.1 * win_h then
-      dragging.zone = zone[dragging.zone]
-    end
-    
     -- prevent window from moving > 80% out of current display
     local minimum_x = 0 -- -0.8 * win_w
     local maximum_x = display_w - win_w
@@ -71,11 +60,22 @@ local expand = {
 }
 
 function Draggable.stop()
+  local x, y, display_index = love.window.getPosition()
+  local win_w, win_h = love.window.getMode()
   love.mouse.setRelativeMode(previous_relative_mode)
   if dragging then
+    if x < 0.05 * win_w then
+      dragging.zone = "left"
+    elseif x > 0.95 * win_w then
+      dragging.zone = "right"
+    else
+      dragging.zone = "center"
+    end
+    if y < 0.05 * win_h then
+      dragging.zone = zone[dragging.zone]
+    end
     love.mouse.setPosition(dragging.x, dragging.y)
     if dragging.zone ~= "center" then
-      local _, _, display_index = love.window.getPosition()
       local w, h = love.window.getDesktopDimensions(display_index)
       lobby.resize(expand[dragging.zone](w, h))
       love.window.updateMode(lobby.width, lobby.height)

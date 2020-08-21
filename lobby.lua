@@ -14,7 +14,7 @@ lobby.userlist = require "gui/userlist"
 lobby.battlelist = require "gui/battlelist"
 function lobby.initialize()
   login.video = nil
-  love.window.updateMode( lobby.width, lobby.height, {minwidth = 800, minheight = 600, borderless = true})
+  love.window.updateMode( lobby.width, lobby.height, {minwidth = 800, minheight = 600, resizable = true, borderless = true})
   lobby.width = 800
   lobby.height = 600
   state = STATE_LOBBY
@@ -136,6 +136,7 @@ function lobby.battleMiniWindow:update(dt)
     self.y = self.dy 
     self.w = lobby.width - self.x
     self.h = lobby.height - self.y
+    self.state = "minimized" 
     lobby.events[self] = nil
     lobby.clickables[self] = true
   elseif self.state == "maximizing" and (self.x < 0 or self.y < 0) then
@@ -143,6 +144,7 @@ function lobby.battleMiniWindow:update(dt)
     self.y = 0
     self.w = lobby.width
     self.h = lobby.height
+    self.state = "maximized" 
     lobby.state = "battle"
     lobby.events[self] = nil
     lobby.resize(lobby.width, lobby.height)
@@ -151,11 +153,18 @@ end
 
 function lobby.battleMiniWindow:click(x, y, b)
   if b ~= 1 then return false end
-  if x > self.dx and y > self.dy then
+  if x > self.x and y > self.y then
     Battle.enter()
     return true
   end
   return false
+end
+
+function lobby.battleMiniWindow:resize(w, h)
+  if self.state == "minimized" then
+    self.x, self.y = 2*lobby.width/3, lobby.fixturePoint[2].y + 35
+    self.w, self.h = lobby.width - self.x, lobby.height - self.y
+  end
 end
 
 function lobby.enter()
@@ -220,6 +229,8 @@ function lobby.resize( w, h )
   lobby.canvas.background = lg.newCanvas(lobby.width, lobby.height)
   lobby.canvas.foreground = lg.newCanvas(lobby.width, lobby.height)
   lobby.canvas.userlist = lg.newCanvas(lobby.width, lobby.height)
+  
+  lobby.battleMiniWindow:resize(w, h)
   
   resize[lobby.state]()
 
@@ -626,7 +637,7 @@ lobby.renderFunction = {
                 38)
     lg.setColor(colors.bt)
     lg.setColor(1,1,1)
-    Battle:getActive():draw()
+    if Battle:getActive() then Battle:getActive():draw() end
   end,
     
   ["replays"] = function()

@@ -95,11 +95,13 @@ function battlelist:update(dt)
 end
 
 function BattleTab:isOver(x,y)
-  if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
-    lobby.battleTabHover = self
-    timer = 0.5
-    self.highlighted = true
-    return true
+  if y > 90 and y < lobby.fixturePoint[2].y then
+    if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
+      lobby.battleTabHover = self
+      timer = 0.5
+      self.highlighted = true
+      return true
+    end
   end
   self.highlighted = false
   return false

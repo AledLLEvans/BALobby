@@ -79,10 +79,6 @@ function Channel:isActive()
   return self.active == self
 end
 
-function Channel:isUser()
-  return self.user
-end
-
 function Channel:getTextbox()
   return self.textbox
 end
@@ -270,7 +266,9 @@ function BattleChannel:render()
     self.infoBoxScrollBar
     :setPosition(sbPosX(), sbPosY())
     :setLength(sbLength())
-    :setOffsetMax(sbOffsetMax(#self.lines, self.h, fontHeight)):draw()
+    :setOffsetMax(sbOffsetMax(#self.infolines, self.h, fontHeight))
+    :draw()
+    
     lg.setColor(colors.bt)
     --lg.line(self.x + w, self.y, self.x + w, self.y + self.h - 21)
     lg.setColor(colors.yellow)
@@ -301,9 +299,10 @@ function BattleChannel:render()
   -- Player Chat
   lg.setColor(colors.text)
   self.scrollBar
-  :setPosition(sbPosX(), sbPosY())
+  :setPosition(2*Channel.w/3, sbPosY())
   :setLength(sbLength())
-  :setOffsetMax(sbOffsetMax(#self.lines, self.h, fontHeight)):draw()
+  :setOffsetMax(sbOffsetMax(#self.lines + 1, self.h, fontHeight))
+  :draw()
 
   lg.setColor(colors.text)
   i = #self.lines
