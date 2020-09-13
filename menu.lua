@@ -423,8 +423,8 @@ function ChannelTab:draw()
   local h = 0
   local channel = self.parent
   if Channel:getActive() and channel == Channel:getActive() then
-    lg.setColor(colors.bb)
-    lg.rectangle("fill", self.x, self.y-1, self.w, self.h + h+1)
+    lg.setColor(colors.bg)
+    lg.rectangle("fill", self.x, self.y, self.w, self.h + h)
     lg.setColor(colors.text)
     lg.setFont(fonts.latochantabbold)
     lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
@@ -439,7 +439,7 @@ function ChannelTab:draw()
     --lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latochantabbold:getHeight()/2, self.w, "center")
   else
     lg.setFont(fonts.latochantab)
-    lg.setColor(colors.bg)
+    lg.setColor(colors.bbb)
     lg.rectangle("fill", self.x, self.y, self.w, self.h + h)
     lg.setColor(colors.bt)
     lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
@@ -461,7 +461,7 @@ function BattleTab:new(id)
   new.colors = {
     background = {
       default = colors.bb,
-      highlight = colors.bd
+      highlight = colors.bbh
     }   
   }
   new.highlighted = false

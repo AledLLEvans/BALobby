@@ -1,7 +1,7 @@
 --© 2020 GitHub, Inc.
 local Draggable = {}
 
-local previous_relative_mode
+local previous_relative_mode = love.mouse.getRelativeMode()
 
 local dragging = false
 

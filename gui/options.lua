@@ -73,7 +73,7 @@ function options.initialize()
           lobby.battlelist.scrollbar.colors.inner = colors.bargreen
           Channel:getActive().scrollBar.colors.main = colors.bt
           Channel:getActive().scrollBar.colors.inner = colors.bargreen
-          Channel.addButton.colors.background = colors.bg
+          Channel.addButton.colors.background = colors.bbb
           Channel.addButton.colors.text = colors.text
           lobby.refreshBattleTabs()
           lobby.render.userlist()
@@ -87,6 +87,14 @@ function options.initialize()
     options.panel:addButton(Button:new():setText("Open Spring Dir")
     :setFunction(function()
           love.system.openURL(lobby.springFilePath)
+        end))
+    
+    options.panel:addButton(Button:new():setText("Borderless")
+    :setFunction(function()
+          local borderless = not settings.borderless
+          settings.add("borderless", borderless)
+          love.window.updateMode( lobby.width, lobby.height, {borderless = borderless})
+          lobby.header.initialize(borderless)
         end))
     
     options.panel:addButton(Button:new():setText("Options")

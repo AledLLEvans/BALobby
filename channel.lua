@@ -19,7 +19,7 @@ Channel.addButton = Button:new():setFunction(
     Channel.active = nil
     Channel:refreshTabs()
   end)
-Channel.addButton.colors.background = colors.bg
+Channel.addButton.colors.background = colors.bbb
 lobby.clickables[Channel.addButton] = true
   
 function Channel:new(o, bool)
@@ -175,7 +175,7 @@ local drawFunc = {
 }
 
 local function sbOffsetMax(n, h, fh)
-  return math.max(0, n - math.floor((h - 20 - 21)/fh) - 6) * fh
+  return math.max(0, n - math.floor((h - 30 - 21)/fh)) * fh
 end
 
 local function sbPosX() return Channel.x + Channel.w end
@@ -301,7 +301,7 @@ function BattleChannel:render()
   self.scrollBar
   :setPosition(2*Channel.w/3, sbPosY())
   :setLength(sbLength())
-  :setOffsetMax(sbOffsetMax(#self.lines + 1, self.h, fontHeight))
+  :setOffsetMax(sbOffsetMax(#self.lines, self.h, fontHeight))
   :draw()
 
   lg.setColor(colors.text)

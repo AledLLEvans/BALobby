@@ -3,7 +3,7 @@
 
 	HostIP = 217.61.106.62;
 	IsHost = 0;
-	HostPort = 8451;
+	HostPort = 8452;
 	MyPlayerName = MastaAli;
-	MyPasswd = 24210092571734;
+	MyPasswd = 80133905944652;
 }

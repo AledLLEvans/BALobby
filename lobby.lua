@@ -12,9 +12,14 @@ local draggable = require "Draggable"
 lobby.options = require "gui/options"
 lobby.userlist = require "gui/userlist"
 lobby.battlelist = require "gui/battlelist"
+lobby.header = require "gui/header"
 function lobby.initialize()
   login.video = nil
-  love.window.updateMode( lobby.width, lobby.height, {minwidth = 800, minheight = 600, resizable = true, borderless = true})
+  local borderless = false
+  if settings.borderless then
+    borderless = true
+  end
+  love.window.updateMode( lobby.width, lobby.height, {minwidth = 800, minheight = 600, resizable = true, borderless = borderless})
   lobby.width = 800
   lobby.height = 600
   state = STATE_LOBBY
@@ -35,60 +40,9 @@ function lobby.initialize()
       lobby.enter()
   end)
 
-  lobby.close = Button:new()
-  :setPosition(lobby.width-30, 0)
-  :setDimensions(30,30)
-  :setFunction(function() love.event.quit() end)
-  lobby.maximize = Button:new()
-  :setPosition(lobby.width-60, 0)
-  :setDimensions(30,30)
-  :setFunction(function()
-      if love.window.isMaximized() then
-        lobby.resize(800, 600)
-        love.window.updateMode(800, 600)
-      else 
-        love.window.maximize()
-        local _, _, flags = love.window.getMode() 
-        lobby.resize(love.window.getDesktopDimensions( flags.display )) 
-      end
-    end)
-  lobby.minimize = Button:new()
-  :setPosition(lobby.width-90, 0)
-  :setDimensions(30,30)
-  :setFunction(function()
-      if love.window.isMinimized() then
-        love.window.restore( )
-      else 
-        love.window.minimize()
-      end
-    end)
-  
-  function lobby.close:draw()
-    lg.setColor(colors.bargreen)
-    lg.rectangle("fill", self.x, self.y, self.w, self.y)
-    lg.setColor(colors.text)
-    lg.setFont(fonts.latoboldbig)
-    lg.print("X", self.x + self.w/4, self.y + self.h/4)
+  if settings.borderless then
+    lobby.header.initialize()
   end
-  function lobby.maximize:draw()
-    lg.setColor(colors.bt)
-    lg.rectangle("fill", self.x, self.y, self.w, self.y)
-    lg.setColor(colors.text)
-    lg.setFont(fonts.latoboldbig)
-    lg.print("| |", self.x + self.w/4, self.y + self.h/4)
-  end
-  function lobby.minimize:draw()
-    lg.setColor(colors.bt)
-    lg.rectangle("fill", self.x, self.y, self.w, self.y)
-    lg.setColor(colors.text)
-    lg.setFont(fonts.latoboldbig)
-    lg.print("__", self.x + self.w/4, self.y + self.h/4)
-  end
-  
-  lobby.clickables[lobby.close] = true
-  lobby.clickables[lobby.maximize] = true
-  lobby.clickables[lobby.minimize] = true
-  
   lobby.userlist.initialize()
   lobby.battlelist.initialize()
   lobby.options.initialize()
@@ -110,47 +64,60 @@ function lobby.battleMiniWindow:initialize(direction)
     self.state = "minimizing"
     self.x, self.y = 0, 0
     self.w, self.h = lobby.width, lobby.height
-    self.dx, self.dy = 2*lobby.width/3, lobby.fixturePoint[2].y + 35
-    self.sw, self.sh = self.dx/12, self.dy/12
+    self.dx, self.dy = 2*lobby.width/3, lobby.fixturePoint[2].y
+    self.dw, self.dh = self.w - lobby.width/3, self.h - 35
+    self:setText()
     lobby.scrollBars[Battle.mapScrollBar] = false
     lobby.scrollBars[Battle.spectatorsScrollBar] = false
     lobby.scrollBars[Battle.modoptionsScrollBar] = false
   elseif direction == "maximize" then
-    lobby.clickables[self] = nil
-    self.state = "maximizing"
-    self.x, self.y = 2*lobby.width/3, lobby.fixturePoint[2].y + 35
-    self.w, self.h = lobby.width - 2*lobby.width/3 , lobby.height - lobby.fixturePoint[2].y + 35
-    self.dx, self.dy = 0, 0
-    self.sw, self.sh = (-self.x)/10, (-self.y)/10
+    self.x = 0
+    self.y = 0
+    self.w = lobby.width
+    self.h = lobby.height
+    self.state = "maximized"
+    lobby.state = "battle"
+    lobby.events[self] = nil
+    lobby.resize(lobby.width, lobby.height)
   end
   lobby.events[self] = true
 end
 
 function lobby.battleMiniWindow:update(dt)
-  self.x = self.x + self.sw
-  self.y = self.y + self.sh
-  self.w = self.w - self.sw
-  self.h = self.h - self.sh
+  self.x = self.x + self.dx/12
+  self.y = self.y + self.dy/12
+  self.w = self.w - self.dw/12
+  self.h = self.h - self.dh/12
   if self.state == "minimizing" and (self.x > self.dx or self.y > self.dy) then
     self.x = self.dx
-    self.y = self.dy 
+    self.y = self.dy
     self.w = lobby.width - self.x
-    self.h = lobby.height - self.y
+    self.h = 35
     self.state = "minimized" 
     lobby.events[self] = nil
     lobby.clickables[self] = true
   elseif self.state == "maximizing" and (self.x < 0 or self.y < 0) then
-    self.x = 0
+    --[[self.x = 0
     self.y = 0
     self.w = lobby.width
     self.h = lobby.height
     self.state = "maximized" 
     lobby.state = "battle"
     lobby.events[self] = nil
-    lobby.resize(lobby.width, lobby.height)
+    lobby.resize(lobby.width, lobby.height)]]
   end
 end
 
+function lobby.battleMiniWindow:setText()
+  self.text = "Click here to return to battle: " .. Battle:getActive().title
+  local b = false
+  while fonts.latoitalicmedium:getWidth(self.text) > lobby.width - lobby.fixturePoint[2].x - 10 do
+    self.text = self.text:sub(0, -2)
+    b = true
+  end
+  if b then self.text = self.text .. ".." end
+end
+  
 function lobby.battleMiniWindow:click(x, y, b)
   if b ~= 1 then return false end
   if x > self.x and y > self.y then
@@ -161,9 +128,10 @@ function lobby.battleMiniWindow:click(x, y, b)
 end
 
 function lobby.battleMiniWindow:resize(w, h)
-  if self.state == "minimized" then
-    self.x, self.y = 2*lobby.width/3, lobby.fixturePoint[2].y + 35
-    self.w, self.h = lobby.width - self.x, lobby.height - self.y
+  if Battle:getActive() and self.state == "minimized" then
+    self.x, self.y = 2*lobby.width/3, lobby.fixturePoint[2].y
+    self.w, self.h = lobby.width/3, 35
+    self:setText()
   end
 end
 
@@ -220,9 +188,9 @@ function lobby.resize( w, h )
     }
   }
   
-  lobby.close:setPosition(lobby.width-30, 0)
-  lobby.maximize:setPosition(lobby.width-60, 0)
-  lobby.minimize:setPosition(lobby.width-90, 0)
+  if settings.borderless then
+    lobby.header.resize()
+  end
   
   lobby.canvas.battlemini = lg.newCanvas(lobby.width, lobby.height)
   lobby.canvas.battlelist = lg.newCanvas(lobby.width, lobby.height)
@@ -251,7 +219,8 @@ function lobby.pickCursor(x,y)
 end
 
 function lobby.mousemoved( x, y, dx, dy, istouch )
-  draggable.move(dx, dy)
+  if not lobby.loginInfoEnd then return end
+  if settings.borderless then draggable.move(dx, dy) end
   lobby.pickCursor(x, y)
   local Ymin = 90*3 + 70 + 40
   local Ymax = lobby.height - 100
@@ -596,45 +565,51 @@ lobby.state = "landing"
 
 lobby.renderFunction = {
   ["landing"] = function()
-    lg.setColor(colors.bb)
+    lg.setColor(colors.bbb)
     lg.rectangle("fill",
                 0,
                 0,
-                lobby.fixturePoint[2].x,
-                40)
-              
-    lg.rectangle("fill",
-                0,
-                lobby.fixturePoint[1].y,
                 lobby.width,
-                lobby.height - lobby.fixturePoint[1].y)
+                32)
               
+    lg.rectangle("fill",
+                0,
+                lobby.fixturePoint[1].y + 3,
+                lobby.width,
+                lobby.height - lobby.fixturePoint[1].y + 3)
     lg.setColor(colors.bg)
     lg.rectangle("fill",
                 0,
-                lobby.fixturePoint[1].y,
+                lobby.fixturePoint[1].y + 38,
                 lobby.width,
-                38)
+                lobby.height - lobby.fixturePoint[1].y - 38)
+              
     lg.setColor(colors.bt)
-
     lg.setFont(fonts.latosmall)
-    lg.print(lobby.battleTabSubText, 50, 25)
+    lg.print(lobby.battleTabSubText, 50, 14)
     lg.setColor(1,1,1)
   end,
   
   ["battle"] = function() 
-    lg.setColor(colors.bb)
+    lg.setColor(colors.bbb)
     lg.rectangle("fill",
-                lobby.fixturePoint[1].x,
-                lobby.fixturePoint[1].y,
-                lobby.width - lobby.fixturePoint[1].x,
-                lobby.height - lobby.fixturePoint[1].y)
+                0,
+                0,
+                lobby.width,
+                32)
+              
+    lg.rectangle("fill",
+                0,
+                lobby.fixturePoint[1].y + 3,
+                lobby.width,
+                lobby.height - lobby.fixturePoint[1].y + 3)
     lg.setColor(colors.bg)
     lg.rectangle("fill",
                 0,
-                lobby.fixturePoint[1].y,
+                lobby.fixturePoint[1].y + 38,
                 lobby.width,
-                38)
+                lobby.height - lobby.fixturePoint[1].y - 38)
+              
     lg.setColor(colors.bt)
     lg.setColor(1,1,1)
     if Battle:getActive() then Battle:getActive():draw() end
@@ -695,9 +670,9 @@ function lobby.render.background()
     lg.setCanvas(lobby.canvas.background)
   end
   
-  lobby.close:draw()
-  lobby.minimize:draw()
-  lobby.maximize:draw()
+  if settings.borderless then
+    lobby.header:draw()
+  end
   
   if Channel:getActive() then
     Channel:getActive():render()
@@ -763,9 +738,11 @@ function lobby.draw()
   lg.draw(lobby.canvas.foreground)
   if lobby.state ~= "battle" and Battle:getActive() then
     lg.setFont(fonts.latoitalicmedium)
-    lg.printf("Battle", 2*lobby.width/3 + 20, lobby.fixturePoint[2].y + 10, lobby.width - lobby.fixturePoint[2].y, "left")
-    lg.draw(lobby.canvas.battlemini, lobby.battleMiniWindow.x, lobby.battleMiniWindow.y, 0, lobby.battleMiniWindow.w/lobby.width, lobby.battleMiniWindow.h/lobby.height)
-    lg.draw(lobby.canvas.foreground, lobby.battleMiniWindow.x, lobby.battleMiniWindow.y, 0, lobby.battleMiniWindow.w/lobby.width, lobby.battleMiniWindow.h/lobby.height)
+    lg.print(lobby.battleMiniWindow.text, lobby.fixturePoint[2].x - 10, lobby.fixturePoint[2].y + 10)
+    if lobby.battleMiniWindow.state == "minimizing" then
+      lg.draw(lobby.canvas.battlemini, lobby.battleMiniWindow.x, lobby.battleMiniWindow.y, 0, lobby.battleMiniWindow.w/lobby.width, lobby.battleMiniWindow.h/lobby.height)
+      lg.draw(lobby.canvas.foreground, lobby.battleMiniWindow.x, lobby.battleMiniWindow.y, 0, lobby.battleMiniWindow.w/lobby.width, lobby.battleMiniWindow.h/lobby.height)
+    end
   end
   Channel.textbox:renderText()
 end

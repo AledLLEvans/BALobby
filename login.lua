@@ -126,6 +126,10 @@ function login.enter()
     login.buttons.sound.func()
   end
   
+  if settings.borderless == nil then
+    settings.add("borderless", false)
+  end
+  
   if not lobby.gotEngine then
     if settings.engine_downloaded then
       if settings.engine_unpacked then
@@ -153,7 +157,7 @@ end
 function login.startEngineUnpack()
   login.unpacking = true
   login.downloadText = "Unpacking .."
-  nfs.createDirectory(lobby.springFilePath .. "engine\\103.0")
+  --nfs.createDirectory(lobby.springFilePath .. "engine\\103")
   local unpacker_thread = love.thread.newThread("thread/unpacker.lua")
   unpacker_thread:start(
     lobby.engineFolder .. "spring_103.0_win64-minimal-portable.7z",

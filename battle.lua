@@ -28,7 +28,7 @@ function Battle.initialize()
     :onClick(function() if User.s[lobby.username].spectator then lobby.launchOnGameStart = not lobby.launchOnGameStart end end),
     ["exit"] = BattleButton:new()
     :resetPosition(function() return lobby.fixturePoint[2].x - 255, lobby.fixturePoint[2].y - 35 end)
-    :setDimensions(100, 40)
+    :setDimensions(100, 35)
     :setText("Exit Battle")
     :onClick(function() Battle:getActive():leave() end),
     ["ready"] = Checkbox:new()
@@ -45,7 +45,7 @@ function Battle.initialize()
     :onClick(function() lobby.setSpectator(not User.s[lobby.username].spectator) end),
     ["launch"] = BattleButton:new()
     :resetPosition(function() return lobby.fixturePoint[2].x - 65, lobby.fixturePoint[2].y - 35 end)
-    :setDimensions(70, 40)
+    :setDimensions(70, 35)
     :setText("Start")
     :onClick(function()
       if Battle:getActive().founder.ingame then
@@ -605,7 +605,7 @@ function Battle:modHandler()
   gameName = string.gsub(gameName, " ", "_")
   if spring.hasMod(gameName) then self.hasMod = true return true end
   self.modMirrors = {
-    "https://www.springfightclub.com/data/" .. gameName .. ".sdz"
+    "https://www.balancedannihilation.com/data/" .. gameName .. ".sdz"
   }
   self.modMirrorID = 1
   self.modDownload = Download:new()
@@ -619,10 +619,12 @@ function Battle:mapHandler()
   local mapName = string.gsub(self.mapName:lower(), " ", "_")
   if spring.hasMap(mapName) then self.hasMap = true return true end
   self.mapMirrors = {
-    --"https://api.springfiles.com/files/maps/" .. mapName .. ".sd7",
-    --"https://api.springfiles.com/files/maps/" .. mapName .. ".sdz",
-    "https://www.springfightclub.com/data/maps/" .. mapName .. ".sd7",
-    "https://www.springfightclub.com/data/maps/" .. mapName .. ".sdz"
+    "https://api.springfiles.com/files/maps/" .. mapName .. ".sd7",
+    "https://api.springfiles.com/files/maps/" .. mapName .. ".sdz",
+    --"https://www.springfightclub.com/data/maps/" .. mapName .. ".sd7",
+    --"https://www.springfightclub.com/data/maps/" .. mapName .. ".sdz"
+    "http://files.balancedannihilation.com/data/maps/" .. mapName .. ".sdz",
+    "http://files.balancedannihilation.com/data/maps/" .. mapName .. ".sd7"
   }
   self.mapDownload = Download:new()
   self.mapMirrorID = 1
