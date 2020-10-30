@@ -198,6 +198,7 @@ function Channel:render()
       y = y + fontHeight
       i = i - 1
     end
+    if i < 1 then return end
     local line = self.lines[i]
     local drawType = line.user and
                     (line.ex and "ex"

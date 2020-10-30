@@ -381,7 +381,10 @@ local function OK(words, sentences)
   login.handleResponse(k, v)
 end
 local function OPENBATTLE(words, sentences)
+  local battleid = words[1]
   Battle.enter(true)--)
+  Battle.s[battleid].users[lobby.username] = User.s[lobby.username]
+  Battle.s[battleid].userCount = Battle.s[battleid].userCount + 1
 end
 local function OPENBATTLEFAILED(words, sentences)
   lw.showMessageBox("OPENBATTLEFAILED", "OPENBATTLEFAILED " .. sentences[1], "info" )
