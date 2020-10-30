@@ -33,14 +33,15 @@ header[30] = ld.pack('string', 'I4', 0) --
 header[31] = ld.pack('string', 'I4', 0) --
 header[32] = ld.pack('string', 'I4', 0) --
 local headerStr = table.concat(header)
+spring.headerStr = headerStr
 
-local function getSMF(dir)
-  for i, k in pairs(lfs.getDirectoryItems( dir )) do
-    local path = dir .. "/" .. k
+function spring.getSMF(dir)
+  for _, filename in pairs(lfs.getDirectoryItems( dir )) do
+    local path = dir .. "/" .. filename
     if lfs.getInfo(path).type == "directory" then
-      local smf = getSMF(path)
+      local smf = spring.getSMF(path)
       if smf then return smf end
-    elseif string.find(k, ".smf") then
+    elseif string.find(filename, ".smf") then
       return path
     end
   end
@@ -65,7 +66,7 @@ local function getMapData(mapName)
   mapName = string.gsub(mapName:lower(), " ", "_")
   local mapArchive = spring.hasMap(mapName)
   if not mapArchive or not nfs.mount(lobby.mapFolder .. mapArchive, "map") then return false end
-  local mapData = lfs.read(getSMF("map"))
+  local mapData = lfs.read(spring.getSMF("map"))
   if not mapData then return false end
   nfs.unmount(lobby.mapFolder .. mapArchive, "map")
   return mapData
@@ -131,5 +132,7 @@ function spring.getMapData(mapName)
   
   return data
 end
+
+
 
 return spring

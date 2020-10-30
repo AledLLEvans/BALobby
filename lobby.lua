@@ -5,14 +5,42 @@ local md5 = require("lib/md5")
   
 local address, port = "springfightclub.com", 8200
 
+canvas = {}
+function canvas:push(canvas)
+  self:pop(canvas)
+  table.insert(self, canvas)
+end
+
+function canvas:pushToBack(canvas)
+  self:pop(canvas)
+  table.insert(self, 1, canvas)
+end
+
+function canvas:pop(canvas)
+  for i = 1, #self do
+    if self[i] == canvas then 
+      table.remove(self, i)
+    end
+  end
+end
+
+function canvas:clean()
+  local i = 0
+  while table.remove(self) do i = i + 1 end
+  print("cleaned: ", i)
+end
+
 lobby.MOTD = {}
 lobby.canvas = {}
 lobby.render = {}
 local draggable = require "Draggable"
-lobby.options = require "gui/options"
+--lobby.options = require "gui/options"
+lobby.topbar = require "gui/topbar"
 lobby.userlist = require "gui/userlist"
 lobby.battlelist = require "gui/battlelist"
 lobby.header = require "gui/header"
+lobby.battlezoom = require "gui/battlezoom"
+Map = require "maps"
 function lobby.initialize()
   login.video = nil
   local borderless = false
@@ -32,20 +60,26 @@ function lobby.initialize()
   } 
 
   lobby.backbutton = ImageButton:new()
-  :setPosition(0, 0)
+  :setPosition(0, -3)
   :setImage(img.back)
   :setDimensions(36,36)
   :onClick(function()
       sound.tab:play()
+      local battle = Battle:getActive()
+      if battle then battle:leave() end
       lobby.enter()
   end)
+
+  function lobby.backbutton:draw()
+    lg.draw(self.image, self.x, self.y, 0, 36/50)
+  end
 
   if settings.borderless then
     lobby.header.initialize()
   end
   lobby.userlist.initialize()
   lobby.battlelist.initialize()
-  lobby.options.initialize()
+  lobby.topbar.initialize()
   
   lobby.resize( lobby.width, lobby.height )
   lobby.timeSinceLastPong = 0
@@ -55,95 +89,18 @@ function lobby.initialize()
   Battle.initialize()
 end
 
-lobby.battleMiniWindow = {}
-
-function lobby.battleMiniWindow:initialize(direction)
-  sound.dwoosh:stop()
-  sound.dwoosh:play()
-  if direction == "minimize" then
-    self.state = "minimizing"
-    self.x, self.y = 0, 0
-    self.w, self.h = lobby.width, lobby.height
-    self.dx, self.dy = 2*lobby.width/3, lobby.fixturePoint[2].y
-    self.dw, self.dh = self.w - lobby.width/3, self.h - 35
-    self:setText()
-    lobby.scrollBars[Battle.mapScrollBar] = false
-    lobby.scrollBars[Battle.spectatorsScrollBar] = false
-    lobby.scrollBars[Battle.modoptionsScrollBar] = false
-  elseif direction == "maximize" then
-    self.x = 0
-    self.y = 0
-    self.w = lobby.width
-    self.h = lobby.height
-    self.state = "maximized"
-    lobby.state = "battle"
-    lobby.events[self] = nil
-    lobby.resize(lobby.width, lobby.height)
-  end
-  lobby.events[self] = true
-end
-
-function lobby.battleMiniWindow:update(dt)
-  self.x = self.x + self.dx/12
-  self.y = self.y + self.dy/12
-  self.w = self.w - self.dw/12
-  self.h = self.h - self.dh/12
-  if self.state == "minimizing" and (self.x > self.dx or self.y > self.dy) then
-    self.x = self.dx
-    self.y = self.dy
-    self.w = lobby.width - self.x
-    self.h = 35
-    self.state = "minimized" 
-    lobby.events[self] = nil
-    lobby.clickables[self] = true
-  elseif self.state == "maximizing" and (self.x < 0 or self.y < 0) then
-    --[[self.x = 0
-    self.y = 0
-    self.w = lobby.width
-    self.h = lobby.height
-    self.state = "maximized" 
-    lobby.state = "battle"
-    lobby.events[self] = nil
-    lobby.resize(lobby.width, lobby.height)]]
-  end
-end
-
-function lobby.battleMiniWindow:setText()
-  self.text = "Click here to return to battle: " .. Battle:getActive().title
-  local b = false
-  while fonts.latoitalicmedium:getWidth(self.text) > lobby.width - lobby.fixturePoint[2].x - 10 do
-    self.text = self.text:sub(0, -2)
-    b = true
-  end
-  if b then self.text = self.text .. ".." end
-end
-  
-function lobby.battleMiniWindow:click(x, y, b)
-  if b ~= 1 then return false end
-  if x > self.x and y > self.y then
-    Battle.enter()
-    return true
-  end
-  return false
-end
-
-function lobby.battleMiniWindow:resize(w, h)
-  if Battle:getActive() and self.state == "minimized" then
-    self.x, self.y = 2*lobby.width/3, lobby.fixturePoint[2].y
-    self.w, self.h = lobby.width/3, 35
-    self:setText()
-  end
-end
 
 function lobby.enter()
-  if lobby.state == "battle" then
-    lobby.battleMiniWindow:initialize("minimize")
+  if lobby.state == "replays" then Replay.exit() end
+  if lobby.state == "battle" and not Battle:getActive().single then
+    lobby.battlezoom:initialize("minimize")
   end
   lobby.clickables[lobby.backbutton] = false
-  lobby.clickables[lobby.options.button] = true
   lobby.battlelist.scrollbar:setOffset(0)
   lobby.events[lobby.battlelist] = true
   lobby.state = "landing"
+  canvas:pushToBack(lobby.canvas.battlelist)
+  lobby.render.all()
 end
 
 function lobby.refreshBattleTabs()
@@ -188,21 +145,35 @@ function lobby.resize( w, h )
     }
   }
   
-  if settings.borderless then
+  if settings.borderless and lobby.header then
     lobby.header.resize()
   end
+  
+  canvas:clean()
   
   lobby.canvas.battlemini = lg.newCanvas(lobby.width, lobby.height)
   lobby.canvas.battlelist = lg.newCanvas(lobby.width, lobby.height)
   lobby.canvas.background = lg.newCanvas(lobby.width, lobby.height)
   lobby.canvas.foreground = lg.newCanvas(lobby.width, lobby.height)
   lobby.canvas.userlist = lg.newCanvas(lobby.width, lobby.height)
+  Battle.canvas = lg.newCanvas(lobby.width, lobby.height)
   
-  lobby.battleMiniWindow:resize(w, h)
+  if lobby.state == "landing" then
+    canvas:push(lobby.canvas.battlelist)
+  end
+  canvas:push(lobby.canvas.background)
+  canvas:push(lobby.canvas.foreground)
+  canvas:push(lobby.canvas.userlist)
+  canvas:push(Battle.canvas)
+  
+  lobby.battlezoom:resize(w, h)
   
   resize[lobby.state]()
+  Map.resize()
 
   Channel.refresh()
+  
+  lobby.topbar.resize()
   
   lobby.userlist.resize()
   lobby.battlelist.resize()
@@ -249,6 +220,9 @@ function lobby.mousemoved( x, y, dx, dy, istouch )
   if Channel:getActive() then
     Channel:getActive():render()
   end
+  for sb in pairs(lobby.scrollBars) do
+    if sb.held then sb.func() end
+  end
   lobby.render.background()
   lobby.render.foreground()
 end
@@ -261,7 +235,7 @@ local function mrexit( )
 end
 
 function lobby.mousepressed(x,y,b)
-  if draggable.start(x, y) then return end
+  if settings.borderless and draggable.start(x, y) then return end
   if math.abs(y - lobby.fixturePoint[1].y) < 10 and x > lobby.fixturePoint[1].x and x < lobby.fixturePoint[2].x  then
     lobby.dragY = true
   end
@@ -299,6 +273,7 @@ function lobby.mousereleased(x,y,b)
   end
   for sb in pairs(lobby.scrollBars) do
     sb.held = false
+    sb.func()
   end
   if not lobby.loginInfoEnd then return end
   for v, bool in pairs(lobby.clickables) do
@@ -385,7 +360,6 @@ end
 local launchCode = [[
   local exec = ...
   io.popen(exec)
-  love.window.restore( )
 ]]
 
 function lobby.launchSpring()
@@ -395,7 +369,7 @@ function lobby.launchSpring()
   if not lobby.springThread then
     lobby.springThread = love.thread.newThread( launchCode )
   end
-  love.window.minimize( )
+  --love.window.minimize( )
   lobby.springThread:start( exec )
 end
 
@@ -461,7 +435,7 @@ function lobby.update( dt )
   --for Map downloading
   local battle = Battle:getActive()
   if battle then battle:update(dt) end
-
+  
 end
 
 function lobby.receiveData(dt)
@@ -588,6 +562,7 @@ lobby.renderFunction = {
     lg.setFont(fonts.latosmall)
     lg.print(lobby.battleTabSubText, 50, 14)
     lg.setColor(1,1,1)
+    if lobby.battleTabHoverWindow then lobby.battleTabHoverWindow:draw() end
   end,
   
   ["battle"] = function() 
@@ -612,7 +587,7 @@ lobby.renderFunction = {
               
     lg.setColor(colors.bt)
     lg.setColor(1,1,1)
-    if Battle:getActive() then Battle:getActive():draw() end
+    if Battle:getActive() then Battle.render() end
   end,
     
   ["replays"] = function()
@@ -637,10 +612,6 @@ lobby.renderFunction = {
     lg.setColor(colors.bt)
     lg.setFont(fonts.latoboldbig)
     lg.print("Your Demos", 50, 15)
-    
-    for _, tab in pairs(ReplayTab.s) do
-      tab:draw()
-    end
   
     lg.setColor(1,1,1)
   end,
@@ -674,20 +645,6 @@ function lobby.render.background()
     lobby.header:draw()
   end
   
-  if Channel:getActive() then
-    Channel:getActive():render()
-  end
-
-  if lobby.state == "landing" then
-    lobby.options.button:draw()
-    if lobby.options.expanded then
-      lobby.options.panel:draw()
-    end
-  else
-    lobby.backbutton:draw()
-  end
-  
-  if lobby.battleTabHoverWindow then lobby.battleTabHoverWindow:draw() end
   lg.setColor(1,1,1)
   lg.setCanvas()
 end
@@ -712,25 +669,47 @@ end
 function lobby.render.foreground()
   lg.setCanvas(lobby.canvas.foreground)
   lg.clear()
+  
+  if lobby.state ~= "landing" then
+    lobby.backbutton:draw()
+  end
+  
+  lobby.topbar:draw()
+  
+  
   for _, channel in pairs(Channel.s) do
     if channel.display then channel.tab:draw() end
   end
- Channel.addButton:draw() 
+  Channel.addButton:draw()
   
   --[[Hyperlink.s = {}
   for h in pairs(Hyperlink.s) do
     h:draw()
   end]]
   
+  if Channel:getActive() then
+    Channel:getActive():render()
+  end
+
   Channel.textbox:draw()
   
   if lobby.dropDown then lobby.dropDown:draw() end
   lg.setCanvas()
 end
 
+function lobby.render.all()
+  lobby.render.background()
+  lobby.render.battlelist()
+  lobby.render.userlist()
+  lobby.render.foreground()
+end
+
 function lobby.draw()
   if not love.window.isVisible() then return end
-  if lobby.state == "landing" then
+  for i = 1, #canvas do
+    lg.draw(canvas[i])
+  end
+  --[[if lobby.st2ate == "landing" then
     lg.draw(lobby.canvas.battlelist)
   end
   lg.draw(lobby.canvas.background)
@@ -738,11 +717,16 @@ function lobby.draw()
   lg.draw(lobby.canvas.foreground)
   if lobby.state ~= "battle" and Battle:getActive() then
     lg.setFont(fonts.latoitalicmedium)
-    lg.print(lobby.battleMiniWindow.text, lobby.fixturePoint[2].x - 10, lobby.fixturePoint[2].y + 10)
-    if lobby.battleMiniWindow.state == "minimizing" then
-      lg.draw(lobby.canvas.battlemini, lobby.battleMiniWindow.x, lobby.battleMiniWindow.y, 0, lobby.battleMiniWindow.w/lobby.width, lobby.battleMiniWindow.h/lobby.height)
-      lg.draw(lobby.canvas.foreground, lobby.battleMiniWindow.x, lobby.battleMiniWindow.y, 0, lobby.battleMiniWindow.w/lobby.width, lobby.battleMiniWindow.h/lobby.height)
+    lg.print(lobby.battlezoom.text or "", lobby.fixturePoint[2].x - 10, lobby.fixturePoint[2].y + 10)
+    if lobby.battlezoom.state == "minimizing" then
+      lg.draw(lobby.canvas.battlemini, lobby.battlezoom.x, lobby.battlezoom.y, 0, lobby.battlezoom.w/lobby.width, lobby.battlezoom.h/lobby.height)
+      lg.draw(lobby.canvas.foreground, lobby.battlezoom.x, lobby.battlezoom.y, 0, lobby.battlezoom.w/lobby.width, lobby.battlezoom.h/lobby.height)
     end
-  end
+  end]]
   Channel.textbox:renderText()
+  --[[local i = 1
+  for k, v in pairs(canvas) do
+    lg.print(tostring(k) .. ":" .. tostring(v), lobby.fixturePoint[2].x, lobby.fixturePoint[2].y + i*10)
+    i = i + 1
+  end]]
 end

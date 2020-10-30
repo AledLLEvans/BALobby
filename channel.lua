@@ -257,8 +257,8 @@ function BattleChannel:render()
   lg.setFont(self.font)
   local fontHeight = self.font:getHeight()
   local tw = self.w
-  local w = 2*tw/3
-  local ow = tw/3
+  local w = math.floor(2*tw/3)
+  local ow = math.floor(tw/3)
   
   if lobby.state == "battle" then
     -- "Info" Box
@@ -289,8 +289,8 @@ function BattleChannel:render()
         lg.printf(wt[j], self.x + w + 10, self.y + self.h - y - 21, ow - 5, "left")
         y = y + fontHeight
         j = j - 1
-      until self.h < y + 21 + 30 + fontHeight or j == 0
-      if self.h < y + 21 + 30 + fontHeight then break end
+      until self.h - 51 - fontHeight < y or j == 0
+      if self.h - 41 - fontHeight < y then break end
       i = i - 1
     end
   end
@@ -324,15 +324,15 @@ function BattleChannel:render()
     local ttext = "[" .. line.time .. "] "
     local ttextw = self.font:getWidth(ttext)
     local align = line.user and "left" or "center"
-    local _, wt = self.font:getWrap(text, w - 10)
+    local _, wt = self.font:getWrap(text, w - 10 - ttextw)
     local j = #wt
     repeat
-      lg.printf(ttext, self.x + 10, self.y + self.h - y - 21, w - 10, "left")
-      lg.printf(wt[j], self.x + 10 + ttextw, self.y + self.h - y - 21, w - 10 - ttextw, align)
+      lg.printf(ttext, self.x + 5, self.y + self.h - y - 21, w - 10, "left")
+      lg.printf(wt[j], self.x + 5 + ttextw, self.y + self.h - y - 21, w - 5 - ttextw, align)
       y = y + fontHeight
       j = j - 1
-    until self.h < y + 21 + 20 or j == 0
-    if self.h < y + 21 + 30 then break end
+    until self.h - 41 < y or j == 0
+    if self.h - 51 < y then break end
     i = i - 1
     lg.setColor(colors.text)
   end

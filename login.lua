@@ -12,6 +12,25 @@ local unpacker_channel = love.thread.getChannel("unpacker")
 
 local socket = require "socket"
 
+local function noEngine()
+  login.buttons.login.crossed = true
+  if settings.engine_downloaded then
+    if settings.engine_unpacked then
+      local buttons = {"OK", "No!", escapebutton = 2}
+      local resp = love.window.showMessageBox("No Engine", "It looks like you (re)moved the spring engine, or it failed to install properly.\n\nShould I attempt to reinstall?", buttons)
+      if resp == 1 then
+        login.startEngineDownload()
+        return
+      elseif resp == 2 then
+        return
+      end
+    end
+    login.startEngineUnpack()
+  else
+    login.startEngineDownload()
+  end
+end
+
 login.downloadText = ""
 function login.enter()
   state = STATE_LOGIN
@@ -75,21 +94,25 @@ function login.enter()
   --LOGIN BUTTONS
   login.buttons = {}
   login.buttons.login = Button:new()
-  login.buttons.login:setDimensions(80, 35)
-  login.buttons.login:setText("Sign In")
-  login.buttons.login:setFont(fonts.latosmall)
-  login.buttons.login:setFunction(function() login.connectToServer() end)
+  :setDimensions(80, 35)
+  :setText("Sign In")
+  :setFont(fonts.latosmall)
+  :setFunction(function() login.connectToServer() end)
   function login.buttons.login:draw()
     lg.setColor(colors.bb)
     lg.rectangle("fill", self.x, self.y, self.w, self.h, 5)
     lg.setColor(colors.text)
     lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2 + 1)
+    if self.crossed then
+      lg.line(self.x + 2, self.y + 2, self.x + self.w - 2, self.y + self.h - 2)
+      lg.line(self.x + self.w - 2, self.y + 2, self.x + 2, self.y + self.h - 2)
+    end
   end
   login.buttons.register = Button:new()
-  login.buttons.register:setDimensions(110, 35)
-  login.buttons.register:setText("Create Account")
-  login.buttons.register:setFont(fonts.latosmall)
-  login.buttons.register:setFunction(function() login.registerAccount() end)
+  :setDimensions(110, 35)
+  :setText("Create Account")
+  :setFont(fonts.latosmall)
+  :setFunction(function() login.registerAccount() end)
   function login.buttons.register:draw()
     lg.setColor(colors.bb)
     lg.rectangle("fill", self.x, self.y, self.w, self.h, 5)
@@ -131,24 +154,16 @@ function login.enter()
   end
   
   if not lobby.gotEngine then
-    if settings.engine_downloaded then
-      if settings.engine_unpacked then
-        love.window.showMessageBox("Cant find engine.", "Check engine installation or delete settings.lua in appdata, you may have trouble launching the game", "error" )
-      end
-      login.startEngineUnpack()
-    else
-      login.startEngineDownload()
-    end
+    noEngine()
   end
   login.resize( lobby.width, lobby.height )
 end
 
-local progress_channel = love.thread.getChannel("progress_login")
+local progress_channel = love.thread.getChannel("login")
 function login.startEngineDownload()
-  local url = "https://springrts.com/dl/buildbot/default/master/103.0/win64/spring_103.0_win64-minimal-portable.7z"
-  
+  local url = "https://springrts.com/dl/buildbot/default/master/103.0/win32/spring_103.0_win32-minimal-portable.7z"
   local download_thread = love.thread.newThread("thread/downloader.lua")
-  download_thread:start(url, "spring_103.0_win64-minimal-portable.7z", lobby.springFilePath .. "engine", "login")
+  download_thread:start(url, "spring_103.0_win32-minimal-portable.7z", lobby.springFilePath .. "engine", "login")
   login.downloading = true
   login.dl_status = {finished = false, downloaded = 0, file_size = 0}
   login.downloadText = "Retrieving URL .."
@@ -156,12 +171,12 @@ end
 
 function login.startEngineUnpack()
   login.unpacking = true
-  login.downloadText = "Unpacking .."
+  login.downloadText = "Unpacking engine .."
   --nfs.createDirectory(lobby.springFilePath .. "engine\\103")
   local unpacker_thread = love.thread.newThread("thread/unpacker.lua")
   unpacker_thread:start(
-    lobby.engineFolder .. "spring_103.0_win64-minimal-portable.7z",
-    lobby.springFilePath .. "engine\\103")
+    lobby.engineFolder .. "spring_103.0_win32-minimal-portable.7z",
+    lobby.springFilePath .. "engine\\103.0")
   nfs.createDirectory(lobby.mapFolder)
   nfs.createDirectory(lobby.gameFolder)
 end
@@ -177,7 +192,7 @@ function login.updateDownload(dt)
     end
     if progress_update.file_size then
       if login.dl_status.file_size == 0 then
-        login.downloadText = "Downloading .."
+        login.downloadText = "Downloading engine .."
       end
       login.dl_status.file_size = progress_update.file_size
     end
@@ -201,7 +216,11 @@ function login.updateUnpack(dt)
     end
     if unpacker_update.finished then
       settings.add({engine_unpacked = true})
-      login.downloadText = "Up to Date"
+      login.buttons.login.crossed = false
+      login.downloadText = "Engine Installed"
+      if nfs.getInfo( lobby.exeFilePath ) then
+        lobby.gotEngine = true
+      end
     end
     if unpacker_update.fileCount then
       login.fileCount = unpacker_update.fileCount
@@ -272,7 +291,10 @@ function login.handleResponse(k, v)
   end
 end
 
-function login.connectToServer()
+function login.connectToServer() 
+  if not lobby.gotEngine then return end
+  if login.delay > 0 then return end
+  login.delay = 0.5
   login.action = 1
   if login.savePass then
     settings.add({
@@ -288,7 +310,7 @@ function login.connectToServer()
       })
   end
   if connect() then
-    --login.handleResponse()
+    login.handleResponse("", "")
   end
 end
 
@@ -380,14 +402,7 @@ local keypress = {
     login.passBox:backspace()
   end,
   ["return"] = function()
-    if not lobby.gotEngine then return end
-    if login.delay > 0 then return end
-    login.delay = 0.5
-    --if login.mode == "login" then
-      login.connectToServer()
-    --elseif login.mode == "register" then
-      --login.registerAccount()
-    --end
+    login.connectToServer()
   end,
   ["tab"] = function() 
     login.nameBox:toggle()
@@ -474,21 +489,21 @@ end
 
 function login.drawDownloadText()
   lg.setColor(colors.bgt)
-  lg.rectangle("fill", lobby.width/2 - 30, 10, 60, 20)
+  --lg.rectangle("fill", lobby.width/2 - 30, 10, 60, 20)
   lg.setColor(colors.text)
-  lg.printf(login.downloadText, 0, 20, lobby.width, "center")
   local fontHeight = fonts.robotosmall:getHeight()
-  if login.dl_status then
+  lg.printf(login.downloadText, 0, 20 + fontHeight, lobby.width, "center")
+  if login.dl_status and not login.dl_status.finished then
     if login.dl_status.file_size > 0 then
       local perc = math.floor(login.dl_status.downloaded / login.dl_status.file_size * 100)
-      lg.print(perc .."%",  lobby.width/2-20, 20 + fontHeight)
+      lg.print(perc .."%",  lobby.width/2-20, 20 + 2*fontHeight)
     end
     if login.dl_status.err then
       lg.print(login.dl_status.err, 0, 32)
     end
   elseif login.unpackerCount then
     if login.unpackerCount > 0 then
-      lg.print(login.unpackerCount .. "/" .. login.fileCount, lobby.width/2 + 10, 20 + fontHeight)
+      lg.print(login.unpackerCount .. "/" .. login.fileCount, lobby.width/2 - 10, 20 + 2*fontHeight)
     end
   end
 end

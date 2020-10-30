@@ -10,14 +10,129 @@ local replayMirror = "http://replays.springfightclub.com/"
 
 local nfs = require "lib/nativefs"
 
-local minimaps = {}
-local widths = {[false] = 0}
-local heights = {[false] = 0}
+local initialized = false
+
+local display = false
 
 function Replay.enter()
+  if not initialized then Replay.initialize() end
+  if display then return Replay.exit() end --Map.exit() end
+  lobby.scrollBars[lobby.battlelist.scrollbar] = false
+  lobby.scrollBars[Replay.scrollbar] = true
+  lobby.events[Replay] = true
+  lobby.clickables[Replay] = true
+  canvas:clean()
+  canvas:push(Replay.canvas)
+  canvas:push(lobby.canvas.background)
+  canvas:push(lobby.canvas.foreground)
+  canvas:push(lobby.canvas.userlist)
+  display = true
   lobby.state = "replays"
-  Replay.fetchLocalReplays()
+  --Replay.fetchLocalReplays()
 end
+
+function Replay.exit()
+  display = false
+  lobby.scrollBars[lobby.battlelist.scrollbar] = true
+  lobby.scrollBars[Replay.scrollbar] = nil
+  lobby.events[Replay] = nil
+  lobby.clickables[Replay] = nil
+  canvas:clean()
+  canvas:push(lobby.canvas.battlelist)
+  canvas:push(lobby.canvas.background)
+  canvas:push(lobby.canvas.foreground)
+  canvas:push(lobby.canvas.userlist)
+end
+
+local canvas
+local xmin
+local ymin
+local xmax
+local ymax
+local padding = 2
+local h = 20
+function Replay.initialize()
+  initialized = true
+  love.thread.newThread("thread/replays.lua"):start(lobby.replayFolder)
+  xmin = 20
+  ymin = 42 + padding
+  xmax = lobby.fixturePoint[2].x
+  ymax = lobby.fixturePoint[2].y
+  Replay.scrollbar = ScrollBar:new()
+  :setPosition(xmax - 5, ymin + 10)
+  :setLength(ymax - ymin - 20)
+  :setScrollBarLength(20)
+  :setScrollSpeed(12)
+  :setRenderFunction(function() Replay.render() end)
+  Replay.scrollbar:getZone()
+  :setPosition(xmin, ymin)
+  :setDimensions(xmax-xmin, ymax-ymin)
+  Replay.canvas = lg.newCanvas(lobby.width, lobby.height)
+end
+
+Replay.s = {}
+local channel = love.thread.getChannel("replays")
+function Replay:update()
+  local data = channel:pop()
+  while data do
+    table.insert(Replay.s, data)
+    data = channel:pop()
+    Replay.render()
+    Replay.scrollbar:setOffsetMax((h+padding+1)*(#Replay.s+2))
+  end
+end
+
+function Replay:click()
+  if false then
+    
+    return true
+  end
+  return false
+end
+
+function Replay.render()
+  lg.setCanvas(Replay.canvas)
+  lg.clear()
+  
+  lg.setFont(fonts.robotosmall)
+  lg.setColor(colors.text)
+  
+  local w = xmax - xmin - 20
+  local i = #Replay.s
+  local y = ymin - Replay.scrollbar:getOffset()
+  local x = xmin
+  
+  lg.print("Showing " .. #Replay.s .. " Replays", lobby.fixturePoint[2].x/2, 42)
+    
+  lg.print("Date & Time", x, y) --dateandtime
+  lg.print("Map", x + 125, y) -- map
+  --lg.print("engine", x + 390, y) --engine vers
+  --lg.print("Players", x + 310, y) --numteams
+  --lg.print("Spectators", x + 360, y) --numplayers
+  
+  while i > 0 do
+    y = y + (h+2*padding)
+    if y > ymin - h then
+      lg.print(#Replay.s - i + 1, padding, y)
+      lg.rectangle("line", x, y, w, h)
+      lg.print(Replay.s[i][3], x + 2, y) --dateandtime
+      lg.print(Replay.s[i][4], x + 125, y) -- map
+      --lg.print(Replay.s[i][5], x + 390, y) --engine vers
+      --lg.print(Replay.s[i][1][12].val, x + 310, y) --numteams
+      lg.print(Replay.s[i][1][7].val, x + 300, y) 
+      lg.print(Replay.s[i][1][8].val, x + 360, y) 
+      --lg.print(Replay.s[i][1][9].val - Replay.s[i][1][12].val, x + 360, y) --numplayers
+    end
+    i = i - 1
+  end
+  
+
+  
+  Replay.scrollbar:draw()
+  
+  lg.setCanvas()
+end
+
 
 function Replay.fetchLocalReplays()
   Replay.local_demos = {
@@ -43,7 +158,7 @@ function Replay.fetchLocalReplays()
   Replay.initialize()
 end
 
-function Replay.initialize()
+--[[function Replay.initialize()
   ReplayTab:clean()
   local i = #Replay.local_demos.date
   local ymin = 40
@@ -60,7 +175,7 @@ function Replay.initialize()
     y = y + 35
   end
   Replay.refresh()
-end
+end]]
 
 function Replay.refresh()
   local i = #Replay.local_demos.date
@@ -165,17 +280,17 @@ local launchCode = [[
 ]]
 
 local function launchReplay(filename)
-    --new:startDownload()
-    local exec = "\"" .. lobby.exeFilePath .. " " .. lobby.replayFolder .. filename .. "\""
-    print(exec)
-    if not lobby.springThread then
-      lobby.springThread = love.thread.newThread( launchCode )
-    end
-    love.window.minimize( )
-    lobby.springThread:start( exec )
+  --new:startDownload()
+  local exec = "\"" .. lobby.exeFilePath .. " " .. lobby.replayFolder .. filename .. "\""
+  print(exec)
+  if not lobby.springThread then
+    lobby.springThread = love.thread.newThread( launchCode )
   end
+  love.window.minimize( )
+  lobby.springThread:start( exec )
+end
 
-ReplayTab = Button:new()
+--[[ReplayTab = Button:new()
 ReplayTab.mt = {__index = ReplayTab}
 ReplayTab.s = {}
 function ReplayTab:new(id, filename, date, time, mapName, eversion)
@@ -213,131 +328,9 @@ function ReplayTab:new(id, filename, date, time, mapName, eversion)
   self.s[id] = new
   lobby.clickables[new] = true
   return new
-end
+end]]
 
-function ReplayTab:parse(path)
-  local info = nfs.getInfo(path)
-  local gzip, size = nfs.read(path)
-  if size == 0 then self.empty = true return end
-  local decomp = ld.decompress( "string", "gzip", gzip )
-    
-  --[[if not info then return end
-  if not ((info.type == "file") and (info.size > 0)) then return end
-  local fd = nfs.newFileData(path)]]
-  
-  local magic,
-  version,
-  headerSize,
-  versionString,
-  gameID,
-  unixTime,
-  scriptSize,
-  demoStreamSize,
-  gameTime,
-  wallclockTime,
-  numPlayers,
-  playerStatSize,
-  playerStatElemSize,
-  numTeams,
-  teamStatSize,
-  teamStatElemSize,
-  teamStatPeriod,
-  winningAllyTeamsSize,
-  _ =
-  love.data.unpack("c16 i i c256 c16 c8 i i i i i i i i i i i", decomp)
-  local scriptStr = love.data.unpack("c" .. scriptSize, decomp, headerSize)
-  --local stats = love.data.unpack("c" .. playerStatSize, decomp, headerSize + scriptSize + demoStreamSize)
-  --local demo = love.data.unpack("c" .. demoStreamSize, decomp, headerSize + scriptSize)
-  local script = {["game"] = {}}
-  --local open = false
-  local tbl
-  for line in string.gmatch(scriptStr,'[^\r\n]+') do
-    local key = line:match("^%[(.+)%]$")
-    if key then
-      script[key] = {}
-      tbl = script[key]
-    end
-    if line:find('}') then
-      tbl = script["game"]
-    end
-    local k, v = line:match("(.+)=(.+);")
-    if tbl and k and v then
-      tbl[k] = v
-    end
-  end
-  
-  self.script = script
-  
-  local mapName = self.script["game"].mapname
-  if mapName then
-    mapName = string.gsub(mapName:lower(), " ", "_")
-    local minimap = self:getMinimap(mapName)
-    self.minimap = minimap
-    self.mapWidthHeightRatio = widths[mapName]/heights[mapName]
-  end
-  
-  self.header = {
-    {name = "magic", val = magic},
-    {name = "version", val = version},
-    {name = "headerSize", val = headerSize},
-    {name = "versionString", val = versionString},
-    --{name = "gameID", val = gameID},
-    --{name = "unixTime", val = unixTime},
-    {name = "scriptSize", val = scriptSize},
-    {name = "demoStreamSize", val = demoStreamSize},
-    {name = "gameTime", val = gameTime},
-    {name = "wallclockTime", val = wallclockTime},
-    {name = "numPlayers", val = numPlayers},
-    {name = "playerStatSize", val = playerStatSize},
-    {name = "playerStatElemSize", val = playerStatElemSize},
-    {name = "numTeams", val = numTeams},
-    {name = "teamStatSize", val = teamStatSize},
-    {name = "teamStatElemSize", val = teamStatElemSize},
-    {name = "teamStatPeriod", val = teamStatPeriod},
-    {name = "winningAllyTeamsSize", val = winningAllyTeamsSize}
-  }
---[[    ["magic"] = magic,
-    ["version"] = version,
-    ["headerSize"] = headerSize,
-    ["versionString"] = versionString,
-    ["gameID"] = gameID,
-    ["unixTime"] = unixTime,
-    ["scriptSize"] = scriptSize,
-    ["demoStreamSize"] = demoStreamSize,
-    ["gameTime"] = gameTime,
-    ["wallclockTime"] = wallclockTime,
-    ["numPlayers"] = numPlayers,
-    ["playerStatSize"] = playerStatSize,
-    ["playerStatElemSize"] = playerStatElemSize,
-    ["numTeams"] = numTeams,
-    ["teamStatSize"] = teamStatSize,
-    ["teamStatElemSize"] = teamStatElemSize,
-    ["teamStatPeriod"] = teamStatPeriod,
-    ["winningAllyTeamsSize"] = winningAllyTeamsSize
-  }]]
-
-  --[[print("magic", magic)
-  print("version", version)
-  print("headerSize", headerSize)
-  print("versionString", versionString)
-  print("gameID", gameID)
-  print("unixTime", unixTime)  
-  print("scriptSize", scriptSize)
-  print("demoStreamSize", demoStreamSize)
-  print("gameTime", gameTime)
-  print("wallclockTime", wallclockTime)
-  print("numPlayers", numPlayers)
-  print("playerStatSize", playerStatSize)
-  print("playerStatElemSize", playerStatElemSize)
-  print("numTeams", numTeams)
-  print("teamStatSize", teamStatSize)
-  print("teamStatElemSize", teamStatElemSize)
-  print("teamStatPeriod", teamStatPeriod)
-  print("winningAllyTeamsSize", winningAllyTeamsSize)]]
-
-end
-
-function ReplayTab:clean()
+--[[function ReplayTab:clean()
   for id, rt in pairs(self.s) do
     lobby.clickables[rt] = nil
     self.s[id] = nil
@@ -380,10 +373,12 @@ function ReplayTab:draw()
     str = str .. ".."
   end
   lg.printf(str, x + h + 10, y+5, w, "left")
+  local numallyteams = tonumber(self.script["game"].numallyteams)
+  local mo_ffa = tonumber(self.script["modoptions"].mo_ffa)
   if self.script then
     local str = "Duel"
-    if tonumber(self.script["game"].numallyteams) > 2 then
-      if tonumber(self.script["modoptions"].mo_ffa) == 1 then
+    if numallyteams and numallyteams > 2 then
+      if mo_ffa and mo_ffa == 1 then
         str = "FFA"
       else
         str = "Teamfight"
@@ -455,4 +450,4 @@ function ReplayTab:getMinimap(mapName)
     heights[mapName] = height
   end
   return minimaps[mapName]
-end
+end]]

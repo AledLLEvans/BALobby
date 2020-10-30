@@ -1,5 +1,6 @@
 local lk = love.keyboard
 local ls = love.system
+local Map = require("maps")
 return {
   ["c"] = function()
     if (lk.isDown("lctrl") or lk.isDown("rctrl")) and Channel:getTextbox():isActive() then
@@ -66,7 +67,11 @@ return {
   end,
   ["escape"] = function()
     if lobby.state ~= "landing" then
-      lobby.enter()
+      if Map.isOpen() then
+        Map.exit()
+      else
+        lobby.enter()
+      end
     end
     --[[if lobby.state == "replays" then
       if Battle:getActive() then

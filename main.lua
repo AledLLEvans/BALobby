@@ -19,7 +19,7 @@ local lg = love.graphics
 
 local function checkOS()
   local os = love.system.getOS()
-  local engine = "103"
+  local engine = "103.0"
   if os == "Windows" then
     lobby.springFilePath = lfs.getUserDirectory() .. 'Documents\\My Games\\Spring\\'
     lobby.engineFolder = lobby.springFilePath .. "engine\\"
@@ -87,6 +87,7 @@ function love.load()
   if nfs.getInfo( lobby.exeFilePath ) then
     lobby.gotEngine = true
   end
+  lobby.modname = "Balanced Annihilation V11.0.2"
   login.enter()
 end
 

@@ -3,6 +3,9 @@ local lg = love.graphics
 
 function header.initialize(bool)
   if bool then
+    if not header.close then
+      header.initialize()
+    end
     lobby.clickables[header.close] = nil
     lobby.clickables[header.maximize] = nil
     lobby.clickables[header.minimize] = nil

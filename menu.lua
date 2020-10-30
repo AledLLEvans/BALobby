@@ -237,7 +237,7 @@ function Button:setText(str)
   return self
 end
 
-function Button:setDimensions(w,h)
+function Button:setDimensions(w, h)
   self.w = w or self.w
   self.h = h or self.h
   self.text:setf(self.str, self.w, "center")
@@ -268,6 +268,7 @@ function Button:setFunction(func)
   self.func = func
   return self
 end
+
 function Button:onClick(func)
   self.func = func
   return self
@@ -529,6 +530,7 @@ function BattleTab:draw()
   lg.draw(img.eye, x + w - fonts.latoboldbiggest:getWidth("00") - 45, y + h/2)
   -- MAP NAME
   lg.setFont(fonts.latolightitalic)
+  lg.printf(battle.gameName, x + h + 5, y+5+fontHeight, w/2, "left")
   local mapName = battle.mapName
   local _, wt = fonts.latolightitalic:getWrap(mapName .. "..", w/2)
   if #wt > 1 then
