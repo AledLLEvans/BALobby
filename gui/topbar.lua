@@ -2,10 +2,7 @@ topbar = {}
 
 local lg = love.graphics
 
-local launchCode = [[
-  local exec = ...
-  io.popen(exec)
-]]
+local spring = require("spring")
 
 function topbar.initialize()
   topbar.singleplayer = Button:new()
@@ -19,12 +16,7 @@ function topbar.initialize()
       lobby.send("LEAVEBATTLE")
       battle:getChannel().display = false
     end
-    if not lobby.springThread then
-      lobby.springThread = love.thread.newThread( launchCode )
-    end
-    --love.window.minimize( )
-    lobby.springThread:start("\"" .. lobby.exeFilePath .. "\"")
-    --Battle.enterSingle()
+    spring.launch("\"" .. lobby.exeFilePath .. "\"")
   end)
 
   topbar.hostbattle = Button:new()

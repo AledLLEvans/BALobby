@@ -82,10 +82,21 @@ function Replay:update()
   end
 end
 
-function Replay:click()
-  if false then
-    
-    return true
+function Replay:click(msx, msy)
+  local w = xmax - xmin - 20
+  local i = #Replay.s
+  local y = ymin - Replay.scrollbar:getOffset()
+  local x = xmin
+
+  while i > 0 do
+    y = y + (h+2*padding)
+    if y > ymin - h then
+      if msx > x and msx < x + w and msy > y and msy < y + h then
+        spring.launch("\"" .. lobby.exeFilePath .. " " .. Replay.s[i][5] .. "\"")
+        return true
+      end
+    end
+    i = i - 1
   end
   return false
 end

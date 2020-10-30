@@ -35,6 +35,17 @@ header[32] = ld.pack('string', 'I4', 0) --
 local headerStr = table.concat(header)
 spring.headerStr = headerStr
 
+local launchCode = [[
+  local exec = ...
+  io.popen(exec)
+]]
+
+function spring.launch(path)
+  print(path)
+  if not spring.thread then spring.thread = love.thread.newThread( launchCode ) end
+  spring.thread:start(path)
+end
+
 function spring.getSMF(dir)
   for _, filename in pairs(lfs.getDirectoryItems( dir )) do
     local path = dir .. "/" .. filename

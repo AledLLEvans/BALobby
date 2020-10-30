@@ -2,6 +2,7 @@ local lg = love.graphics
 local lk = love.keyboard
 local base64 = require("lib/base64")
 local md5 = require("lib/md5")
+local spring = require("spring")
   
 local address, port = "springfightclub.com", 8200
 
@@ -357,20 +358,11 @@ local function writeScript()
 	txt:close()
 end
 
-local launchCode = [[
-  local exec = ...
-  io.popen(exec)
-]]
-
 function lobby.launchSpring()
   lobby.setReady(false)
   writeScript()
   local exec = "\"" .. lobby.exeFilePath .. "\" script.txt"
-  if not lobby.springThread then
-    lobby.springThread = love.thread.newThread( launchCode )
-  end
-  --love.window.minimize( )
-  lobby.springThread:start( exec )
+  spring.launch(exec)
 end
 
 lobby.events = {}

@@ -207,7 +207,7 @@ for i, file in pairs(nfs.getDirectoryItems(replays_directory)) do
         {name = "winningAllyTeamsSize", val = winningAllyTeamsSize}
       }
       
-      channel:push({header, script, dateAndTimeString, mapName, enginev, ext})
+      channel:push({header, script, dateAndTimeString, mapName, filepath})
     end
   end
 end
