@@ -73,12 +73,12 @@ function login.enter()
   --LOGIN TEXTBOXES
   login.nameBox = Textbox:new({name = 'Username'})
   login.nameBox:setDimensions(320, 30)
-  login.nameBox:setFont(fonts.latomedium)
+  login.nameBox:setFont(fonts.latobig)
   --login.nameBox.colors.outline = {50/255, 50/255, 50/255, 255/255}
   
   login.passBox = TextboxPrivate:new({name = 'Password'})
   login.passBox:setDimensions(320, 30)
-  login.passBox:setFont(fonts.latomedium)
+  login.passBox:setFont(fonts.latobold18)
   --login.passBox.colors.outline = {50/255, 50/255, 50/255, 255/255}
     
   if settings.name then

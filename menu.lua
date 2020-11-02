@@ -33,8 +33,8 @@ function ScrollBar:new()
   new.horizontal = not new.vertical
   
   new.colors = {
-    main = colors.bt,
-    inner = colors.bargreen
+    main = colors.bbb,
+    inner = colors.barblue
   }
   
   lobby.scrollBars[new] = true
@@ -212,7 +212,7 @@ function Button:new()
   local o = {}
   setmetatable(o, Button.mt)
   
-  o.font = fonts.latoitalic
+  o.font = fonts.latobold
   o.str = ""
   o.text = lg.newText( o.font )
   o.clickSound = "click"
@@ -442,7 +442,7 @@ function ChannelTab:draw()
     lg.setFont(fonts.latochantab)
     lg.setColor(colors.bbb)
     lg.rectangle("fill", self.x, self.y, self.w, self.h + h)
-    lg.setColor(colors.bt)
+    lg.setColor(colors.text)
     lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
     --lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latochantab:getHeight()/2, self.w, "center")
   end
@@ -493,17 +493,19 @@ function BattleTab:draw()
   local x = self.x
   local w = self.w
   local h = self.h
-  lg.setFont(fonts.latosmall) 
-  local fontHeight = fonts.latosmall:getHeight()
+  local fontHeight = fonts.latobold16:getHeight()
   if self.highlighted then
     lg.setColor(self.colors.background.highlight)
   else
     lg.setColor(self.colors.background.default) 
   end
   lg.rectangle("fill", x, y, w, h)
+  
   -- BATTLE TITLE
-  lg.setColor(colors.text)
-  lg.printf(battle.title, x + h + 5, y+5, w/2, "left")
+  lg.setFont(fonts.latobold16)
+  lg.setColor(colors.textblue)
+  lg.printf(battle.title, x + h + 5, y+5, w - 5, "left")
+  
   -- PLAYER/SPEC COUNTS
   local pcount = math.max(0, battle.userCount - battle.spectatorCount + 1)
   local maxpcount = "/" .. battle.maxPlayers
@@ -511,33 +513,41 @@ function BattleTab:draw()
   lg.setColor(1,1,1)
   if pcount == 0 then
     lg.setColor(colors.bt)
-    lg.draw(img["players_zero"], x + w/2, y + h/2 + 5, 0, 1, 1, 41/2, 44/2)
-  elseif lobby.darkMode then
-    lg.draw(img["playersDark"], x + w/2, y + h/2 + 5, 0, 1, 1, 41/2, 44/2)
-    lg.setColor(colors.bargreen)
+    lg.draw(img["players_zero"], x + 3*w/5, y + h/2 + 5, 0, 1, 1, 41/2, 44/2)
   else
-    lg.draw(img["playersLight"], x + w/2, y + h/2 + 5, 0, 1, 1, 41/2, 44/2)
-    lg.setColor(colors.bargreen)
+    lg.draw(img["playersBlue"], x + 3*w/5, y + h/2 + 5, 0, 1, 1, 41/2, 44/2)
+    lg.setColor(colors.textblue)
   end
   local by = y + h/2 - fonts.latoboldbiggest:getHeight()/2 + 5
   lg.setFont(fonts.latoboldbigger)
-  lg.print(maxpcount, x + w/2 + 45 + fonts.latoboldbiggest:getWidth(pcount), y + h/2)
+  lg.print(maxpcount, x + 3*w/5 + 45 + fonts.latoboldbiggest:getWidth(pcount), y + h/2)
   lg.setFont(fonts.latoboldbiggest)
-  lg.print(pcount, x + w/2 + 40, by)
+  lg.print(pcount, x + 3*w/5 + 40, by)
   lg.setColor(colors.bt)
   lg.print(scount, x + w - fonts.latoboldbiggest:getWidth(scount) - 25, by)
   lg.setColor(colors.text)
   lg.draw(img.eye, x + w - fonts.latoboldbiggest:getWidth("00") - 45, y + h/2)
+  
   -- MAP NAME
-  lg.setFont(fonts.latolightitalic)
-  lg.printf(battle.gameName, x + h + 5, y+5+fontHeight, w/2, "left")
+  lg.setFont(fonts.latoregular13)
+  do
+    local i = 0
+    local str = battle.gameName
+    repeat
+      str = str:sub(1, #str - i)
+      i = i + 1
+    until fonts.latoregular13:getWidth(str) < w/2 - 70 or str == ""
+    if i > 1 then str = str:sub(1, #str - 2) .. ".." end
+    lg.printf(str, x + h + 5, y+5+fontHeight, w/2, "left")
+  end
   local mapName = battle.mapName
-  local _, wt = fonts.latolightitalic:getWrap(mapName .. "..", w/2)
+  local _, wt = fonts.latoregular13:getWrap(mapName .. "..", w/2)
   if #wt > 1 then
     lg.print(wt[1], x + h + 5, y + h - fontHeight - 2)
   else
     lg.print(mapName, x + h + 5, y + h - fontHeight - 2)
   end
+  
   -- IMAGES
   lg.setColor(colors.bd)
   lg.rectangle("fill", x, y, h, h)
@@ -548,8 +558,8 @@ function BattleTab:draw()
     local mody = math.min(1, 1/battle.mapWidthHeightRatio)
     lg.draw(battle.minimap, x - (modx-1)*h/2, y - (mody-1)*h/2, 0,
       modx*h/1024, mody*h/1024)
-  else
-    lg.draw(img["nomap"], x + 25, y + 25)
+  --else
+    ---lg.draw(img["nomap"], x + 25, y + 25)
   end
   lg.setColor(colors.text)
   if battle.founder.ingame then
@@ -598,7 +608,7 @@ function BattleButton:new()
   local new = Button:new()
   setmetatable(new, BattleButton.mt)
   
-  new.font = fonts.latoitalicmedium
+  new.font = fonts.latoboldbig
   new.text:setFont(new.font)
   lobby.clickables[new] = true
   return new

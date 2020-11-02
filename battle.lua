@@ -31,7 +31,7 @@ function Battle.initialize()
       ["autolaunch"] = Checkbox:new()
         :resetPosition(function() return lobby.fixturePoint[2].x - 90, lobby.fixturePoint[2].y - 65 end)
         :setDimensions(20,20)
-        :setText("Auto-start"):setFont(fonts.latobolditalicmedium)
+        :setText("Auto-start"):setFont(fonts.latoboldmedium)
         :setToggleVariable(function() return lobby.launchOnGameStart end)
         :onClick(function() if User.s[lobby.username].spectator then lobby.launchOnGameStart = not lobby.launchOnGameStart end end),
       ["exit"] = BattleButton:new()
@@ -42,13 +42,13 @@ function Battle.initialize()
       ["ready"] = Checkbox:new()
         :resetPosition(function() return lobby.fixturePoint[2].x - 165, lobby.fixturePoint[2].y - 65 end)
         :setDimensions(20, 20)
-        :setText("Ready"):setFont(fonts.latobolditalicmedium)
+        :setText("Ready"):setFont(fonts.latoboldmedium)
         :setToggleVariable(function() return User.s[lobby.username].ready end)
         :onClick(function() if not User.s[lobby.username].spectator then lobby.setReady(not User.s[lobby.username].ready) end end),
       ["spectate"] = Checkbox:new()
         :resetPosition(function() return lobby.fixturePoint[2].x - 255, lobby.fixturePoint[2].y - 65 end)
         :setDimensions(20, 20)
-        :setText("Spectate"):setFont(fonts.latobolditalicmedium)
+        :setText("Spectate"):setFont(fonts.latoboldmedium)
         :setToggleVariable(function() return User.s[lobby.username].spectator end)
         :onClick(function() lobby.setSpectator(not User.s[lobby.username].spectator) end),
       ["launch"] = BattleButton:new()
@@ -148,7 +148,7 @@ function Battle.host()
 end
 
 function Battle.enter(fromJoined)
-  lobby.clickables[lobby.backbutton] = true
+  --lobby.clickables[lobby.backbutton] = true
   --lobby.clickables[lobby.options.button] = false
   lobby.events[lobby.battlelist] = nil
   if fromJoined then
@@ -372,7 +372,7 @@ function Battle:draw()
   
   --Room Name, Title
   lg.setFont(fonts.roboto)
-  lg.setColor(colors.bargreen)
+  lg.setColor(colors.textblue)
   local i = 0
   local text = self.title
   repeat
@@ -385,8 +385,8 @@ function Battle:draw()
   local fontHeight = fonts.roboto:getHeight()
   
   --Game Name, subtitle
-  lg.setFont(fonts.latoitalic)
-  lg.setColor(colors.bt)
+  lg.setFont(fonts.latoboldbig)
+  lg.setColor(colors.text)
   lg.print(self.gameName, lobby.fixturePoint[1].x + 25, 32 + fontHeight)
   
     --[[if self.modDownload then
@@ -409,7 +409,7 @@ end
 
 function Battle:drawMap()
   local fontHeight = fonts.roboto:getHeight()
-  lg.setFont(fonts.robotoitalic)
+  lg.setFont(fonts.latobold)
   lg.setColor(colors.text)
   
   lg.setColor(1,1,1)
@@ -501,7 +501,8 @@ function Battle:drawMap()
     lg.draw(img["nomap"], lobby.fixturePoint[2].x - 10 - 1024/8, 20 + 2*fontHeight, 0, 1024/(8*50))
     x, w, h = lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8, 1024/8
   end
-  lg.setColor(1,1,1)
+  lg.setColor(colors.text)
+  lg.setFont(fonts.latoboldbig)
   lg.printf(self.mapName, self.midpoint + 5, 15 + fontHeight, aw, "center")
   Battle.pickMap:setPosition(x, ymin):setDimensions(w, h)
   return h

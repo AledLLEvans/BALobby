@@ -43,6 +43,8 @@ lobby.header = require "gui/header"
 lobby.battlezoom = require "gui/battlezoom"
 Map = require "maps"
 function lobby.initialize()
+  love.graphics.setLineStyle( 'rough' )
+  love.graphics.setDefaultFilter("nearest", "nearest")
   login.video = nil
   local borderless = false
   if settings.borderless then
@@ -60,7 +62,7 @@ function lobby.initialize()
     {x = 3*lobby.width/4, y = 2*lobby.height/3}
   } 
 
-  lobby.backbutton = ImageButton:new()
+  --[[lobby.backbutton = ImageButton:new()
   :setPosition(0, -3)
   :setImage(img.back)
   :setDimensions(36,36)
@@ -73,7 +75,7 @@ function lobby.initialize()
 
   function lobby.backbutton:draw()
     lg.draw(self.image, self.x, self.y, 0, 36/50)
-  end
+  end]]
 
   if settings.borderless then
     lobby.header.initialize()
@@ -96,7 +98,7 @@ function lobby.enter()
   if lobby.state == "battle" and not Battle:getActive().single then
     lobby.battlezoom:initialize("minimize")
   end
-  lobby.clickables[lobby.backbutton] = false
+  --lobby.clickables[lobby.backbutton] = false
   lobby.battlelist.scrollbar:setOffset(0)
   lobby.events[lobby.battlelist] = true
   lobby.state = "landing"
@@ -626,9 +628,9 @@ function lobby.render.background()
     lg.setColor(colors.text)
     lg.rectangle("line", lobby.fixturePoint[2].x, lobby.fixturePoint[2].y, lobby.width - lobby.fixturePoint[2].x, lobby.height - lobby.fixturePoint[2].y)]]
     lobby.renderFunction["battle"]()
-    if Channel:getActive() then
+    --[[if Channel:getActive() then
       Channel:getActive():render()
-    end
+    end]]
     lobby.userlist.bar:draw()
     lg.setCanvas(lobby.canvas.background)
   end
@@ -662,9 +664,9 @@ function lobby.render.foreground()
   lg.setCanvas(lobby.canvas.foreground)
   lg.clear()
   
-  if lobby.state ~= "landing" then
+  --[[if lobby.state ~= "landing" then
     lobby.backbutton:draw()
-  end
+  end]]
   
   lobby.topbar:draw()
   

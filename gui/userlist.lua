@@ -81,9 +81,9 @@ function userlist:initialize()
   
   function userlist.bar:drawChannelList()
     lg.printf("Channel List", self.x + 30, self.y, self.w, "left")
-    local fontHeight = fonts.latosmall:getHeight()
+    local fontHeight = fonts.latobold:getHeight()
     local x = self.x
-    lg.setFont(fonts.latosmall)
+    lg.setFont(fonts.latobold)
     local m = 36 - userlist.scrollBar:getOffset()
     for channel_name, users in pairs(lobby.channels) do
       m = m + fontHeight
@@ -96,20 +96,21 @@ function userlist:initialize()
   end
   
   function userlist.bar:draw()
+    lg.setColor(1,1,1)
     if self.state == "shut" then
-      if lobby.darkMode then lg.draw(img["playerslist_closed"], self.x, self.y, 0, 1, lobby.fixturePoint[2].y/userlist.bar.shuth)
+      if lobby.darkMode then lg.draw(img["playerslist_closedBlue"], self.x, self.y, 0, 1, (lobby.fixturePoint[2].y-30)/userlist.bar.shuth)
       else lg.draw(img["playerslist_closed_light"], self.x, self.y, 0, 1, lobby.fixturePoint[2].y/userlist.bar.shuth) end
       return
     end
-    if lobby.darkMode then lg.draw(img["playerslist"], self.x, self.y)
-    else lg.draw(img["playerslist_light"], self.x, self.y) end
+    if lobby.darkMode then lg.draw(img["playerslistBlue"], self.x, self.y) else lg.draw(img["playerslist_light"], self.x, self.y) end
     if self.state == "open" then
       lg.setColor(1,1,1)
-      local fontHeight = fonts.latosmall:getHeight()
       local list = User.s
       local channel = Channel:getActive()
-      lg.setFont(fonts.latobolditalicmedium)
+      lg.setFont(fonts.latoboldbig)
       lg.setColor(colors.bt)
+      lg.setColor(colors.bbb)
+      local fontHeight = fonts.latobold:getHeight()
       local headtext = "Users online " .. User.count
       if channel then 
         if channel.isServer then
@@ -132,7 +133,7 @@ function userlist:initialize()
       end
       lg.printf(headtext, self.x + 30, self.y, self.w, "left")
       local x = self.x
-      lg.setFont(fonts.latosmall)
+      lg.setFont(fonts.latobold)
       local m = 36 - userlist.scrollBar:getOffset()
       local t = 0
       local c = 0
@@ -189,11 +190,11 @@ function userlist:initialize()
     else
       return self:channel_click(x, y)
     end
-    local fontHeight = fonts.latosmall:getHeight()
+    local fontHeight = fonts.latobold:getHeight()
     local m = 36 - userlist.scrollBar:getOffset()
     for username, user in pairs(list) do
       m = m + fontHeight
-      if y > m + fontHeight and y < m + 2*fontHeight and x > lobby.fixturePoint[2].x + 60 and x < lobby.fixturePoint[2].x + 60 + fonts.latosmall:getWidth(username) then
+      if y > m + fontHeight and y < m + 2*fontHeight and x > lobby.fixturePoint[2].x + 60 and x < lobby.fixturePoint[2].x + 60 + fonts.latobold:getWidth(username) then
         button[b](username, x, y)
         return true
       end
@@ -203,11 +204,11 @@ function userlist:initialize()
   end
   
   function userlist:channel_click(x, y)
-    local fontHeight = fonts.latosmall:getHeight()
+    local fontHeight = fonts.latobold:getHeight()
     local m = 36 - userlist.scrollBar:getOffset()
     for channel_name in pairs(lobby.channels) do
       m = m + fontHeight
-      if y > m + fontHeight and y < m + 2*fontHeight and x > lobby.fixturePoint[2].x + 60 and x < lobby.fixturePoint[2].x + 70 + fonts.latosmall:getWidth(channel_name)  then
+      if y > m + fontHeight and y < m + 2*fontHeight and x > lobby.fixturePoint[2].x + 60 and x < lobby.fixturePoint[2].x + 70 + fonts.latobold:getWidth(channel_name)  then
         if Channel.s[channel_name] then
           Channel.s[channel_name]:open()
           Channel:refreshTabs()

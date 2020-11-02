@@ -7,7 +7,7 @@ Channel.x = 0
 Channel.y = 0
 Channel.w = 10
 Channel.h = 10
-Channel.scrollBar = ScrollBar:new():setScrollBarLength(-20):setScrollSpeed(fonts.latosmall:getHeight())
+Channel.scrollBar = ScrollBar:new():setScrollBarLength(-20):setScrollSpeed(fonts.latobold:getHeight())
 Channel.textbox = Textbox:new()
 
 lobby.channels = {}
@@ -38,7 +38,7 @@ function Channel:new(o, bool)
   o.tab.parent = o
   o.tab:setText(title):setFont(fonts.latochantab)
   
-  o.font = fonts.latosmall
+  o.font = fonts.latobold
   o.lines = {}
   o.users = {} 
   o.sents = {}
@@ -113,7 +113,7 @@ local channel_dimensions = {
   ["landing"] = function() return {
       x = 5,
       y = lobby.fixturePoint[1].y,
-      w = lobby.fixturePoint[2].x - 10,
+      w = lobby.width - 10,
       h = lobby.height - lobby.fixturePoint[2].y - 1} end,
   ["battle"] = function() return {
       x = lobby.fixturePoint[1].x + 5,
@@ -123,7 +123,7 @@ local channel_dimensions = {
   ["replays"] = function() return {
       x = lobby.fixturePoint[1].x + 5,
       y = lobby.fixturePoint[1].y,
-      w = lobby.width - lobby.fixturePoint[1].x - 10,
+      w = lobby.width - 10,
       h = lobby.height - lobby.fixturePoint[2].y - 1} end,
   ["options"] = function() return {
       x = 0
@@ -171,7 +171,7 @@ local drawFunc = {
   ["ingame"] = function(u, t) lg.setColor(colors.mo) return  "[" .. u .. "]" .. t end,
   ["ex"] = function(u, t) lg.setColor(colors.yellow) return  "*" .. u .. "*" .. t  end,
   ["system"] = function(u, t) lg.setColor(1,0,0) return  "::: ".. t .. " :::" end,
-  ["green"] = function(u, t) lg.setColor(0,1,0) return "*" .. t .. "*" end
+  ["green"] = function(u, t) lg.setColor(colors.textblue) return "*" .. t .. "*" end
 }
 
 local function sbOffsetMax(n, h, fh)

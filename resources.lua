@@ -260,10 +260,13 @@ local IMAGE_FILES = {
   "players_zero",
   "playersLight",
   "playersDark",
+  "playersBlue",
   "playerslist_closed_light",
   "playerslist_closed",
+  "playerslist_closedBlue",
   "playerslist_light",
   "playerslist",
+  "playerslistBlue",
   "musicOn",
   "musicOff",
   "back"
@@ -297,25 +300,31 @@ loadFlags()
 loadImages()
 
 fonts = {}
-fonts.notable = lg.newFont("data/fonts/Notable/Notable-Regular.ttf", 30)
-fonts.roboto = lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 20)
-fonts.robotosmall = lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 12)
-fonts.robotoitalic = lg.newFont("data/fonts/Roboto/Roboto-Italic.ttf", 20)
-fonts.latosmall = lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 12)
-fonts.latobig = lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 16)
-fonts.latochantab = lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 12)
-fonts.latochantabbold = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 12)
-fonts.latomedium = lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 18)
-fonts.latoitalic = lg.newFont("data/fonts/Lato/Lato-Italic.ttf", 14)
-fonts.latoitalicmedium = lg.newFont("data/fonts/Lato/Lato-Italic.ttf", 18)
-fonts.latolightitalic = lg.newFont("data/fonts/Lato/Lato-LightItalic.ttf", 12)
-fonts.latobold = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 12)
-fonts.latoboldmedium = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 14)
-fonts.latoboldbig = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 16)
-fonts.latoboldbigger = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 24)
-fonts.latoboldbiggest = lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 48)
-fonts.latobolditalic = lg.newFont("data/fonts/Lato/Lato-BoldItalic.ttf", 12)
-fonts.latobolditalicmedium = lg.newFont("data/fonts/Lato/Lato-BoldItalic.ttf", 16)
+fonts.notable =               lg.newFont("data/fonts/Notable/Notable-Regular.ttf", 30)
+fonts.roboto =                lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 20)
+fonts.robotosmall =           lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 12)
+fonts.robotoitalic =          lg.newFont("data/fonts/Roboto/Roboto-Italic.ttf", 20)
+fonts.latosmall =             lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 12)
+fonts.latoregular13 =         lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 13)
+fonts.latobig =               lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 16)
+fonts.latochantab =           lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 12)
+fonts.latochantabbold =       lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 14)
+fonts.latomedium =            lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 18)
+fonts.latoitalic =            lg.newFont("data/fonts/Lato/Lato-Italic.ttf", 14)
+fonts.latoitalicmedium =      lg.newFont("data/fonts/Lato/Lato-Italic.ttf", 18)
+fonts.latolightitalic =       lg.newFont("data/fonts/Lato/Lato-LightItalic.ttf", 12)
+fonts.latobold =              lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 12)
+fonts.latobold14 =            lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 14)
+fonts.latobold16 =            lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 16)
+fonts.latobold18 =            lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 18)
+fonts.latoboldbigger =        lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 24)
+fonts.latoboldbiggest =       lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 48)
+fonts.latobolditalic =        lg.newFont("data/fonts/Lato/Lato-BoldItalic.ttf", 12)
+fonts.latobolditalicmedium =  lg.newFont("data/fonts/Lato/Lato-BoldItalic.ttf", 16)
+
+fonts.latoboldmedium = fonts.latobold14
+
+fonts.latoboldbig = fonts.latobold16
 
 sound = {}
 
@@ -369,6 +378,8 @@ function setLightMode()
   colors.bt = {112/255, 112/255, 112/255}
   colors.mo = {50/255, 50/255, 50/255}
   colors.bargreen = {0, 191/255, 165/255}
+  colors.barblue = {73/255, 203/255, 222/255}
+  colors.textblue = {73/255, 203/255, 222/255}
   colors.orange = {1, 156/255, 67/255}
   colors.yellow = {1/2, 1/2, 0}
   lg.setBackgroundColor(colors.bg)
@@ -378,14 +389,16 @@ function setDarkMode()
   colors.w = {1, 1, 1}
   colors.text = {1, 1, 1}
   colors.bgt = {28/255, 28/255, 28/255, 0.6}
-  colors.bg = {28/255, 28/255, 28/255}
-  colors.bb = {16/255, 17/255, 19/255} --colors.bb = {33/255, 33/255, 33/255}
-  colors.bbb = {7/255, 7/255, 7/255}
-  colors.bbh = {39/255, 39/255, 39/255}
-  colors.bd = {50/255, 50/255, 50/255}
+  colors.bg = {12/255, 14/255, 17/255}
+  colors.bb = {4/255, 5/255, 5/255} --colors.bb = {33/255, 33/255, 33/255}
+  colors.bbb = {0/255, 0/255, 0/255}
+  colors.bbh = {8/255, 9/255, 12/255}
+  colors.bd = {7/255, 9/255, 12/255}
   colors.bt = {112/255, 112/255, 112/255}
   colors.mo = {201/255, 201/255, 201/255}
   colors.bargreen = {28/255, 252/255, 139/255}
+  colors.barblue = {73/255, 203/255, 222/255}
+  colors.textblue = {73/255, 203/255, 222/255}
   colors.orange = {1, 156/255, 67/255}
   colors.yellow = {1, 1, 0}
   lg.setBackgroundColor(colors.bg)
