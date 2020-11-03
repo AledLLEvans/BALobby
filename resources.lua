@@ -389,6 +389,7 @@ end
 function setDarkMode()
   colors.w = {1, 1, 1}
   colors.text = {1, 1, 1}
+  colors.cb = {6/255, 7/255, 9/255}
   colors.bgt = {28/255, 28/255, 28/255, 0.6}
   colors.bg = {12/255, 14/255, 17/255}
   colors.bb = {4/255, 5/255, 5/255} --colors.bb = {33/255, 33/255, 33/255}

@@ -24,35 +24,35 @@ function Battle.initialize()
   Battle.canvas = lg.newCanvas(lobby.width, lobby.height)
   Battle.buttons = {
       ["addbot"] = BattleButton:new()
-        :resetPosition(function() return lobby.fixturePoint[2].x - 155, lobby.fixturePoint[2].y - 35 end)
+        :resetPosition(function() return 3*lobby.width/4 - 155, lobby.fixturePoint[2].y - 35 end)
         :setDimensions(120, 35)
         :setText("Add Bot")
         :onClick(function() Battle.addbot() end),
       ["autolaunch"] = Checkbox:new()
-        :resetPosition(function() return lobby.fixturePoint[2].x - 90, lobby.fixturePoint[2].y - 65 end)
+        :resetPosition(function() return 3*lobby.width/4 - 90, lobby.fixturePoint[2].y - 65 end)
         :setDimensions(20,20)
         :setText("Auto-start"):setFont(fonts.latoboldmedium)
         :setToggleVariable(function() return lobby.launchOnGameStart end)
         :onClick(function() if User.s[lobby.username].spectator then lobby.launchOnGameStart = not lobby.launchOnGameStart end end),
       ["exit"] = BattleButton:new()
-        :resetPosition(function() return lobby.fixturePoint[2].x - 255, lobby.fixturePoint[2].y - 35 end)
+        :resetPosition(function() return 3*lobby.width/4 - 255, lobby.fixturePoint[2].y - 35 end)
         :setDimensions(100, 35)
         :setText("Exit Battle")
         :onClick(function() Battle:getActive():leave() end),
       ["ready"] = Checkbox:new()
-        :resetPosition(function() return lobby.fixturePoint[2].x - 165, lobby.fixturePoint[2].y - 65 end)
+        :resetPosition(function() return 3*lobby.width/4 - 165, lobby.fixturePoint[2].y - 65 end)
         :setDimensions(20, 20)
         :setText("Ready"):setFont(fonts.latoboldmedium)
         :setToggleVariable(function() return User.s[lobby.username].ready end)
         :onClick(function() if not User.s[lobby.username].spectator then lobby.setReady(not User.s[lobby.username].ready) end end),
       ["spectate"] = Checkbox:new()
-        :resetPosition(function() return lobby.fixturePoint[2].x - 255, lobby.fixturePoint[2].y - 65 end)
+        :resetPosition(function() return 3*lobby.width/4 - 255, lobby.fixturePoint[2].y - 65 end)
         :setDimensions(20, 20)
         :setText("Spectate"):setFont(fonts.latoboldmedium)
         :setToggleVariable(function() return User.s[lobby.username].spectator end)
         :onClick(function() lobby.setSpectator(not User.s[lobby.username].spectator) end),
       ["launch"] = BattleButton:new()
-        :resetPosition(function() return lobby.fixturePoint[2].x - 65, lobby.fixturePoint[2].y - 35 end)
+        :resetPosition(function() return 3*lobby.width/4 - 65, lobby.fixturePoint[2].y - 35 end)
         :setDimensions(70, 35)
         :setText("Start")
         :onClick(function()
@@ -150,7 +150,6 @@ end
 function Battle.enter(fromJoined)
   --lobby.clickables[lobby.backbutton] = true
   --lobby.clickables[lobby.options.button] = false
-  lobby.userlist.bar:shut()
   lobby.events[lobby.battlelist] = nil
   if fromJoined then
     lobby.state = "battle"
@@ -176,6 +175,7 @@ function Battle.enter(fromJoined)
               15, self.y + self.h/2)
   end]]
   --lobby.clickables[Battle.sideButton] = true
+  lobby.userlist.bar:shut()
 end
 
 function Battle.enterSingle()

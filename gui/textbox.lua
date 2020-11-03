@@ -13,7 +13,7 @@ function Textbox:new(box)
   box.w = box.w or 0
   box.h = box.h or 0
   box.colors = {
-    background = colors.bd,
+    background = {9/255, 10/255, 15/255},
     outline = false, --{112/255, 112/255, 112/255, 255/255},
     text = colors.text
   }
@@ -24,7 +24,7 @@ function Textbox:new(box)
   box.timer = 0
   box.line = false
   box.charoffset = 0
-  box.font = fonts.latosmall
+  box.font = fonts.latobold
   
   setmetatable(box, Textbox.mt)
   

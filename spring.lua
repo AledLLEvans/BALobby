@@ -41,7 +41,6 @@ local launchCode = [[
 ]]
 
 function spring.launch(path)
-  print(path)
   if not spring.thread then spring.thread = love.thread.newThread( launchCode ) end
   spring.thread:start(path)
 end

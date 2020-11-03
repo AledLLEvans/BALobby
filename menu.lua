@@ -394,7 +394,7 @@ end
 
 function ChannelTab:click(x,y,b)
   if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
-    userlist.scrollBar:setOffsetMax(0):setOffset(0)
+    lobby.userlist.scrollBar:setOffsetMax(0):setOffset(0)
     if b == 1 then
       sound.tab:play()
       if Channel:getActive() then
@@ -424,7 +424,7 @@ function ChannelTab:draw()
   local h = 0
   local channel = self.parent
   if Channel:getActive() and channel == Channel:getActive() then
-    lg.setColor(colors.bg)
+    lg.setColor(colors.cb)
     lg.rectangle("fill", self.x, self.y, self.w, self.h + h)
     lg.setColor(colors.text)
     lg.setFont(fonts.latochantabbold)

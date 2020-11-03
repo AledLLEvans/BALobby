@@ -90,10 +90,12 @@ function Replay:click(msx, msy)
 
   while i > 0 do
     y = y + (h+2*padding)
-    if y > ymin - h then
+    if y > ymin - h and msy < lobby.fixturePoint[2].y  then
       if msx > x and msx < x + w and msy > y and msy < y + h then
         local str = 
-        spring.launch("\"\"" .. lobby.exeFilePath .. "\" \"" .. Replay.s[i][5] .. "\"\"")
+        --spring.launch("\"\"" .. lobby.exeFilePath .. "\" \"" .. Replay.s[i][5] .. "\"\"")
+        --spring.launch([[""]] .. lobby.exeFilePath .. [[" "]] .. Replay.s[i][5] .. [[""]])
+        spring.launch(string.format("\"\"%s\" \"%s\"\"", lobby.exeFilePath, Replay.s[i][5]))
         return true
       end
     end

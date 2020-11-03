@@ -546,7 +546,7 @@ lobby.renderFunction = {
                 lobby.fixturePoint[1].y + 3,
                 lobby.width,
                 lobby.height - lobby.fixturePoint[1].y + 3)
-    lg.setColor(colors.bg)
+    lg.setColor(colors.cb)
     lg.rectangle("fill",
                 0,
                 lobby.fixturePoint[1].y + 38,
@@ -573,7 +573,7 @@ lobby.renderFunction = {
                 lobby.fixturePoint[1].y + 3,
                 lobby.width,
                 lobby.height - lobby.fixturePoint[1].y + 3)
-    lg.setColor(colors.bg)
+    lg.setColor(colors.cb)
     lg.rectangle("fill",
                 0,
                 lobby.fixturePoint[1].y + 38,
@@ -597,7 +597,7 @@ lobby.renderFunction = {
                 lobby.fixturePoint[1].y,
                 lobby.fixturePoint[2].x,
                 lobby.height - lobby.fixturePoint[1].y)
-    lg.setColor(colors.bg)
+    lg.setColor(colors.cb)
     lg.rectangle("fill",
                 0,
                 lobby.fixturePoint[1].y,
