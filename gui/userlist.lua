@@ -5,10 +5,10 @@ local lg = love.graphics
 function userlist:initialize()
   userlist.bar = Button:new()
   userlist.bar.state = "shut"
-  userlist.bar.openw = img["playerslist"]:getWidth()
-  userlist.bar.shutw = img["playerslist_closed"]:getWidth()
-  userlist.bar.openh = img["playerslist"]:getHeight()
-  userlist.bar.shuth = img["playerslist_closed"]:getHeight()
+  userlist.bar.openw = img["playerslistBlue"]:getWidth()
+  userlist.bar.shutw = img["playerslist_closedBlue"]:getWidth()
+  userlist.bar.openh = img["playerslistBlue"]:getHeight()
+  userlist.bar.shuth = img["playerslist_closedBlue"]:getHeight()
   
   userlist.bar.openx = function() return lobby.width - lobby.fixturePoint[2].x end
   userlist.bar.shutx = function() return lobby.width - userlist.bar.shutw end
@@ -144,8 +144,8 @@ function userlist:initialize()
           c = c + 1
           lg.setColor(1,1,1)
           lg.draw(user.flag, x + 6, 12 + m)
-          lg.draw(user.insignia, x + 25, 10 + m, 0, 1/5, 1/4)
-          if user.icon then lg.draw(img[user.icon], x + 40, 10 + m, 0, 1/4) end
+          lg.draw(user.insignia, x + 25, 10 + m, 0, 1/2)
+          if user.icon then lg.draw(img[user.icon], x + 40, 10 + m, 0, 1/2) end
           lg.setColor(colors.text)
           lg.printf(username, x + 60, 10 + m, lobby.width - lobby.fixturePoint[2].x - 20)
         end

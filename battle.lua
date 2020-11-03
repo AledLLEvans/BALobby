@@ -150,6 +150,7 @@ end
 function Battle.enter(fromJoined)
   --lobby.clickables[lobby.backbutton] = true
   --lobby.clickables[lobby.options.button] = false
+  lobby.userlist.bar:shut()
   lobby.events[lobby.battlelist] = nil
   if fromJoined then
     lobby.state = "battle"
@@ -587,7 +588,7 @@ function Battle:drawPlayers()
       lg.setFont(fonts.latomedium)
       lg.setColor(colors.bt)
       teamNo = user.allyTeamNo
-      if teamBool then lg.print("Team " .. teamNo, xmax, y) end
+      if teamBool then lg.print("Team " .. teamNo, xmax - 10, y) end
       cy = y
       lg.setFont(font)
     end
@@ -600,12 +601,12 @@ function Battle:drawPlayers()
       draw.readyButton[user.ready](xmax - 50, y + 7 + padding)
       lg.setColor(1,1,1)
       lg.draw(user.flag, 23, 3 + y)
-      lg.draw(user.insignia, 41, y, 0, 1/4)
+      lg.draw(user.insignia, 41, y, 0, 1/2)
       lg.setColor(user.teamColorUnpacked[1]/255, user.teamColorUnpacked[2]/255, user.teamColorUnpacked[3]/255, 0.4)
       lg.rectangle("fill", 60, y, 120, fontHeight, 5, 5)
       lg.setColor(colors.text)
       if user.icon then
-        lg.draw(img[user.icon], 5, y, 0, 1/4)
+        lg.draw(img[user.icon], 5, y, 0, 1/2)
       end
       lg.print(username, 64, y)
       if self.game.players[username:lower()] and self.game.players[username:lower()].skill then
@@ -655,18 +656,20 @@ function Battle:drawSpectators(y)
         draw.specButton(xmax - 50, 7 + y + padding)
         lg.setColor(1,1,1)
         lg.draw(user.flag, 23, 3 + y)
-        lg.draw(user.insignia, 41, y, 0, 1/4)
+        lg.draw(user.insignia, 41, y, 0, 1/2)
         --local w = fonts.latosmall:getWidth(username)
         lg.setColor(colors.text)
         if user.icon then
-          lg.draw(img[user.icon], 5, y, 0, 1/4)
+          lg.draw(img[user.icon], 5, y, 0, 1/2)
         end
         lg.print(username, 60, y)
       end
       y = y + fontHeight
     end
   end
-  self.spectatorsScrollBar:setLength(ymax - ymin - 70):setOffsetMax(math.max(0, t - c) * fontHeight):setScrollSpeed(fontHeight):draw()
+  if c > 0 then
+    self.spectatorsScrollBar:setLength(ymax - ymin - 70):setOffsetMax(math.max(0, t - c) * fontHeight):setScrollSpeed(fontHeight):draw()
+  end
 end
 
 function Battle:modHandler()

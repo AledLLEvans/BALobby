@@ -66,13 +66,16 @@ return {
   ["tab"] = function() 
   end,
   ["escape"] = function()
-    if lobby.state ~= "landing" then
+    if lobby.state == "battle" then
+      Battle:getActive():leave()
+    end
+    --[[if lobby.state ~= "landing" then
       if Map.isOpen() then
         Map.exit()
       else
         lobby.enter()
       end
-    end
+    end]]
     --[[if lobby.state == "replays" then
       if Battle:getActive() then
         lobby.state = "battle"

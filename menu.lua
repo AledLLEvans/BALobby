@@ -524,9 +524,9 @@ function BattleTab:draw()
   lg.setFont(fonts.latoboldbiggest)
   lg.print(pcount, x + 3*w/5 + 40, by)
   lg.setColor(colors.bt)
-  lg.print(scount, x + w - fonts.latoboldbiggest:getWidth(scount) - 25, by)
+  lg.print(scount, x + w - fonts.latoboldbiggest:getWidth(scount) - 25 + 10, by)
   lg.setColor(colors.text)
-  lg.draw(img.eye, x + w - fonts.latoboldbiggest:getWidth("00") - 45, y + h/2)
+  lg.draw(img.eye, x + w - fonts.latoboldbiggest:getWidth("00") - 45 + 20, y + h/2)
   
   -- MAP NAME
   lg.setFont(fonts.latoregular13)
@@ -594,8 +594,8 @@ function BattleTabHoverWindow:draw()
   for _, user in pairs(battle.users) do
     lg.setColor(1,1,1)
     lg.draw(user.flag, msx + 2, y + 10)
-    lg.draw(user.insignia, msx + 21, y + 8, 0, 1/5, 1/4)
-    if user.icon then lg.draw(img[user.icon], msx + 42, y + 8, 0, 1/4) end
+    lg.draw(user.insignia, msx + 21, y + 8, 0, 1/2)
+    if user.icon then lg.draw(img[user.icon], msx + 42, y + 8, 0, 1/2) end
     lg.setColor(colors.text)
     lg.print(user.name, msx + 56, y + 8)
     y = y + fontHeight

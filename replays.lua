@@ -92,7 +92,8 @@ function Replay:click(msx, msy)
     y = y + (h+2*padding)
     if y > ymin - h then
       if msx > x and msx < x + w and msy > y and msy < y + h then
-        spring.launch("\"" .. lobby.exeFilePath .. " " .. Replay.s[i][5] .. "\"")
+        local str = 
+        spring.launch("\"\"" .. lobby.exeFilePath .. "\" \"" .. Replay.s[i][5] .. "\"\"")
         return true
       end
     end

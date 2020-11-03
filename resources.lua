@@ -248,24 +248,24 @@ local flag_codes ={
 
 local IMAGE_FILES = {
   --"balanced+annihilation+big+loadscreen-min",
-  "nomap",
+  --"nomap",
   "gamepad",
   "nothome",
   "monitor",
-  "MenuButtonLight",
-  "MenuButtonDark",
-  "MenuPanelLight",
-  "MenuPanelDark",
+  --"MenuButtonLight",
+ --"MenuButtonDark",
+  --"MenuPanelLight",
+  --"MenuPanelDark",
   "eye",
   "players_zero",
-  "playersLight",
-  "playersDark",
+  --"playersLight",
+  --"playersDark",
   "playersBlue",
-  "playerslist_closed_light",
-  "playerslist_closed",
+  --"playerslist_closed_light",
+  --"playerslist_closed",
   "playerslist_closedBlue",
-  "playerslist_light",
-  "playerslist",
+  --"playerslist_light",
+  --"playerslist",
   "playerslistBlue",
   "musicOn",
   "musicOff",
@@ -382,6 +382,7 @@ function setLightMode()
   colors.textblue = {73/255, 203/255, 222/255}
   colors.orange = {1, 156/255, 67/255}
   colors.yellow = {1/2, 1/2, 0}
+  colors.green = {28/255,252/255,139/255}
   lg.setBackgroundColor(colors.bg)
 end
 
@@ -401,6 +402,7 @@ function setDarkMode()
   colors.textblue = {73/255, 203/255, 222/255}
   colors.orange = {1, 156/255, 67/255}
   colors.yellow = {1, 1, 0}
+  colors.green = {28/255,252/255,139/255}
   lg.setBackgroundColor(colors.bg)
 end
 

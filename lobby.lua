@@ -98,6 +98,7 @@ function lobby.enter()
   if lobby.state == "battle" and not Battle:getActive().single then
     lobby.battlezoom:initialize("minimize")
   end
+  lobby.userlist.bar:open()
   --lobby.clickables[lobby.backbutton] = false
   lobby.battlelist.scrollbar:setOffset(0)
   lobby.events[lobby.battlelist] = true

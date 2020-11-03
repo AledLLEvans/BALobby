@@ -169,7 +169,7 @@ local drawFunc = {
   ["user"] = function(u, t) return  "<" .. u .. ">" .. t  end,
   ["mention"] = function(u, t) lg.setColor(1,0,0) return  "<" .. u .. ">" .. t  end,
   ["ingame"] = function(u, t) lg.setColor(colors.mo) return  "[" .. u .. "]" .. t end,
-  ["ex"] = function(u, t) lg.setColor(colors.yellow) return  "*" .. u .. "*" .. t  end,
+  ["ex"] = function(u, t) lg.setColor(colors.green) return  "*" .. u .. "*" .. t  end,
   ["system"] = function(u, t) lg.setColor(1,0,0) return  "::: ".. t .. " :::" end,
   ["green"] = function(u, t) lg.setColor(colors.textblue) return "*" .. t .. "*" end
 }
@@ -272,7 +272,7 @@ function BattleChannel:render()
     
     lg.setColor(colors.bt)
     --lg.line(self.x + w, self.y, self.x + w, self.y + self.h - 21)
-    lg.setColor(colors.yellow)
+    lg.setColor(colors.green)
     lg.printf(battle.founder, self.x + w + 10, self.y + fontHeight + 10, ow - 5, "center")  
     local i = #self.infolines
     local ymin = 20
