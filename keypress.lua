@@ -66,9 +66,10 @@ return {
   ["tab"] = function() 
   end,
   ["escape"] = function()
-    if lobby.state == "battle" then
+    lobby.backbutton.func()
+    --[[if lobby.state == "battle" then
       Battle:getActive():leave()
-    end
+    end]]
     --[[if lobby.state ~= "landing" then
       if Map.isOpen() then
         Map.exit()

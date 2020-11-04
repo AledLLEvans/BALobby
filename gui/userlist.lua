@@ -95,6 +95,11 @@ function userlist:initialize()
     end
   end
   
+  local drawBackRect = {
+    [true] = function(x,y,w,fh) lg.setColor(colors.bbb) lg.rectangle("fill", x, y, w, fh) end,
+    [false] = function() end
+  }
+
   function userlist.bar:draw()
     lg.setColor(1,1,1)
     if self.state == "shut" then
@@ -132,22 +137,28 @@ function userlist:initialize()
         return
       end
       lg.printf(headtext, self.x + 30, self.y, self.w, "left")
+      local w = lobby.width - lobby.fixturePoint[2].x - 20
       local x = self.x
       lg.setFont(fonts.latobold)
       local m = 36 - userlist.scrollBar:getOffset()
       local t = 0
       local c = 0
+      local msx, msy = love.mouse.getPosition()
       for username, user in pairs(list) do
         m = m + fontHeight
         t = t + 1
         if m < lobby.fixturePoint[2].y - fontHeight and m > 36 then
+          drawBackRect[c % 2 == 1](x, m+12, w, fontHeight)
+          if msy > m + fontHeight and msy < m + 2*fontHeight and msx > lobby.fixturePoint[2].x + 60 and msx < lobby.fixturePoint[2].x + 60 + fonts.latobold:getWidth(username) then
+            lg.setColor(colors.bt) lg.rectangle("fill", x+60, m+12, fonts.latobold:getWidth(username), fontHeight)
+          end
           c = c + 1
           lg.setColor(1,1,1)
           lg.draw(user.flag, x + 6, 12 + m)
           lg.draw(user.insignia, x + 25, 10 + m, 0, 1/2)
           if user.icon then lg.draw(img[user.icon], x + 40, 10 + m, 0, 1/2) end
           lg.setColor(colors.text)
-          lg.printf(username, x + 60, 10 + m, lobby.width - lobby.fixturePoint[2].x - 20)
+          lg.printf(username, x + 60, 10 + m, w)
         end
       end
       userlist.scrollBar:setScrollSpeed(fontHeight):setOffsetMax(math.max(0, t - c) * fontHeight):draw()
@@ -223,6 +234,13 @@ function userlist:initialize()
   end
   
   lobby.clickables[userlist] = true
+end
+
+function userlist:isOver(x,y)
+  if x < lobby.fixturePoint[2].x then return false end
+  if y < 36 then return false end
+  if y > lobby.fixturePoint[2].y then return false end
+  return true
 end
 
 function userlist.resize()

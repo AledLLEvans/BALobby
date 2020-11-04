@@ -62,20 +62,27 @@ function lobby.initialize()
     {x = 3*lobby.width/4, y = 2*lobby.height/3}
   } 
 
-  --[[lobby.backbutton = ImageButton:new()
-  :setPosition(0, -3)
+  lobby.backbutton = ImageButton:new()
+  :setPosition(0, -2)
   :setImage(img.back)
   :setDimensions(36,36)
   :onClick(function()
-      sound.tab:play()
       local battle = Battle:getActive()
-      if battle then battle:leave() end
-      lobby.enter()
+      if lobby.state == "replays" then
+        sound.tab:play()
+        Replay.exit()
+      elseif battle then
+        sound.tab:play()
+        battle:leave()
+        lobby.enter()
+      end
   end)
 
   function lobby.backbutton:draw()
     lg.draw(self.image, self.x, self.y, 0, 36/50)
-  end]]
+  end
+  
+  lobby.clickables[lobby.backbutton] = true
 
   if settings.borderless then
     lobby.header.initialize()
@@ -99,7 +106,6 @@ function lobby.enter()
     lobby.battlezoom:initialize("minimize")
   end
   lobby.userlist.bar:open()
-  --lobby.clickables[lobby.backbutton] = false
   lobby.battlelist.scrollbar:setOffset(0)
   lobby.events[lobby.battlelist] = true
   lobby.state = "landing"
@@ -128,8 +134,6 @@ local resize = {
               :setDimensions(0, 0)
   end,
   ["replays"] = function()
-              Replay.initialize()
-              lobby.fixturePoint[1].x = 0
   end
 }
 
@@ -164,6 +168,9 @@ function lobby.resize( w, h )
   
   if lobby.state == "landing" then
     canvas:push(lobby.canvas.battlelist)
+  end
+  if lobby.state == "replays" then
+    Replay.resize()
   end
   canvas:push(lobby.canvas.background)
   canvas:push(lobby.canvas.foreground)
@@ -227,7 +234,15 @@ function lobby.mousemoved( x, y, dx, dy, istouch )
   for sb in pairs(lobby.scrollBars) do
     if sb.held then sb.func() end
   end
+  for button in pairs(lobby.clickables) do
+    if button.isOver and button:isOver(x, y) then
+      button.highlighted = true
+    else
+      button.highlighted = false
+    end
+  end
   lobby.render.background()
+  lobby.render.userlist()
   lobby.render.foreground()
 end
 
@@ -319,7 +334,7 @@ function lobby.wheelmoved(x, y)
       end
     end
   end
-  lobby.render.background()
+  lobby.render.all()
 end
 
 ---- Courtesy of https://springrts.com/phpbb/viewtopic.php?t&t=32643 ----
@@ -534,35 +549,15 @@ lobby.state = "landing"
 
 lobby.renderFunction = {
   ["landing"] = function()
-    lg.setColor(colors.bbb)
-    lg.rectangle("fill",
-                0,
-                0,
-                lobby.width,
-                32)
-              
-    lg.rectangle("fill",
-                0,
-                lobby.fixturePoint[1].y + 3,
-                lobby.width,
-                lobby.height - lobby.fixturePoint[1].y + 3)
-    lg.setColor(colors.cb)
-    lg.rectangle("fill",
-                0,
-                lobby.fixturePoint[1].y + 38,
-                lobby.width,
-                lobby.height - lobby.fixturePoint[1].y - 38)
-              
     lg.setColor(colors.bt)
     lg.setFont(fonts.latosmall)
     lg.print(lobby.battleTabSubText, 50, 14)
     lg.setColor(1,1,1)
-    if lobby.battleTabHoverWindow then lobby.battleTabHoverWindow:draw() end
   end,
   
   ["battle"] = function() 
     lg.setColor(colors.bbb)
-    lg.rectangle("fill",
+    --[[lg.rectangle("fill",
                 0,
                 0,
                 lobby.width,
@@ -578,7 +573,7 @@ lobby.renderFunction = {
                 0,
                 lobby.fixturePoint[1].y + 38,
                 lobby.width,
-                lobby.height - lobby.fixturePoint[1].y - 38)
+                lobby.height - lobby.fixturePoint[1].y - 38)]]
               
     lg.setColor(colors.bt)
     lg.setColor(1,1,1)
@@ -587,7 +582,7 @@ lobby.renderFunction = {
     
   ["replays"] = function()
     lg.setColor(colors.bb)
-    lg.rectangle("fill",
+    --[[lg.rectangle("fill",
                 0,
                 0,
                 lobby.fixturePoint[2].x,
@@ -602,7 +597,7 @@ lobby.renderFunction = {
                 0,
                 lobby.fixturePoint[1].y,
                 lobby.fixturePoint[2].x,
-                38)
+                38)]]
               
     lg.setColor(colors.bt)
     lg.setFont(fonts.latoboldbig)
@@ -620,7 +615,27 @@ function lobby.render.background()
   lg.setCanvas(lobby.canvas.background)
   lg.clear()
   
+  lg.setColor(colors.bbb)
+  lg.rectangle("fill",
+              0,
+              0,
+              lobby.width,
+              32)
+            
+  lg.rectangle("fill",
+              0,
+              lobby.fixturePoint[1].y + 3,
+              lobby.width,
+              lobby.height - lobby.fixturePoint[1].y + 3)
+  lg.setColor(colors.cb)
+  lg.rectangle("fill",
+              0,
+              lobby.fixturePoint[1].y + 38,
+              lobby.width,
+              lobby.height - lobby.fixturePoint[1].y - 38)
+  
   lobby.renderFunction[lobby.state]()
+  
   if Battle:getActive() and lobby.state ~= "battle" then
     lg.setCanvas(lobby.canvas.battlemini)
     lg.clear()
@@ -665,9 +680,9 @@ function lobby.render.foreground()
   lg.setCanvas(lobby.canvas.foreground)
   lg.clear()
   
-  --[[if lobby.state ~= "landing" then
+  if lobby.state ~= "landing" then
     lobby.backbutton:draw()
-  end]]
+  end
   
   lobby.topbar:draw()
   
@@ -686,6 +701,9 @@ function lobby.render.foreground()
     Channel:getActive():render()
   end
 
+  
+  if lobby.battleTabHoverWindow and lobby.state == "landing" then lobby.battleTabHoverWindow:draw() end
+  
   Channel.textbox:draw()
   
   if lobby.dropDown then lobby.dropDown:draw() end

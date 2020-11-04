@@ -25,7 +25,7 @@ function Battle.initialize()
   Battle.buttons = {
       ["addbot"] = BattleButton:new()
         :resetPosition(function() return 3*lobby.width/4 - 155, lobby.fixturePoint[2].y - 35 end)
-        :setDimensions(120, 35)
+        :setDimensions(90, 35)
         :setText("Add Bot")
         :onClick(function() Battle.addbot() end),
       ["autolaunch"] = Checkbox:new()
@@ -64,6 +64,7 @@ function Battle.initialize()
           end
         end)
   }
+  
   for _, button in pairs(Battle.buttons) do
     lobby.clickables[button] = false
   end
@@ -144,7 +145,7 @@ function Battle:leave()
 end
 
 function Battle.host()
-  lobby.send("OPENBATTLE 0 0 * 8452 16 1 0 1 Spring\t103\tDeltaSiegeDry v8\t" .. lobby.username .. "'s battle\t" .. lobby.modname )
+  lobby.send("OPENBATTLE 0 0 * 8452 16 ".. spring.getArchiveChecksum(lobby.gameFolder .. "Balanced_Annihilation-V11.0.2.sdz") .." 0 ".. spring.getArchiveChecksum(lobby.mapFolder .. "DeltaSiegeDry_v8.sd7") .." Spring\t103\tDeltaSiegeDry v8\t" .. lobby.username .. "'s battle\t" .. lobby.modname )
 end
 
 function Battle.enter(fromJoined)
@@ -338,10 +339,10 @@ end
 
 local draw = {
   readyButton = {
-    [true] = function(x, y) lg.setColor(colors.bargreen) lg.circle("fill", x, y, 6) end,
-    [false] = function(x, y) lg.setColor(colors.orange) lg.circle("fill", x, y, 6) end
+    [true] = function(x, y) --[[lg.setColor(0,0,0) lg.circle("line", x, y, 6)]] lg.setColor(colors.readygreen) lg.circle("fill", x, y, 6) end,
+    [false] = function(x, y) --[[lg.setColor(0,0,0) lg.circle("line", x, y, 6)]] lg.setColor(colors.readyred) lg.circle("fill", x, y, 6) end
   },
-  specButton = function(x, y) lg.setColor(colors.bt) lg.circle("fill", x, y, 4) end
+  specButton = function(x, y) lg.setColor(colors.bt) lg.circle("fill", x, y, 2) end
 }
 
 local rectColors = {
@@ -486,8 +487,11 @@ function Battle:drawMap()
                     ymin + h*box[2],
                     w*(box[3] - box[1]),
                     h*(box[4] - box[2]))
-      lg.setFont(fonts.roboto)
+      lg.setFont(fonts.robotoB)
       lg.setColor(0,0,0)
+      lg.print(ally, x + w*(box[1] + box[3])/2 - fonts.roboto:getWidth(ally)/2 - 2, ymin + h*(box[2] + box[4])/2 - fonts.roboto:getHeight()/2 - 2 )
+      lg.setFont(fonts.roboto)
+      lg.setColor(1,1,1)
       lg.print(ally, x + w*(box[1] + box[3])/2 - fonts.roboto:getWidth(ally)/2, ymin + h*(box[2] + box[4])/2 - fonts.roboto:getHeight()/2 )
     end
   elseif self.mapDownload and self.mapDownload.error then
@@ -499,7 +503,7 @@ function Battle:drawMap()
     lg.print(self.mapDownload.filename, lobby.fixturePoint[2].x - 10 - 1024/8, 20 + 2*fontHeight)
     lg.print(tostring(math.ceil(100*self.mapDownload.downloaded/self.mapDownload.file_size)) .. "%", lobby.fixturePoint[2].x - 10 - 1024/8, 20 + 3*fontHeight)
   else
-    lg.draw(img["nomap"], lobby.fixturePoint[2].x - 10 - 1024/8, 20 + 2*fontHeight, 0, 1024/(8*50))
+    --lg.draw(img["nomap"], lobby.fixturePoint[2].x - 10 - 1024/8, 20 + 2*fontHeight, 0, 1024/(8*50))
     x, w, h = lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8, 1024/8
   end
   lg.setColor(colors.text)
@@ -553,28 +557,27 @@ function Battle:drawModOptions(h)
 end
 
 function Battle:drawPlayers()
-  local y = 37 --+ self.userListScrollOffset
-  lg.translate(lobby.fixturePoint[1].x + 25, 40 )
-  local xmax = self.midpoint - (lobby.fixturePoint[1].x + 25) - fonts.latomedium:getWidth("Team 00")
+  local y = 42 --+ self.userListScrollOffset
+  lg.translate(lobby.fixturePoint[1].x + 25, 40)
+  local xmax = self.midpoint - (lobby.fixturePoint[1].x + 25) - fonts.latobold20:getWidth("Team 00")
   local teamNo = 0
   local drawBackRect = true
   local cy = y
   local myAllyTeam = 0
   local teamBool = (self.teamCount > 2) and not self.ffa
-  local font = fonts.latosmall
+  local font = fonts.latobold12
   local padding = 0
   if love.graphics:getWidth() > 1200 then
     padding = 4
-    font = fonts.latomedium
+    font = fonts.latobold14
   elseif love.graphics:getWidth() > 800 then
     padding = 2
-    font = fonts.latobig
+    font = fonts.latobold16
   end
   local fontHeight = font:getHeight() + 2
-  lg.setFont(fonts.latomedium)
+  lg.setFont(fonts.latobold16)
   lg.setColor(colors.bt)
   if not self.single then if (self.teamCount < 3) then lg.print("Duel", xmax, y) elseif self.ffa then lg.print("FFA", xmax, y) end end
-  lg.setFont(font)
   for _, user in pairs(self.playersByTeam) do
     local username = user.name
     if username == lobby.username then
@@ -585,32 +588,36 @@ function Battle:drawPlayers()
         lg.line(0, y + fontHeight/4, xmax - 40, y + fontHeight/4)
         y = y + fontHeight/2
       end
-      lg.setFont(fonts.latomedium)
-      lg.setColor(colors.bt)
+      lg.setFont(fonts.latobold19)
+      lg.setColor(colors.text)
       teamNo = user.allyTeamNo
-      if teamBool then lg.print("Team " .. teamNo, xmax - 10, y) end
+      if teamBool then lg.print(teamNo, -14, y -4) end
       cy = y
-      lg.setFont(font)
     end
     if user.battleStatus then
       if drawBackRect then
         lg.setColor(colors.bb)
-        lg.rectangle("fill", 0, y - padding + 1, xmax - 40, fontHeight - 2 + 2*padding)
+        lg.rectangle("fill", 0, y - padding, xmax - 40, fontHeight + 2*padding)
       end
       drawBackRect = not drawBackRect
-      draw.readyButton[user.ready](xmax - 50, y + 7 + padding)
+      draw.readyButton[user.ready](xmax - 50, y + 8 + padding)
       lg.setColor(1,1,1)
-      lg.draw(user.flag, 23, 3 + y)
-      lg.draw(user.insignia, 41, y, 0, 1/2)
+      lg.draw(user.flag, 43, 3 + y)
+      lg.draw(user.insignia, 61, y, 0, 1/2)
       lg.setColor(user.teamColorUnpacked[1]/255, user.teamColorUnpacked[2]/255, user.teamColorUnpacked[3]/255, 0.4)
-      lg.rectangle("fill", 60, y, 120, fontHeight, 5, 5)
+      lg.rectangle("fill", 24, y+2, 12, 12, 4, 4)
+      lg.setColor(0,0,0)
+      lg.setLineWidth(2)
+      lg.rectangle("line", 24, y+2, 12, 12, 4, 4)
+      lg.setLineWidth(1)
       lg.setColor(colors.text)
       if user.icon then
         lg.draw(img[user.icon], 5, y, 0, 1/2)
       end
-      lg.print(username, 64, y)
+      lg.setFont(font)
+      lg.print(username, 84, y)
       if self.game.players[username:lower()] and self.game.players[username:lower()].skill then
-        lg.print(string.match(self.game.players[username:lower()].skill, "%d+"), 190, y)
+        lg.print(string.match(self.game.players[username:lower()].skill, "%d+"), xmax - 80, y)
       end
       y = y + fontHeight + padding
     end
@@ -619,26 +626,24 @@ function Battle:drawPlayers()
 end
 
 function Battle:drawSpectators(y)
-  local xmax = self.midpoint - (lobby.fixturePoint[1].x + 25) - fonts.latomedium:getWidth("Team 00")
-  local font = fonts.latosmall
+  local xmax = self.midpoint - (lobby.fixturePoint[1].x + 25) - fonts.latobold20:getWidth("Team 00")
+  local font = fonts.latobold12
   local padding = 0
   if love.graphics:getWidth() > 1200 then
     padding = 4
-    font = fonts.latomedium
+    font = fonts.latobold14
   elseif love.graphics:getWidth() > 800 then
     padding = 2
-    font = fonts.latobig
+    font = fonts.latobold16
   end
   local fontHeight = font:getHeight() + 2
   local drawBackRect = true
   self.spectatorsScrollBar:getZone():setPosition(lobby.fixturePoint[1].x + 25, y)
   self.spectatorsScrollBar:getZone():setDimensions(self.midpoint - lobby.fixturePoint[1].x + 25, lobby.fixturePoint[2].y - y)
-  local ymin = math.max(8*fontHeight, y + fontHeight)
+  local ymin = math.max(8*fontHeight, y + 6)
   self.spectatorsScrollBar:setPosition(xmax - 20, ymin + 3*fontHeight/2)
   local ymax = lobby.fixturePoint[1].y
   y = ymin - self.spectatorsScrollBar:getOffset()
-  lg.setColor(colors.text)
-  if not self.single then lg.print("Spectators", 60, ymin) end
   y = y + 3*fontHeight/2
   drawBackRect = true
   local c = 0
@@ -662,12 +667,16 @@ function Battle:drawSpectators(y)
         if user.icon then
           lg.draw(img[user.icon], 5, y, 0, 1/2)
         end
+        lg.setFont(font)
         lg.print(username, 60, y)
       end
       y = y + fontHeight
     end
   end
   if c > 0 then
+    lg.setColor(colors.text)
+    lg.setFont(fonts.latobold15)
+    if not self.single then lg.print("Spectators", 0, ymin) end
     self.spectatorsScrollBar:setLength(ymax - ymin - 70):setOffsetMax(math.max(0, t - c) * fontHeight):setScrollSpeed(fontHeight):draw()
   end
 end

@@ -4,7 +4,19 @@ local ld = love.data
 local spring = require "spring"
 local replays_directory = ...
 
-for i, file in pairs(nfs.getDirectoryItems(replays_directory)) do
+local function iter(a, i)
+  i = i - 1
+  local v = a[i]
+  if v then
+    return i, v
+  end
+end
+    
+local function reverseipairs(a)
+  return iter, a, #a+1
+end
+
+for i, file in reverseipairs(nfs.getDirectoryItems(replays_directory)) do
   local filepath = replays_directory .. file
   local dateAndTime, mapName, enginev, ext = file:match("(%d+_%d+)_(.+)_(%d+)%.(.+)")
   if dateAndTime and mapName and enginev and ext and ext == "sdfz" then
@@ -84,7 +96,33 @@ for i, file in pairs(nfs.getDirectoryItems(replays_directory)) do
         {name = "winningAllyTeamsSize", val = winningAllyTeamsSize}
       }
       
-      channel:push({header, script, dateAndTimeString, mapName, filepath})
+      local gameType = "Duel"
+      do
+        local numallyteams = numTeams
+        local mo_ffa = tonumber(script["modoptions"].mo_ffa)
+        if numallyteams and numallyteams > 2 then
+          if mo_ffa and mo_ffa == 1 then
+            gameType = "FFA"
+          else
+            gameType = "Teams"
+          end
+        end
+      end
+  
+      local gameTimeString = "N/A"
+      do
+        local gametime = header[7].val
+        local hour = math.floor(gametime / 3600)
+        local minute = math.floor(gametime / 60) - hour * 60
+        local second = gametime - hour * 3600 - minute * 60
+        if hour < 10 then hour = "0" .. hour end
+        if minute < 10 then minute = "0" .. minute end
+        if second < 10 then second = "0" .. second end
+        if tonumber(second) > 0 then
+          gameTimeString = hour ..":" .. minute .. ":" .. second
+        end
+      end
+      channel:supply({header, script, dateAndTimeString, mapName, filepath, gameTimeString, gameType})
     end
   end
 end

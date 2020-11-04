@@ -136,13 +136,18 @@ function ScrollBar:scroll(y)
   return self
 end
 
+local lk = love.keyboard
 function ScrollBar:scrollUp()
-  self:setOffset(math.min(self:getOffsetMax(), self:getOffset() + self:getScrollSpeed()))
+  local b = 0
+  if lk.isDown("lshift") or lk.isDown("rshift") then b = self:getScrollSpeed() end
+  self:setOffset(math.min(self:getOffsetMax(), self:getOffset() + self:getScrollSpeed() + b))
   return self
 end
 
 function ScrollBar:scrollDown()
-  self:setOffset(math.max(0, self:getOffset() - self:getScrollSpeed()))
+  local b = 0
+  if lk.isDown("lshift") or lk.isDown("rshift") then b = self:getScrollSpeed() end
+  self:setOffset(math.max(0, self:getOffset() - self:getScrollSpeed() - b))
   return self
 end
 
@@ -218,6 +223,7 @@ function Button:new()
   o.clickSound = "click"
   o.colors = {
     background = colors.bb,
+    highlight = colors.bt,
     text = colors.text
   }
   
@@ -245,7 +251,11 @@ function Button:setDimensions(w, h)
 end
 
 function Button:draw()
-  lg.setColor(self.colors.background)
+  if self.highlighted then
+    lg.setColor(self.colors.highlight)
+  else
+    lg.setColor(self.colors.background)
+  end
   lg.rectangle("fill", self.x, self.y, self.w, self.h)
   lg.setColor(self.colors.text)
   lg.setFont(self.font)
@@ -302,6 +312,7 @@ function ImageButton:setImage(img)
 end
 
 function ImageButton:draw()
+  if self.highlight then lg.setColor(0.5, 0.5, 0.5) end
   lg.draw(self.image, self.x, self.y)
 end
   
@@ -318,6 +329,7 @@ function Checkbox:new()
   o.ticked = false
   o.color = {
     back = colors.bb,
+    highlight = colors.bt,
     outline = colors.bt,
     inside = colors.bt
   }
@@ -338,7 +350,7 @@ function Checkbox:setText(str)
 end
 
 function Checkbox:draw()
-  lg.setColor(self.color.back)
+  if self.highlighted then lg.setColor(self.color.highlight) else lg.setColor(self.color.back) end
   lg.rectangle("fill", self.x, self.y, self.w, self.h)
   lg.setColor(self.color.outline)
   lg.rectangle("line", self.x, self.y, self.w, self.h)
@@ -432,12 +444,19 @@ function ChannelTab:draw()
     --lg.printf(, self.x, self.y + self.h/2 + h - fonts.latochantabbold:getHeight()/2, self.w, "center")
   elseif channel.newMessage then
     --h = 3
-    lg.setColor(colors.bg)
     lg.setFont(fonts.latochantabbold)
+    lg.setColor(colors.bbb)
     lg.rectangle("fill", self.x, self.y, self.w, self.h + h)
-    lg.setColor(colors.bt)
+    lg.setColor(colors.textblue)
     lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
     --lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latochantabbold:getHeight()/2, self.w, "center")
+  elseif self.highlighted then
+    lg.setFont(fonts.latochantab)
+    lg.setColor(colors.bt)
+    lg.rectangle("fill", self.x, self.y, self.w, self.h + h)
+    lg.setColor(colors.text)
+    lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
+    --lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latochantab:getHeight()/2, self.w, "center")
   else
     lg.setFont(fonts.latochantab)
     lg.setColor(colors.bbb)
@@ -526,7 +545,7 @@ function BattleTab:draw()
   lg.setColor(colors.bt)
   lg.print(scount, x + w - fonts.latoboldbiggest:getWidth(scount) - 25 + 10, by)
   lg.setColor(colors.text)
-  lg.draw(img.eye, x + w - fonts.latoboldbiggest:getWidth("00") - 45 + 20, y + h/2)
+  lg.draw(img.eye, x + w - fonts.latoboldbiggest:getWidth("00") - 45 + 15, y + h/2)
   
   -- MAP NAME
   lg.setFont(fonts.latoregular13)
@@ -563,7 +582,7 @@ function BattleTab:draw()
   end
   lg.setColor(colors.text)
   if battle.founder.ingame then
-    lg.draw(img["gamepad"], x + w - 18, y + 1, 0, 1/4)
+    lg.draw(img["gamepad"], x + w - 18, y + 1, 0, 1/2)
   end
 end
 
@@ -578,8 +597,9 @@ function BattleTabHoverWindow:new(battleid)
 end
 
 function BattleTabHoverWindow:draw()
-  if not lobby.state == "landing" then return end
+  if lobby.state ~= "landing" then return end
   local battle = self.battle
+  if not battle then return end
   if battle.userCount == 0 then
     return
   end

@@ -324,6 +324,7 @@ local function JOINEDBATTLE(words, sentences)
   if battle and battleid == battle.id then
     local chan = battle:getChannel()
     table.insert(chan.lines, {time = os.date("%X"), green = true, msg = user .." has joined the battle."})
+    Battle.render()
   end
   
   lobby.refreshBattleTabs()
@@ -358,6 +359,7 @@ local function LEFTBATTLE(words, sentences)
   if battle and battleid == battle.id then
     local chan = battle:getChannel()
     table.insert(chan.lines, {time = os.date("%X"), green = true, msg = user .." has left the battle."})
+    Battle.render()
   end
 
   lobby.refreshBattleTabs()
@@ -763,6 +765,5 @@ local responses = {
   ["UPDATEBATTLEINFO"] = UPDATEBATTLEINFO,
   ["UPDATEBOT"] = UPDATEBOT,
 }
-
 
 return responses

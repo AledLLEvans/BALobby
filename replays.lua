@@ -13,6 +13,7 @@ local nfs = require "lib/nativefs"
 local initialized = false
 
 local display = false
+local oldstate
 
 function Replay.enter()
   if not initialized then Replay.initialize() end
@@ -27,7 +28,9 @@ function Replay.enter()
   canvas:push(lobby.canvas.foreground)
   canvas:push(lobby.canvas.userlist)
   display = true
+  oldstate = lobby.state 
   lobby.state = "replays"
+  
   --Replay.fetchLocalReplays()
 end
 
@@ -37,6 +40,7 @@ function Replay.exit()
   lobby.scrollBars[Replay.scrollbar] = nil
   lobby.events[Replay] = nil
   lobby.clickables[Replay] = nil
+  lobby.state = oldstate
   canvas:clean()
   canvas:push(lobby.canvas.battlelist)
   canvas:push(lobby.canvas.background)
@@ -44,7 +48,6 @@ function Replay.exit()
   canvas:push(lobby.canvas.userlist)
 end
 
-local canvas
 local xmin
 local ymin
 local xmax
@@ -54,7 +57,7 @@ local h = 20
 function Replay.initialize()
   initialized = true
   love.thread.newThread("thread/replays.lua"):start(lobby.replayFolder)
-  xmin = 20
+  xmin = 30
   ymin = 42 + padding
   xmax = lobby.fixturePoint[2].x
   ymax = lobby.fixturePoint[2].y
@@ -70,10 +73,30 @@ function Replay.initialize()
   Replay.canvas = lg.newCanvas(lobby.width, lobby.height)
 end
 
+function Replay.resize()
+  Replay.canvas = lg.newCanvas(lobby.width, lobby.height)
+  xmin = 30
+  ymin = 42 + padding
+  xmax = 3*lobby.width/4
+  ymax = lobby.fixturePoint[2].y
+  Replay.scrollbar
+  :setPosition(xmax - 5, ymin + 10)
+  :setLength(ymax - ymin - 20)
+  :setScrollBarLength(20)
+  :setScrollSpeed(12)
+  :setRenderFunction(function() Replay.render() end)
+  Replay.scrollbar:getZone()
+  :setPosition(xmin, ymin)
+  :setDimensions(xmax-xmin, ymax-ymin)
+  Replay.render()
+  canvas:push(Replay.canvas)
+end
+
 Replay.s = {}
 local channel = love.thread.getChannel("replays")
 function Replay:update()
   local data = channel:pop()
+  if #Replay.s > 30 + Replay.scrollbar:getOffset()/Replay.scrollbar:getScrollSpeed() then return end
   while data do
     table.insert(Replay.s, data)
     data = channel:pop()
@@ -84,13 +107,14 @@ end
 
 function Replay:click(msx, msy)
   local w = xmax - xmin - 20
-  local i = #Replay.s
+  local i = 0
   local y = ymin - Replay.scrollbar:getOffset()
   local x = xmin
 
-  while i > 0 do
+  while i < #Replay.s do
+    i = i + 1
     y = y + (h+2*padding)
-    if y > ymin - h and msy < lobby.fixturePoint[2].y  then
+    if y > ymin - h then
       if msx > x and msx < x + w and msy > y and msy < y + h then
         local str = 
         --spring.launch("\"\"" .. lobby.exeFilePath .. "\" \"" .. Replay.s[i][5] .. "\"\"")
@@ -99,7 +123,6 @@ function Replay:click(msx, msy)
         return true
       end
     end
-    i = i - 1
   end
   return false
 end
@@ -112,35 +135,36 @@ function Replay.render()
   lg.setColor(colors.text)
   
   local w = xmax - xmin - 20
-  local i = #Replay.s
+  local i = 0
   local y = ymin - Replay.scrollbar:getOffset()
   local x = xmin
   
-  lg.print("Showing " .. #Replay.s .. " Replays", lobby.fixturePoint[2].x/2, 42)
+  --lg.print("Showing " .. #Replay.s .. " Replays", lobby.fixturePoint[2].x/2, 42)
     
   lg.print("Date & Time", x, y) --dateandtime
   lg.print("Map", x + 125, y) -- map
+  lg.print("Duration", x + 300, y) -- game length
+  lg.print("Players", x + 360, y) -- game length
   --lg.print("engine", x + 390, y) --engine vers
   --lg.print("Players", x + 310, y) --numteams
   --lg.print("Spectators", x + 360, y) --numplayers
   
-  while i > 0 do
+  while i < #Replay.s do
+    i = i + 1
     y = y + (h+2*padding)
     if y > ymin - h then
-      lg.print(#Replay.s - i + 1, padding, y)
-      lg.rectangle("line", x, y, w, h)
+      lg.print(i, padding, y)
+      if i % 2 == 1 then lg.setColor(colors.bbb) lg.rectangle("fill", x, y - padding, w, h + padding) lg.setColor(1,1,1) end
       lg.print(Replay.s[i][3], x + 2, y) --dateandtime
       lg.print(Replay.s[i][4], x + 125, y) -- map
       --lg.print(Replay.s[i][5], x + 390, y) --engine vers
       --lg.print(Replay.s[i][1][12].val, x + 310, y) --numteams
-      lg.print(Replay.s[i][1][7].val, x + 300, y) 
-      lg.print(Replay.s[i][1][8].val, x + 360, y) 
+      lg.print(Replay.s[i][6], x + 300, y) 
+      lg.print(Replay.s[i][1][12].val, x + 360, y) 
+      lg.print(Replay.s[i][7], x + 400, y) 
       --lg.print(Replay.s[i][1][9].val - Replay.s[i][1][12].val, x + 360, y) --numplayers
     end
-    i = i - 1
   end
-  
-
   
   Replay.scrollbar:draw()
   

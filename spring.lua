@@ -143,6 +143,12 @@ function spring.getMapData(mapName)
   return data
 end
 
-
+local sha1 = require("sha1")
+function spring.getArchiveChecksum(fpath)
+  print(fpath)
+  local archive = nfs.read(fpath)
+  if archive then return sha1(archive) end
+  return false
+end
 
 return spring

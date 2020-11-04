@@ -302,6 +302,7 @@ loadImages()
 fonts = {}
 fonts.notable =               lg.newFont("data/fonts/Notable/Notable-Regular.ttf", 30)
 fonts.roboto =                lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 20)
+fonts.robotoB =               lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 24)
 fonts.robotosmall =           lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 12)
 fonts.robotoitalic =          lg.newFont("data/fonts/Roboto/Roboto-Italic.ttf", 20)
 fonts.latosmall =             lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 12)
@@ -313,17 +314,20 @@ fonts.latomedium =            lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 18)
 fonts.latoitalic =            lg.newFont("data/fonts/Lato/Lato-Italic.ttf", 14)
 fonts.latoitalicmedium =      lg.newFont("data/fonts/Lato/Lato-Italic.ttf", 18)
 fonts.latolightitalic =       lg.newFont("data/fonts/Lato/Lato-LightItalic.ttf", 12)
-fonts.latobold =              lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 12)
+fonts.latobold12 =            lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 12)
 fonts.latobold14 =            lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 14)
+fonts.latobold15 =            lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 15)
 fonts.latobold16 =            lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 16)
 fonts.latobold18 =            lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 18)
+fonts.latobold19 =            lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 19)
+fonts.latobold20 =            lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 20)
 fonts.latoboldbigger =        lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 24)
 fonts.latoboldbiggest =       lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 48)
 fonts.latobolditalic =        lg.newFont("data/fonts/Lato/Lato-BoldItalic.ttf", 12)
 fonts.latobolditalicmedium =  lg.newFont("data/fonts/Lato/Lato-BoldItalic.ttf", 16)
 
+fonts.latobold = fonts.latobold12
 fonts.latoboldmedium = fonts.latobold14
-
 fonts.latoboldbig = fonts.latobold16
 
 sound = {}
@@ -380,7 +384,7 @@ function setLightMode()
   colors.bargreen = {0, 191/255, 165/255}
   colors.barblue = {73/255, 203/255, 222/255}
   colors.textblue = {73/255, 203/255, 222/255}
-  colors.orange = {1, 156/255, 67/255}
+  colors.orange = {252/255, 49/255, 281/255}
   colors.yellow = {1/2, 1/2, 0}
   colors.green = {28/255,252/255,139/255}
   lg.setBackgroundColor(colors.bg)
@@ -401,9 +405,11 @@ function setDarkMode()
   colors.bargreen = {28/255, 252/255, 139/255}
   colors.barblue = {73/255, 203/255, 222/255}
   colors.textblue = {73/255, 203/255, 222/255}
-  colors.orange = {1, 156/255, 67/255}
+  colors.orange = {240/255, 71/255, 71/255}
   colors.yellow = {1, 1, 0}
   colors.green = {28/255,252/255,139/255}
+  colors.readygreen = {67/255, 181/255, 129/255}
+  colors.readyred = {240/255,71/255,71/255}
   lg.setBackgroundColor(colors.bg)
 end
 

@@ -7,7 +7,7 @@ Channel.x = 0
 Channel.y = 0
 Channel.w = 10
 Channel.h = 10
-Channel.scrollBar = ScrollBar:new():setScrollBarLength(-20):setScrollSpeed(fonts.latobold:getHeight())
+Channel.scrollBar = ScrollBar:new():setScrollBarLength(-20):setScrollSpeed(fonts.latobold12:getHeight())
 Channel.textbox = Textbox:new()
 
 lobby.channels = {}
@@ -38,7 +38,7 @@ function Channel:new(o, bool)
   o.tab.parent = o
   o.tab:setText(title):setFont(fonts.latochantab)
   
-  o.font = fonts.latobold
+  o.font = fonts.latobold12
   o.lines = {}
   o.users = {} 
   o.sents = {}
