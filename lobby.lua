@@ -125,13 +125,14 @@ local resize = {
   end,
   ["battle"] = function()
               if not Battle:getActive() then return end
-              lobby.fixturePoint[1].x = 0
+              lobby.fixturePoint[1].x = math.max(280, lobby.width * 0.35)
               for _, b in pairs(Battle:getActive().buttons) do
                 b:resetPosition()
               end
               lobby.battlelist.scrollbar:getZone()
               :setPosition(0, 0)
               :setDimensions(0, 0)
+              Battle:getActive().spectatorsScrollBar:setOffset(0)
   end,
   ["replays"] = function()
   end
@@ -159,7 +160,7 @@ function lobby.resize( w, h )
   
   canvas:clean()
   
-  lobby.canvas.battlemini = lg.newCanvas(lobby.width, lobby.height)
+  --lobby.canvas.battlemini = lg.newCanvas(lobby.width, lobby.height)
   lobby.canvas.battlelist = lg.newCanvas(lobby.width, lobby.height)
   lobby.canvas.background = lg.newCanvas(lobby.width, lobby.height)
   lobby.canvas.foreground = lg.newCanvas(lobby.width, lobby.height)
@@ -168,16 +169,16 @@ function lobby.resize( w, h )
   
   if lobby.state == "landing" then
     canvas:push(lobby.canvas.battlelist)
-  end
-  if lobby.state == "replays" then
+  elseif lobby.state == "replays" then
     Replay.resize()
   end
   canvas:push(lobby.canvas.background)
   canvas:push(lobby.canvas.foreground)
   canvas:push(lobby.canvas.userlist)
-  canvas:push(Battle.canvas)
-  
-  lobby.battlezoom:resize(w, h)
+  if lobby.state == "battle" then
+    canvas:push(Battle.canvas)
+  end
+  --lobby.battlezoom:resize(w, h)
   
   resize[lobby.state]()
   Map.resize()
@@ -188,6 +189,7 @@ function lobby.resize( w, h )
   
   lobby.userlist.resize()
   lobby.battlelist.resize()
+  
   lobby.render.background()
   lobby.render.foreground()
 end
@@ -298,7 +300,7 @@ function lobby.mousereleased(x,y,b)
   for v, bool in pairs(lobby.clickables) do
     if bool then if v:click(x, y, b) then return mrexit() end end
   end
-  if lobby.state == "landing" and y > 40 and y < lobby.fixturePoint[1].y then
+  if lobby.state == "landing" and y > 40 and y < lobby.fixturePoint[1].y and x < lobby.fixturePoint[2].x then
     for id, bt in pairs(BattleTab.s) do
       if lobby.clickedBattleID == id then
         bt:click(x, y)
@@ -556,48 +558,11 @@ lobby.renderFunction = {
   end,
   
   ["battle"] = function() 
-    lg.setColor(colors.bbb)
-    --[[lg.rectangle("fill",
-                0,
-                0,
-                lobby.width,
-                32)
-              
-    lg.rectangle("fill",
-                0,
-                lobby.fixturePoint[1].y + 3,
-                lobby.width,
-                lobby.height - lobby.fixturePoint[1].y + 3)
-    lg.setColor(colors.cb)
-    lg.rectangle("fill",
-                0,
-                lobby.fixturePoint[1].y + 38,
-                lobby.width,
-                lobby.height - lobby.fixturePoint[1].y - 38)]]
-              
-    lg.setColor(colors.bt)
     lg.setColor(1,1,1)
     if Battle:getActive() then Battle.render() end
   end,
     
   ["replays"] = function()
-    lg.setColor(colors.bb)
-    --[[lg.rectangle("fill",
-                0,
-                0,
-                lobby.fixturePoint[2].x,
-                40)
-    lg.rectangle("fill",
-                0,
-                lobby.fixturePoint[1].y,
-                lobby.fixturePoint[2].x,
-                lobby.height - lobby.fixturePoint[1].y)
-    lg.setColor(colors.cb)
-    lg.rectangle("fill",
-                0,
-                lobby.fixturePoint[1].y,
-                lobby.fixturePoint[2].x,
-                38)]]
               
     lg.setColor(colors.bt)
     lg.setFont(fonts.latoboldbig)
@@ -610,7 +575,6 @@ lobby.renderFunction = {
   ["options"] = function() end
 }
 
-
 function lobby.render.background()
   lg.setCanvas(lobby.canvas.background)
   lg.clear()
@@ -621,7 +585,6 @@ function lobby.render.background()
               0,
               lobby.width,
               32)
-            
   lg.rectangle("fill",
               0,
               lobby.fixturePoint[1].y + 3,
@@ -686,7 +649,6 @@ function lobby.render.foreground()
   
   lobby.topbar:draw()
   
-  
   for _, channel in pairs(Channel.s) do
     if channel.display then channel.tab:draw() end
   end
@@ -701,7 +663,6 @@ function lobby.render.foreground()
     Channel:getActive():render()
   end
 
-  
   if lobby.battleTabHoverWindow and lobby.state == "landing" then lobby.battleTabHoverWindow:draw() end
   
   Channel.textbox:draw()

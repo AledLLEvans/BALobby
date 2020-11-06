@@ -15,6 +15,29 @@ local initialized = false
 local display = false
 local oldstate
 
+
+local xmin
+local ymin
+local xmax
+local ymax
+local padding = 2
+local h = 20
+function Replay.expand()
+  xmin = 30
+  ymin = 42 + padding
+  xmax = 3*lobby.width/4
+  ymax = lobby.fixturePoint[2].y
+  Replay.scrollbar
+  :setPosition(xmax - 5, ymin + 10)
+  :setLength(ymax - ymin - 20)
+  :setScrollBarLength(20)
+  :setScrollSpeed(12)
+  :setRenderFunction(function() Replay.render() end)
+  Replay.scrollbar:getZone()
+  :setPosition(xmin, ymin)
+  :setDimensions(xmax-xmin, ymax-ymin)
+end
+
 function Replay.enter()
   if not initialized then Replay.initialize() end
   if display then return Replay.exit() end --Map.exit() end
@@ -30,6 +53,7 @@ function Replay.enter()
   display = true
   oldstate = lobby.state 
   lobby.state = "replays"
+  Replay.expand()
   
   --Replay.fetchLocalReplays()
 end
@@ -42,52 +66,32 @@ function Replay.exit()
   lobby.clickables[Replay] = nil
   lobby.state = oldstate
   canvas:clean()
-  canvas:push(lobby.canvas.battlelist)
+  if lobby.state == "landing" then
+    canvas:push(lobby.canvas.battlelist)
+  end
   canvas:push(lobby.canvas.background)
   canvas:push(lobby.canvas.foreground)
   canvas:push(lobby.canvas.userlist)
+  if lobby.state == "battle" then
+    canvas:push(Battle.canvas)
+  end
 end
 
-local xmin
-local ymin
-local xmax
-local ymax
-local padding = 2
-local h = 20
 function Replay.initialize()
   initialized = true
   love.thread.newThread("thread/replays.lua"):start(lobby.replayFolder)
   xmin = 30
   ymin = 42 + padding
-  xmax = lobby.fixturePoint[2].x
+  xmax = 3*lobby.width/4
   ymax = lobby.fixturePoint[2].y
   Replay.scrollbar = ScrollBar:new()
-  :setPosition(xmax - 5, ymin + 10)
-  :setLength(ymax - ymin - 20)
-  :setScrollBarLength(20)
-  :setScrollSpeed(12)
-  :setRenderFunction(function() Replay.render() end)
-  Replay.scrollbar:getZone()
-  :setPosition(xmin, ymin)
-  :setDimensions(xmax-xmin, ymax-ymin)
+  Replay.expand()
   Replay.canvas = lg.newCanvas(lobby.width, lobby.height)
 end
 
 function Replay.resize()
   Replay.canvas = lg.newCanvas(lobby.width, lobby.height)
-  xmin = 30
-  ymin = 42 + padding
-  xmax = 3*lobby.width/4
-  ymax = lobby.fixturePoint[2].y
-  Replay.scrollbar
-  :setPosition(xmax - 5, ymin + 10)
-  :setLength(ymax - ymin - 20)
-  :setScrollBarLength(20)
-  :setScrollSpeed(12)
-  :setRenderFunction(function() Replay.render() end)
-  Replay.scrollbar:getZone()
-  :setPosition(xmin, ymin)
-  :setDimensions(xmax-xmin, ymax-ymin)
+  Replay.expand()
   Replay.render()
   canvas:push(Replay.canvas)
 end

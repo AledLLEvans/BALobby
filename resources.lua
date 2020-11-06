@@ -269,7 +269,10 @@ local IMAGE_FILES = {
   "playerslistBlue",
   "musicOn",
   "musicOff",
-  "back"
+  "back",
+  "gear",
+  "magnifier",
+  "bot"
 }
 
 --success = love.system.openURL( url )
@@ -300,11 +303,16 @@ loadFlags()
 loadImages()
 
 fonts = {}
+fonts.krone =                 lg.newFont("data/fonts/Krone/krone.extrabold.ttf", 30)
+fonts.krones =                lg.newFont("data/fonts/Krone/krone.shadow.ttf", 30)
+
 fonts.notable =               lg.newFont("data/fonts/Notable/Notable-Regular.ttf", 30)
+
 fonts.roboto =                lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 20)
 fonts.robotoB =               lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 24)
 fonts.robotosmall =           lg.newFont("data/fonts/Roboto/Roboto-Black.ttf", 12)
 fonts.robotoitalic =          lg.newFont("data/fonts/Roboto/Roboto-Italic.ttf", 20)
+
 fonts.latosmall =             lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 12)
 fonts.latoregular13 =         lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 13)
 fonts.latobig =               lg.newFont("data/fonts/Lato/Lato-Regular.ttf", 16)
@@ -316,7 +324,6 @@ fonts.latoitalicmedium =      lg.newFont("data/fonts/Lato/Lato-Italic.ttf", 18)
 fonts.latolightitalic =       lg.newFont("data/fonts/Lato/Lato-LightItalic.ttf", 12)
 fonts.latobold12 =            lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 12)
 fonts.latobold14 =            lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 14)
-fonts.latobold15 =            lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 15)
 fonts.latobold16 =            lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 16)
 fonts.latobold18 =            lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 18)
 fonts.latobold19 =            lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 19)
@@ -325,6 +332,10 @@ fonts.latoboldbigger =        lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 24)
 fonts.latoboldbiggest =       lg.newFont("data/fonts/Lato/Lato-Bold.ttf", 48)
 fonts.latobolditalic =        lg.newFont("data/fonts/Lato/Lato-BoldItalic.ttf", 12)
 fonts.latobolditalicmedium =  lg.newFont("data/fonts/Lato/Lato-BoldItalic.ttf", 16)
+
+fonts.freesansbold12 =        lg.newFont("data/fonts/FreeSansBold.otf", 12)
+fonts.freesansbold14 =        lg.newFont("data/fonts/FreeSansBold.otf", 14)
+fonts.freesansbold16 =        lg.newFont("data/fonts/FreeSansBold.otf", 16)
 
 fonts.latobold = fonts.latobold12
 fonts.latoboldmedium = fonts.latobold14
@@ -392,11 +403,12 @@ end
 
 function setDarkMode()
   colors.w = {1, 1, 1}
-  colors.text = {1, 1, 1}
+  colors.text = {1, 1, 1, 1}
   colors.cb = {6/255, 7/255, 9/255}
   colors.bgt = {28/255, 28/255, 28/255, 0.6}
   colors.bg = {12/255, 14/255, 17/255}
   colors.bb = {4/255, 5/255, 5/255} --colors.bb = {33/255, 33/255, 33/255}
+  colors.brb = {0/255, 0/255, 0/255}
   colors.bbb = {0/255, 0/255, 0/255}
   colors.bbh = {8/255, 9/255, 12/255}
   colors.bd = {7/255, 9/255, 12/255}
@@ -408,8 +420,8 @@ function setDarkMode()
   colors.orange = {240/255, 71/255, 71/255}
   colors.yellow = {1, 1, 0}
   colors.green = {28/255,252/255,139/255}
-  colors.readygreen = {67/255, 181/255, 129/255}
-  colors.readyred = {240/255,71/255,71/255}
+  colors.readygreen = {33/255, 235/255, 62/255}
+  colors.readyred = {230/255,39/255,30/255}
   lg.setBackgroundColor(colors.bg)
 end
 

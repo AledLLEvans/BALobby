@@ -16,8 +16,8 @@ function userlist:initialize()
   userlist.bar.shutfunc = function() userlist.bar:open() end
   userlist.bar.openfunc = function() userlist.bar:shut() end
   
-  userlist.bar.openspeed = function() return lobby.width/32 end
-  userlist.bar.shutspeed = function() return lobby.width/25 end
+  userlist.bar.openspeed = function() return lobby.width/20 end
+  userlist.bar.shutspeed = function() return lobby.width/15 end
 
   userlist.bar:setPosition(userlist.bar.shutx(), 32)
   
@@ -38,7 +38,7 @@ function userlist:initialize()
     self.w = userlist.bar.shutw
     self.h = userlist.bar.shuth
     lobby.fixturePoint[2].x = lobby.width - userlist.bar.shutw
-    if lobby.state == "battle" then Battle:getActive():resetButtons() end
+    --if lobby.state == "battle" then Battle:getActive():resetButtons() end
     self.func = self.shutfunc
     self.state = "shutting"
     lobby.clickables[userlist] = nil
@@ -79,14 +79,24 @@ function userlist:initialize()
     return true
   end
   
+  local drawBackRect = {
+    [true] = function(x,y,w,fh) lg.setColor(colors.brb) lg.rectangle("fill", x, y, w, fh) end,
+    [false] = function() end
+  }
+  
   function userlist.bar:drawChannelList()
     lg.printf("Channel List", self.x + 30, self.y, self.w, "left")
     local fontHeight = fonts.latobold:getHeight()
     local x = self.x
     lg.setFont(fonts.latobold)
     local m = 36 - userlist.scrollBar:getOffset()
+    local msx, msy = love.mouse.getPosition()
     for channel_name, users in pairs(lobby.channels) do
       m = m + fontHeight
+      --drawBackRect[c % 2 == 1](x, m+12, w, fontHeight)
+      if msy > m + fontHeight and msy < m + 2*fontHeight and msx > lobby.fixturePoint[2].x + 60 and msx < lobby.fixturePoint[2].x + 60 + fonts.latobold:getWidth(channel_name) then
+        lg.setColor(colors.bbh) lg.rectangle("fill", x+60, m+12, fonts.latobold:getWidth(channel_name), fontHeight)
+      end
       if m > lobby.width - 36 then return end
       lg.setColor(colors.text)
       lg.printf("#" .. channel_name, x + 60, 10 + m, lobby.width - lobby.fixturePoint[2].x - 20)
@@ -94,28 +104,32 @@ function userlist:initialize()
       if m > lobby.fixturePoint[2].y - fontHeight then break end
     end
   end
-  
-  local drawBackRect = {
-    [true] = function(x,y,w,fh) lg.setColor(colors.bbb) lg.rectangle("fill", x, y, w, fh) end,
-    [false] = function() end
-  }
 
   function userlist.bar:draw()
-    lg.setColor(1,1,1)
     if self.state == "shut" then
-      if lobby.darkMode then lg.draw(img["playerslist_closedBlue"], self.x, self.y, 0, 1, (lobby.fixturePoint[2].y-30)/userlist.bar.shuth)
-      else lg.draw(img["playerslist_closed_light"], self.x, self.y, 0, 1, lobby.fixturePoint[2].y/userlist.bar.shuth) end
+      lg.setColor(colors.cb)
+      lg.rectangle("fill",
+                  lobby.fixturePoint[2].x,
+                  36,
+                  lobby.width - lobby.fixturePoint[2].x,
+                  lobby.fixturePoint[1].y - 36 + 1)
+      lg.setColor(1,1,1)
+      lg.draw(img["playerslist_closedBlue"], self.x, self.y, 0, 1/2, (lobby.fixturePoint[2].y-30)/userlist.bar.shuth)
       return
     end
-    if lobby.darkMode then lg.draw(img["playerslistBlue"], self.x, self.y) else lg.draw(img["playerslist_light"], self.x, self.y) end
     if self.state == "open" then
+      lg.setColor(colors.cb)
+      lg.rectangle("fill",
+                  lobby.fixturePoint[2].x,
+                  36,
+                  lobby.width - lobby.fixturePoint[2].x,
+                  lobby.fixturePoint[1].y - 36 + 1)
       lg.setColor(1,1,1)
+      if lobby.darkMode then lg.draw(img["playerslistBlue"], self.x, self.y) else lg.draw(img["playerslist_light"], self.x, self.y) end
       local list = User.s
       local channel = Channel:getActive()
       lg.setFont(fonts.latoboldbig)
-      lg.setColor(colors.bt)
       lg.setColor(colors.bbb)
-      local fontHeight = fonts.latobold:getHeight()
       local headtext = "Users online " .. User.count
       if channel then 
         if channel.isServer then
@@ -139,7 +153,9 @@ function userlist:initialize()
       lg.printf(headtext, self.x + 30, self.y, self.w, "left")
       local w = lobby.width - lobby.fixturePoint[2].x - 20
       local x = self.x
-      lg.setFont(fonts.latobold)
+      local font = fonts.freesansbold12
+      lg.setFont(font)
+      local fontHeight = font:getHeight()
       local m = 36 - userlist.scrollBar:getOffset()
       local t = 0
       local c = 0
@@ -148,9 +164,9 @@ function userlist:initialize()
         m = m + fontHeight
         t = t + 1
         if m < lobby.fixturePoint[2].y - fontHeight and m > 36 then
-          drawBackRect[c % 2 == 1](x, m+12, w, fontHeight)
-          if msy > m + fontHeight and msy < m + 2*fontHeight and msx > lobby.fixturePoint[2].x + 60 and msx < lobby.fixturePoint[2].x + 60 + fonts.latobold:getWidth(username) then
-            lg.setColor(colors.bt) lg.rectangle("fill", x+60, m+12, fonts.latobold:getWidth(username), fontHeight)
+          --drawBackRect[c % 2 == 1](x, m+10, w, fontHeight)
+          if msy > m + fontHeight and msy < m + 2*fontHeight and msx > lobby.fixturePoint[2].x + 60 and msx < lobby.fixturePoint[2].x + 60 + font:getWidth(username) then
+            lg.setColor(colors.bt) lg.rectangle("fill", x+60, m+12, font:getWidth(username), fontHeight)
           end
           c = c + 1
           lg.setColor(1,1,1)
@@ -248,7 +264,6 @@ function userlist.resize()
     lobby.fixturePoint[2].x = lobby.width - userlist.bar.shutw
     userlist.bar:setPosition(lobby.fixturePoint[2].x, 32)
   else
-    
     lobby.fixturePoint[2].x = 3*lobby.width/4
     userlist.bar:setPosition(3*lobby.width/4, 32)
     --lobby.fixturePoint[2].x = 3*lobby.width/4

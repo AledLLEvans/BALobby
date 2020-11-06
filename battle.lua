@@ -23,44 +23,75 @@ local Map = require "maps"
 function Battle.initialize()
   Battle.canvas = lg.newCanvas(lobby.width, lobby.height)
   Battle.buttons = {
-      ["addbot"] = BattleButton:new()
-        :resetPosition(function() return 3*lobby.width/4 - 155, lobby.fixturePoint[2].y - 35 end)
-        :setDimensions(90, 35)
-        :setText("Add Bot")
+      ["map"] = ImageButton:new()
+        :resetPosition(function() return lobby.fixturePoint[2].x - 45, lobby.fixturePoint[2].y - 300 end)
+        :setDimensions(40, 35)
+        :setImage(img.magnifier)
         :onClick(function() Battle.addbot() end),
-      ["autolaunch"] = Checkbox:new()
-        :resetPosition(function() return 3*lobby.width/4 - 90, lobby.fixturePoint[2].y - 65 end)
-        :setDimensions(20,20)
-        :setText("Auto-start"):setFont(fonts.latoboldmedium)
-        :setToggleVariable(function() return lobby.launchOnGameStart end)
-        :onClick(function() if User.s[lobby.username].spectator then lobby.launchOnGameStart = not lobby.launchOnGameStart end end),
-      ["exit"] = BattleButton:new()
+      ["addbot"] = ImageButton:new()
+        :resetPosition(function() return lobby.fixturePoint[2].x - 45, lobby.fixturePoint[2].y - 260 end)
+        :setDimensions(40, 35)
+        :setImage(img.bot)
+        :onClick(function() Battle.addbot() end),
+      ["info"] = ImageButton:new()
+        :resetPosition(function() return lobby.fixturePoint[2].x - 45, lobby.fixturePoint[2].y - 220 end)
+        :setDimensions(40, 35)
+        :setImage(img.gear)
+        :onClick(function() Battle.addbot() end),
+      ["ally"] = BattleButton:new()
+        :resetPosition(function() return lobby.fixturePoint[1].x + 10, lobby.fixturePoint[2].y - 75 end)
+        :setDimensions(40, 35)
+        :setText("Ally")
+        :onClick(function() Battle.ally() end),
+      ["team"] = BattleButton:new()
+        :resetPosition(function() return lobby.fixturePoint[1].x + 90, lobby.fixturePoint[2].y - 75 end)
+        :setDimensions(40, 35)
+        :setText("Team")
+        :onClick(function() Battle.team() end),
+      ["faction"] = BattleButton:new()
+        :resetPosition(function() return lobby.fixturePoint[1].x + 155, lobby.fixturePoint[2].y - 75 end)
+        :setDimensions(60, 35)
+        :setText("Faction")
+        :onClick(function() Battle.faction() end),
+      ["colour"] = BattleButton:new()
+        :resetPosition(function() return  lobby.fixturePoint[1].x + 240, lobby.fixturePoint[2].y - 75 end)
+        :setDimensions(60, 35)
+        :setText("Colour")
+        :onClick(function() Battle.faction() end),
+      --[[["exit"] = BattleButton:new()
         :resetPosition(function() return 3*lobby.width/4 - 255, lobby.fixturePoint[2].y - 35 end)
         :setDimensions(100, 35)
         :setText("Exit Battle")
-        :onClick(function() Battle:getActive():leave() end),
-      ["ready"] = Checkbox:new()
-        :resetPosition(function() return 3*lobby.width/4 - 165, lobby.fixturePoint[2].y - 65 end)
-        :setDimensions(20, 20)
-        :setText("Ready"):setFont(fonts.latoboldmedium)
-        :setToggleVariable(function() return User.s[lobby.username].ready end)
-        :onClick(function() if not User.s[lobby.username].spectator then lobby.setReady(not User.s[lobby.username].ready) end end),
+        :onClick(function() Battle:getActive():leave() end),]]
       ["spectate"] = Checkbox:new()
-        :resetPosition(function() return 3*lobby.width/4 - 255, lobby.fixturePoint[2].y - 65 end)
+        :resetPosition(function() return lobby.fixturePoint[1].x + 10, lobby.fixturePoint[2].y - 35 end)
         :setDimensions(20, 20)
         :setText("Spectate"):setFont(fonts.latoboldmedium)
         :setToggleVariable(function() return User.s[lobby.username].spectator end)
         :onClick(function() lobby.setSpectator(not User.s[lobby.username].spectator) end),
+      ["ready"] = Checkbox:new()
+        :resetPosition(function() return lobby.fixturePoint[1].x + 90, lobby.fixturePoint[2].y - 35 end)
+        :setDimensions(20, 20)
+        :setText("Ready"):setFont(fonts.latoboldmedium)
+        :setToggleVariable(function() return User.s[lobby.username].ready end)
+        :onClick(function() if not User.s[lobby.username].spectator then lobby.setReady(not User.s[lobby.username].ready) end end),
+      ["autolaunch"] = Checkbox:new()
+        :resetPosition(function() return lobby.fixturePoint[1].x + 155, lobby.fixturePoint[2].y - 35 end)
+        :setDimensions(20,20)
+        :setText("Auto-start"):setFont(fonts.latoboldmedium)
+        :setToggleVariable(function() return lobby.launchOnGameStart end)
+        :onClick(function() if User.s[lobby.username].spectator then lobby.launchOnGameStart = not lobby.launchOnGameStart end end),
       ["launch"] = BattleButton:new()
-        :resetPosition(function() return 3*lobby.width/4 - 65, lobby.fixturePoint[2].y - 35 end)
-        :setDimensions(70, 35)
+        :resetPosition(function() return lobby.fixturePoint[1].x + 250, lobby.fixturePoint[2].y - 38 end)
+        :setDimensions(45, 25)
         :setText("Start")
         :onClick(function()
           local battle = Battle:getActive()
           if battle.isMyBattle or battle.founder.ingame then
             lobby.launchSpring()
           else
-            love.window.showMessageBox("For your information", "Game has not yet started.", "info")
+            lobby.send("SAYBATTLE !start")
+            --love.window.showMessageBox("For your information", "Game has not yet started.", "info")
           end
         end)
   }
@@ -94,7 +125,7 @@ function Battle.initialize()
   :setLength(40)
   :setScrollBarLength(10)
   :setOffset(0)
-  :setScrollSpeed(fonts.latosmall:getHeight())
+  :setScrollSpeed(fonts.freesansbold12:getHeight())
   
   Battle.showMap = "minimap"
 end
@@ -113,7 +144,7 @@ function Battle:joined(id)
     Channel.active = Channel.s["Battle"]
   end
   self.display = true
-  self:getChannel().infoBoxScrollBar:setOffset(0)
+  --self:getChannel().infoBoxScrollBar:setOffset(0)
 end
 
 function Battle:resetButtons()
@@ -300,7 +331,7 @@ function Battle:update(dt)
     elseif err then
       self.modMirrorID = self.modMirrorID + 1
       if self.modMirrorID > #self.modMirrors then
-        table.insert(self:getChannel().lines, {time = os.date("%X"), msg = "Error auto-downloading game\n" .. self.modDownload.error .. "\nYou Could try installing manually"})
+        --table.insert(self:getChannel().lines, {time = os.date("%X"), msg = "Error auto-downloading game\n" .. self.modDownload.error .. "\nYou Could try installing manually"})
         self.modDownload:release()
         self.modDownload = nil
         if self.hasMap or (not self.mapDownload) then lobby.events[self] = nil end
@@ -324,7 +355,7 @@ function Battle:update(dt)
     elseif err then
       self.mapMirrorID = self.mapMirrorID + 1
       if self.mapMirrorID > #self.mapMirrors then
-        table.insert(self:getChannel().lines, {time = os.date("%X"), msg = "Failed to find URL for map " .. self.mapName .. "\n".. self.mapDownload.error .. "\nTry downloading manually\n(Type !maplink, click on the hyperlink and place the file in your spring/maps/ directory)"})
+        --table.insert(self:getChannel().lines, {time = os.date("%X"), msg = "Failed to find URL for map " .. self.mapName .. "\n".. self.mapDownload.error .. "\nTry downloading manually\n(Type !maplink, click on the hyperlink and place the file in your spring/maps/ directory)"})
         --love.window.showMessageBox("Auto Map Downloader", "\nFailed to find URL for map\nTry installing manually\n(Type !maplink, click on the hyperlink and place the file in your spring/maps/ directory)", "error" )
         self.mapDownload:release()
         self.mapDownload = nil
@@ -358,19 +389,15 @@ function Battle.render()
 end
     
 function Battle:draw()
-  self.midpoint = math.max(lobby.fixturePoint[1].x + 280, lobby.width * 0.45)
+  self.midpoint = math.max(280, lobby.width * 0.45)
+  lg.line(lobby.fixturePoint[1].x, 0, lobby.fixturePoint[1].x, lobby.height)
+  lg.line(self.midpoint, 0, self.midpoint, lobby.height)
+  lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.height)
   --Buttons
-  
-  if self.single then
-    --
-  else
-    Battle.buttons.autolaunch:draw()
-    Battle.buttons.ready:draw()
-    Battle.buttons.spectate:draw()
+
+  for k, button in pairs(Battle.buttons) do
+    button:draw()
   end
-  Battle.buttons.addbot:draw()
-  Battle.buttons.exit:draw()
-  Battle.buttons.launch:draw()
   
   --Room Name, Title
   lg.setFont(fonts.roboto)
@@ -381,22 +408,22 @@ function Battle:draw()
     text = text:sub(1, #text - i)
     local width = fonts.roboto:getWidth(text)
     i = i + 1
-  until width < self.midpoint - 25 or text == ""
+  until width < lobby.fixturePoint[2].x - 25 or text == ""
   if i > 1 then text = text:sub(1, #text - 2) .. ".." end
-  lg.print(text, lobby.fixturePoint[1].x + 25, 32)
+  lg.print(text, 25, 32)
   local fontHeight = fonts.roboto:getHeight()
   
   --Game Name, subtitle
   lg.setFont(fonts.latoboldbig)
   lg.setColor(colors.text)
-  lg.print(self.gameName, lobby.fixturePoint[1].x + 25, 32 + fontHeight)
+  lg.print(self.gameName, 25, 32 + fontHeight)
   
     --[[if self.modDownload then
     lg.printf(self.modDownload.filename, lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8 + 20 + 3*fontHeight, 1024/8, "left")
     lg.printf(tostring(math.ceil(100*self.modDownload.downloaded/self.modDownload.file_size)) .. "%", lobby.fixturePoint[2].x - 10 - 1024/8, 1024/8 + 20 + 4*fontHeight, 1024/8, "left")
   end]]
   
-  local h = self:drawMap()
+  local h = self:drawMap(32 + fontHeight)
   self:drawModOptions(h)
   local y = self:drawPlayers()
   self:drawSpectators(y)
@@ -409,17 +436,17 @@ function Battle:draw()
   lg.setCanvas()
 end
 
-function Battle:drawMap()
+function Battle:drawMap(height)
   local fontHeight = fonts.roboto:getHeight()
-  lg.setFont(fonts.latobold)
-  lg.setColor(colors.text)
-  
-  lg.setColor(1,1,1)
   local x, w, h
-  local xmin = self.midpoint + 20
+  local xmin = lobby.fixturePoint[1].x
   local xmax = lobby.fixturePoint[2].x - 50
-  local ymin = 25 + 2*fontHeight
+  local ymin = 30 + 2*fontHeight
   local ymax = lobby.fixturePoint[2].y - 60 - (math.floor(lobby.height/100))*fonts.latoitalic:getHeight() - 10
+  lg.setFont(fonts.freesansbold16)
+  lg.setColor(colors.bt)
+  if not self.single then if (self.teamCount < 3) then lg.print("Duel", xmax, 32 + fontHeight) elseif self.ffa then lg.print("FFA", xmax, 32 + fontHeight) end end
+  lg.setColor(1,1,1)
   -- couldnt find a better way to do this
   local aw, ah = xmax - xmin, ymax - ymin
   if self.minimap then
@@ -487,12 +514,12 @@ function Battle:drawMap()
                     ymin + h*box[2],
                     w*(box[3] - box[1]),
                     h*(box[4] - box[2]))
-      lg.setFont(fonts.robotoB)
+      lg.setFont(fonts.krone)
       lg.setColor(0,0,0)
-      lg.print(ally, x + w*(box[1] + box[3])/2 - fonts.roboto:getWidth(ally)/2 - 2, ymin + h*(box[2] + box[4])/2 - fonts.roboto:getHeight()/2 - 2 )
-      lg.setFont(fonts.roboto)
+      lg.print(ally, x + w*(box[1] + box[3])/2 - fonts.krone:getWidth(ally)/2, ymin + h*(box[2] + box[4])/2 - fonts.krone:getHeight()/2 )
+      lg.setFont(fonts.krones)
       lg.setColor(1,1,1)
-      lg.print(ally, x + w*(box[1] + box[3])/2 - fonts.roboto:getWidth(ally)/2, ymin + h*(box[2] + box[4])/2 - fonts.roboto:getHeight()/2 )
+      lg.print(ally, x + w*(box[1] + box[3])/2 - fonts.krones:getWidth(ally)/2, ymin + h*(box[2] + box[4])/2 - fonts.krones:getHeight()/2 )
     end
   elseif self.mapDownload and self.mapDownload.error then
     lg.setColor(colors.text)
@@ -508,22 +535,22 @@ function Battle:drawMap()
   end
   lg.setColor(colors.text)
   lg.setFont(fonts.latoboldbig)
-  lg.printf(self.mapName, self.midpoint + 5, 15 + fontHeight, aw, "center")
+  lg.printf(self.mapName, lobby.fixturePoint[1].x, height, aw, "center")
   Battle.pickMap:setPosition(x, ymin):setDimensions(w, h)
   return h
 end
 
 function Battle:drawModOptions(h)
   local fontHeight = fonts.roboto:getHeight()
-  local x = self.midpoint + 20
-  local ymin = 20 + 3*fontHeight + (h or 1024/8)
-  local ymax = lobby.fixturePoint[2].y - fontHeight - 60
+  local x = lobby.fixturePoint[1].x + 10
+  local ymin = 10 + 3*fontHeight + (h or 1024/8)
+  local ymax = lobby.fixturePoint[2].y - fontHeight - 70
   local y = ymin - self.modoptionsScrollBar:getOffset()
-  local font = fonts.latobold
+  local font = fonts.freesansbold12
   if love.graphics:getWidth() > 1200 then
-    font = fonts.latobig
+    font = fonts.freesansbold14
   elseif love.graphics:getWidth() > 800 then
-    font = fonts.latoboldmedium
+    font = fonts.freesansbold16
   end
   lg.setFont(font)
   fontHeight = font:getHeight()
@@ -558,49 +585,47 @@ end
 
 function Battle:drawPlayers()
   local y = 42 --+ self.userListScrollOffset
-  lg.translate(lobby.fixturePoint[1].x + 25, 40)
-  local xmax = self.midpoint - (lobby.fixturePoint[1].x + 25) - fonts.latobold20:getWidth("Team 00")
+  lg.translate(25, 40)
+  local xmax = lobby.fixturePoint[1].x
   local teamNo = 0
   local drawBackRect = true
   local cy = y
   local myAllyTeam = 0
   local teamBool = (self.teamCount > 2) and not self.ffa
-  local font = fonts.latobold12
-  local padding = 0
-  if love.graphics:getWidth() > 1200 then
-    padding = 4
-    font = fonts.latobold14
-  elseif love.graphics:getWidth() > 800 then
-    padding = 2
-    font = fonts.latobold16
+  local font = fonts.freesansbold12
+  if lg:getWidth() > 1200 then
+    font = fonts.freesansbold16
+  elseif lg:getWidth() > 800 then
+    font = fonts.freesansbold14
   end
-  local fontHeight = font:getHeight() + 2
-  lg.setFont(fonts.latobold16)
-  lg.setColor(colors.bt)
-  if not self.single then if (self.teamCount < 3) then lg.print("Duel", xmax, y) elseif self.ffa then lg.print("FFA", xmax, y) end end
+  local fontHeight = font:getHeight()
   for _, user in pairs(self.playersByTeam) do
     local username = user.name
     if username == lobby.username then
       myAllyTeam = user.allyTeamNo
     end
+    local increment = math.ceil(fontHeight/4)
     if user.allyTeamNo > teamNo then
       if teamNo > 0 then
-        lg.line(0, y + fontHeight/4, xmax - 40, y + fontHeight/4)
-        y = y + fontHeight/2
+        if self.ffa then
+          lg.line(0, y, xmax - 40, y)
+        else 
+          lg.line(0, y + increment, xmax - 40, y + increment)
+          y = y + increment + increment
+        end
       end
-      lg.setFont(fonts.latobold19)
-      lg.setColor(colors.text)
+      lg.setFont(fonts.latobold19) lg.setColor(colors.text)
       teamNo = user.allyTeamNo
       if teamBool then lg.print(teamNo, -14, y -4) end
       cy = y
     end
     if user.battleStatus then
       if drawBackRect then
-        lg.setColor(colors.bb)
-        lg.rectangle("fill", 0, y - padding, xmax - 40, fontHeight + 2*padding)
+        lg.setColor(colors.brb)
+        lg.rectangle("fill", 0, y, xmax - 40, fontHeight)
       end
       drawBackRect = not drawBackRect
-      draw.readyButton[user.ready](xmax - 50, y + 8 + padding)
+      draw.readyButton[user.ready](xmax - 50, y + 8)
       lg.setColor(1,1,1)
       lg.draw(user.flag, 43, 3 + y)
       lg.draw(user.insignia, 61, y, 0, 1/2)
@@ -619,27 +644,24 @@ function Battle:drawPlayers()
       if self.game.players[username:lower()] and self.game.players[username:lower()].skill then
         lg.print(string.match(self.game.players[username:lower()].skill, "%d+"), xmax - 80, y)
       end
-      y = y + fontHeight + padding
+      y = y + fontHeight
     end
   end
   return y
 end
 
 function Battle:drawSpectators(y)
-  local xmax = self.midpoint - (lobby.fixturePoint[1].x + 25) - fonts.latobold20:getWidth("Team 00")
-  local font = fonts.latobold12
-  local padding = 0
+  local xmax = lobby.fixturePoint[1].x
+  local font = fonts.freesansbold12
   if love.graphics:getWidth() > 1200 then
-    padding = 4
-    font = fonts.latobold14
+    font = fonts.freesansbold16
   elseif love.graphics:getWidth() > 800 then
-    padding = 2
-    font = fonts.latobold16
+    font = fonts.freesansbold14
   end
-  local fontHeight = font:getHeight() + 2
+  local fontHeight = font:getHeight()
   local drawBackRect = true
-  self.spectatorsScrollBar:getZone():setPosition(lobby.fixturePoint[1].x + 25, y)
-  self.spectatorsScrollBar:getZone():setDimensions(self.midpoint - lobby.fixturePoint[1].x + 25, lobby.fixturePoint[2].y - y)
+  self.spectatorsScrollBar:getZone():setPosition(25, y)
+  self.spectatorsScrollBar:getZone():setDimensions(lobby.fixturePoint[1].x + 25, lobby.fixturePoint[2].y - y)
   local ymin = math.max(8*fontHeight, y + 6)
   self.spectatorsScrollBar:setPosition(xmax - 20, ymin + 3*fontHeight/2)
   local ymax = lobby.fixturePoint[1].y
@@ -654,11 +676,11 @@ function Battle:drawSpectators(y)
       if y >= ymin + fontHeight and y <= ymax - 60 then
         c = c + 1
         if drawBackRect then
-          lg.setColor(colors.bb)
+          lg.setColor(colors.brb)
           lg.rectangle("fill", 0, y, xmax - 40, fontHeight)
         end
         drawBackRect = not drawBackRect
-        draw.specButton(xmax - 50, 7 + y + padding)
+        --draw.specButton(xmax - 50, 7 + y)
         lg.setColor(1,1,1)
         lg.draw(user.flag, 23, 3 + y)
         lg.draw(user.insignia, 41, y, 0, 1/2)
@@ -675,7 +697,7 @@ function Battle:drawSpectators(y)
   end
   if c > 0 then
     lg.setColor(colors.text)
-    lg.setFont(fonts.latobold15)
+    lg.setFont(fonts.latobold14)
     if not self.single then lg.print("Spectators", 0, ymin) end
     self.spectatorsScrollBar:setLength(ymax - ymin - 70):setOffsetMax(math.max(0, t - c) * fontHeight):setScrollSpeed(fontHeight):draw()
   end

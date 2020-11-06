@@ -1,5 +1,6 @@
 local bit = require("bit")
 local lw = love.window
+local lf = love.filesystem
 
 local function ACCEPTED(words, sentences)
   lobby.username = login.nameBox.text
@@ -42,7 +43,7 @@ local function ADDUSER(words, sentences)
   if existing_user then
     local chan = existing_user.channel 
     if chan then
-      table.insert(chan.lines, {time = os.date("%X"), msg = user.name .. " is now online."})
+      --table.insert(chan.lines, {time = os.date("%X"), msg = user.name .. " is now online."})
     end
     return
   end
@@ -252,10 +253,12 @@ local function ENDOFCHANNELS(words, sentences)
   lw.showMessageBox("Channel List", text, "info" )]]
 end
 local function FAILED(words, sentences)
+  lw.showMessageBox("FAILED", "REASON: " .. string.gsub(sentences[1], "%S+ ", "", 1), "info" )
 end
 local function FORCEQUITBATTLE(words, sentences)
   local battle = Battle:getActive()
   if battle then battle:leave() end
+  lobby.state = "landing"
   lw.showMessageBox("For your information", "You were kicked from the battle!", "info" )
 end
 local function HOSTPORT(words, sentences)
@@ -275,11 +278,12 @@ local function JOIN(words, sentences)
   if not Channel.s[chan] then
     Channel:new({title = chan, isChannel = true})
     if lobby.channel_topics[chan] then
-      table.insert(Channel.s[chan].lines, lobby.channel_topics[chan])
+      --table.insert(Channel.s[chan].lines, lobby.channel_topics[chan])
     end
     if chan == "main" then
       for i = 1, #lobby.MOTD do
-        table.insert(Channel.s[chan].lines, lobby.MOTD[i])
+        Channel.onMessage(lobby.MOTD[i].msg .. " **" .. "\n", chan, "", false, true)
+        --table.insert(Channel.s[chan].lines, lobby.MOTD[i])
       end
     end
   end
@@ -291,7 +295,7 @@ local function JOINBATTLE(words, sentences)
   local channel = words[3]
   Battle.active = Battle.s[id]
   if not Battle.active.channel then
-    Battle.active.channel = BattleChannel:new({title = "Battle_" .. id})
+    Battle.active.channel = Channel:new({title = "Battle_" .. id})
   else
     Battle.active.channel.display = true
   end
@@ -301,7 +305,7 @@ local function JOINBATTLE(words, sentences)
   Battle.enter(true)
 end
 local function JOINBATTLEFAILED(words, sentences)
-  Channel:broadcast("REQUEST TO JOIN BATTLE FAILED, REASON: " .. string.gsub(sentences[1], "%S+ ", "", 1))
+  --Channel:broadcast("REQUEST TO JOIN BATTLE FAILED, REASON: " .. string.gsub(sentences[1], "%S+ ", "", 1))
   --lw.showMessageBox("REQUEST TO JOIN BATTLE FAILED", "REASON: " .. string.gsub(sentences[1], "%S+ ", "", 1), "info" )
 end
 local function JOINBATTLEREQUEST(words, sentences)
@@ -323,7 +327,7 @@ local function JOINEDBATTLE(words, sentences)
   local battle = Battle:getActive()
   if battle and battleid == battle.id then
     local chan = battle:getChannel()
-    table.insert(chan.lines, {time = os.date("%X"), green = true, msg = user .." has joined the battle."})
+    --table.insert(chan.lines, {time = os.date("%X"), green = true, msg = user .." has joined the battle."})
     Battle.render()
   end
   
@@ -332,7 +336,7 @@ end
 local function JOINEDFROM(words, sentences)
 end
 local function JOINFAILED(words, sentences)
-  table.insert(Channel.s[words[1]].lines, {msg = "Failure to join channel, reason: " .. words[2]})
+  --table.insert(Channel.s[words[1]].lines, {msg = "Failure to join channel, reason: " .. words[2]})
 end
 local function JSON(words, sentences)
 end
@@ -358,7 +362,7 @@ local function LEFTBATTLE(words, sentences)
   local battle = Battle:getActive()
   if battle and battleid == battle.id then
     local chan = battle:getChannel()
-    table.insert(chan.lines, {time = os.date("%X"), green = true, msg = user .." has left the battle."})
+    --table.insert(chan.lines, {time = os.date("%X"), green = true, msg = user .." has left the battle."})
     Battle.render()
   end
 
@@ -376,7 +380,8 @@ local function LOGININFOEND(words, sentences)
   lobby.render.userlist()
 end
 local function MOTD(words, sentences)
-  table.insert(lobby.MOTD, {time = os.date("%X"), user = "", ex = true, msg = " " .. string.gsub(sentences[1], "%u+ ", "", 1) .. " **" .. "\n"})
+  --Channel.onMessage(" " .. string.gsub(sentences[1], "%u+ ", "", 1) .. " **" .. "\n", "main", "", false, true)
+  table.insert(lobby.MOTD, {time = os.date("%X"), user = "", ex = true, msg = string.gsub(sentences[1], "%u+ ", "", 1)})
 end
 local function OK(words, sentences)
   local k, v = words[1]:match("(.+)=(.+)")
@@ -437,7 +442,7 @@ local function REMOVEUSER(words, sentences)
 end
 local function REQUESTBATTLESTATUS(words, sentences)
   User.s[lobby.username].ready = false
-  User.s[lobby.username].spectator = true
+  User.s[lobby.username].spectator = false
   lobby.sendMyBattleStatus()
 end
 local function RESENDVERIFICATIONACCEPTED(words, sentences)
@@ -455,157 +460,115 @@ end
 local function RING(words, sentences)
   sound["ring"]:play()
 end
-local function mentioned(text, channel)
-  channel.newMessage = true
-  if string.find(text, lobby.username) then
-    if not channel:isActive() then
-      sound["ding"]:play()
-    end
-    if not lw.isOpen() then
-      lw.requestAttention( )
-      sound["ding"]:play()
-    end
-    return true
-  end
-  return false
-end
-local profanity = {
-  "[c]+[u]+[n]+t",
-  "[f]+[u]+[c]+[k]+",
-  "[s]+[h]+[i]+[t]+",
-  "b[a]+[s]+[t]+ard",
-  "[b]+[i]+t[c]+h",
-  "[n]+[i]+[g]+g[e]+[r]+",
-  "[r]+[e]+[t]+[a]+[r]+[d]+"
-}
-local function profanity_filter(text) --because we love f'ing swearing
-  for i = 1, #profanity do
-    text = string.gsub(text, profanity[i], "****")
-  end
-  return text
-end
 local function SAID(words, sentences, data)
-  local chan = words[1]
-  local user = words[2]
+  local channelname = words[1]
+  local username = words[2]
   local text = string.gsub(sentences[1], "%S+", "", 3) .. "\n"
   
-  local mention = mentioned(text, Channel.s[chan])
-  for link in text:gmatch("http[s]*://%S+") do
+  --[[for link in text:gmatch("http[s]*://%S+") do
     local links = links or {}
     local i, j = string.find(text, link)
     table.insert(links, {link = link, i = i, j = j})
-  end
+  end]]
   
-  if settings.profanity_filter then text = profanity_filter(text) end
-  
-  table.insert(Channel.s[chan].lines, {time = os.date("%X"), links = links, mention = mention, user = user, msg = text})
+  Channel.onMessage(text, channelname, username, false, false)
+  --table.insert(Channel.s[chan].lines, {time = os.date("%X"), links = links, mention = mention, user = user, msg = text})
   lobby.render.foreground()
-  love.filesystem.write( "chatlogs/" .. chan .. ".txt", user .. ": " .. text )
+  lf.write( "chatlogs/" .. channelname .. ".txt", username .. ": " .. text )
 end
 local function SAIDBATTLE(words, sentences)
-  local user = words[1]
+  local username = words[1]
   local text = string.gsub(sentences[1], "%S+", "", 2) .. "\n"
   local battle = Battle:getActiveBattle()
   local founder = battle.founder
-  local chan = battle:getChannel()
-  local mention = mentioned(text, chan)
+  local channel = battle:getChannel()
   local ingame = false
   
-  if settings.profanity_filter then text = profanity_filter(text) end
-  
-  if user == founder.name and not battle.isMyBattle then
+  if username == founder.name and not battle.isMyBattle then
     ingame = true
-    user = "INGAME"
+    username = "INGAME"
   end
-  table.insert(chan.lines, {time = os.date("%X"), ingame = ingame, mention = mention, user = user, msg = text})
+  Channel.onMessage(text, battle.channel.title, username, true, false)
+  --table.insert(chan.lines, {time = os.date("%X"), ingame = ingame, mention = mention, user = user, msg = text})
   lobby.render.foreground()
 end
 local function SAIDBATTLEEX(words, sentences)
-  local user = words[1]
+  local username = words[1]
   local text = string.gsub(sentences[1], "%S+", "", 2) .. "\n"
   local battle = Battle:getActiveBattle()
   local founder = battle.founder
-  local mention = mentioned(text, battle:getChannel())
   
-  if settings.profanity_filter then text = profanity_filter(text) end
+  Channel.onMessage(text, battle.channel.title, username, true, true)
   
-  if user == founder.name then
-    table.insert(battle:getChannel().infolines, {time = os.date("%X"), ex = true, user = user, msg = text})
-    if string.find(text, "called a vote") then
-      table.insert(battle:getChannel().lines, {time = os.date("%X"), mention = mention, ex = true, user = user, msg = text})
-    end
+  if username == founder.name then
+    --table.insert(battle:getChannel().infolines, {time = os.date("%X"), ex = true, user = user, msg = text})
   else
-    table.insert(battle:getChannel().lines, {time = os.date("%X"), mention = mention, ex = true, user = user, msg = text})
+    --table.insert(battle:getChannel().lines, {time = os.date("%X"), mention = mention, ex = true, user = user, msg = text})
   end
   lobby.render.foreground()
 end
 local function SAIDEX(words, sentences)
-  local chan = words[1]
-  local user = words[2]
+  local channelname = words[1]
+  local username = words[2]
   local text = string.gsub(sentences[1], "%S+", "", 3) .. "\n"
-  
-  if settings.profanity_filter then text = profanity_filter(text) end
-  
-  local mention = mentioned(text, Channel.s[chan])
-  for link in text:gmatch("http[s]*://%S+") do
+
+  --[[for link in text:gmatch("http[s]*://%S+") do
     local links = links or {}
     local i, j = string.find(text, link)
     table.insert(links, {link = link, i = i, j = j})
-  end
+  end]]
   
-  table.insert(Channel.s[chan].lines, {time = os.date("%X"), links = links, mention = mention, ex = true, user = user, msg = text})
+  Channel.onMessage(text, channelname, username, false, true)
+  --table.insert(Channel.s[chan].lines, {time = os.date("%X"), links = links, mention = mention, ex = true, user = user, msg = text})
   lobby.render.foreground()
-  love.filesystem.write( "chatlogs/" .. chan .. ".txt", user .. ": " .. text )
+  lf.write( "chatlogs/" .. channelname .. ".txt", username .. ": " .. text )
 end
 local function SAIDFROM(words, sentences)
 end
 local function SAIDPRIVATE(words, sentences)
-  local user = words[1]
+  local username = words[1]
   local text = string.gsub(sentences[1], "%S+", "", 2) .. "\n"
-  if not Channel.s[user] then
-    User.s[user]:openChannel()
+  if not Channel.s[username] then
+    User.s[username]:openChannel()
   end
+
+  Channel.onMessage(text, username, username, false, false)
   
-  if settings.profanity_filter then text = profanity_filter(text) end
-  
-  mentioned(lobby.username, Channel.s[user])
-  table.insert(Channel.s[user].lines, {time = os.date("%X"), user = user, msg = text})
+  --table.insert(Channel.s[user].lines, {time = os.date("%X"), user = user, msg = text})
   lobby.render.foreground()
-  love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
+  lf.write( "chatlogs/" .. username .. ".txt", username .. ": " .. text )
 end
 local function SAIDPRIVATEEX(words, sentences)
-  local user = words[1]
+  local username = words[1]
   local text = string.gsub(sentences[1], "%S+", "", 2) .. "\n"
   if not Channel.s[user] then
     User.s[user]:openChannel()
   end
   
-  if settings.profanity_filter then text = profanity_filter(text) end
+  Channel.onMessage(text, username, username, false, false)
   
-  mentioned(lobby.username, Channel.s[user])
-  table.insert(Channel.s[user].lines, {time = os.date("%X"), ex = true, user = user, msg = text})
+  --table.insert(Channel.s[user].lines, {time = os.date("%X"), ex = true, user = user, msg = text})
   lobby.render.foreground()
-  love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
+  lf.write( "chatlogs/" .. username .. ".txt", username .. ": " .. text )
 end
 local function SAYPRIVATE(words, sentences)
-  local user = words[1]
+  local username = words[1]
   local text = string.gsub(sentences[1], "%S+", "", 2) .. "\n"
   
-  if settings.profanity_filter then text = profanity_filter(text) end
-  
-  table.insert(Channel.s[user].lines, {time = os.date("%X"), user = lobby.username, msg = text})
+  Channel.onMessage(text, username, username, false, false)
+  --table.insert(Channel.s[user].lines, {time = os.date("%X"), user = lobby.username, msg = text})
   lobby.render.foreground()
-  love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
+  lf.write( "chatlogs/" .. username .. ".txt", username .. ": " .. text )
 end
 local function SAYPRIVATEEX(words, sentences)
-  local user = words[1]
+  local username = words[1]
   local text = string.gsub(sentences[1], "%S+", "", 2) .. "\n"
   
-  if settings.profanity_filter then text = profanity_filter(text) end
+  Channel.onMessage(text, username, username, false, true)
   
-  table.insert(Channel.s[user].lines, {time = os.date("%X"), ex = true, user = lobby.username, msg = text})
+  --table.insert(Channel.s[user].lines, {time = os.date("%X"), ex = true, user = lobby.username, msg = text})
   lobby.render.foreground()
-  love.filesystem.write( "chatlogs/" .. user .. ".txt", user .. ": " .. text )
+  lf.write( "chatlogs/" .. username .. ".txt", username .. ": " .. text )
 end
 local function SERVERMSG(words, sentences)
 end

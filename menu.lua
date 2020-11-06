@@ -223,7 +223,7 @@ function Button:new()
   o.clickSound = "click"
   o.colors = {
     background = colors.bb,
-    highlight = colors.bt,
+    highlight = colors.bbh,
     text = colors.text
   }
   
@@ -312,7 +312,7 @@ function ImageButton:setImage(img)
 end
 
 function ImageButton:draw()
-  if self.highlight then lg.setColor(0.5, 0.5, 0.5) end
+  --if self.highlight then lg.setColor(0.5, 0.5, 0.5) end
   lg.draw(self.image, self.x, self.y)
 end
   
@@ -329,7 +329,7 @@ function Checkbox:new()
   o.ticked = false
   o.color = {
     back = colors.bb,
-    highlight = colors.bt,
+    highlight = colors.bbh,
     outline = colors.bt,
     inside = colors.bt
   }
@@ -442,6 +442,13 @@ function ChannelTab:draw()
     lg.setFont(fonts.latochantabbold)
     lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
     --lg.printf(, self.x, self.y + self.h/2 + h - fonts.latochantabbold:getHeight()/2, self.w, "center")
+  elseif self.highlighted then
+    lg.setFont(fonts.latochantab)
+    lg.setColor(colors.bbh)
+    lg.rectangle("fill", self.x, self.y, self.w, self.h + h)
+    lg.setColor(colors.text)
+    lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
+    --lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latochantab:getHeight()/2, self.w, "center")
   elseif channel.newMessage then
     --h = 3
     lg.setFont(fonts.latochantabbold)
@@ -450,13 +457,6 @@ function ChannelTab:draw()
     lg.setColor(colors.textblue)
     lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
     --lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latochantabbold:getHeight()/2, self.w, "center")
-  elseif self.highlighted then
-    lg.setFont(fonts.latochantab)
-    lg.setColor(colors.bt)
-    lg.rectangle("fill", self.x, self.y, self.w, self.h + h)
-    lg.setColor(colors.text)
-    lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
-    --lg.printf(text, self.x, self.y + self.h/2 + h - fonts.latochantab:getHeight()/2, self.w, "center")
   else
     lg.setFont(fonts.latochantab)
     lg.setColor(colors.bbb)

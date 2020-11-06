@@ -7,7 +7,7 @@ Channel.x = 0
 Channel.y = 0
 Channel.w = 10
 Channel.h = 10
-Channel.scrollBar = ScrollBar:new():setScrollBarLength(-20):setScrollSpeed(fonts.latobold12:getHeight())
+Channel.scrollBar = ScrollBar:new():setScrollBarLength(-20):setScrollSpeed(fonts.freesansbold12:getHeight())
 Channel.textbox = Textbox:new()
 
 lobby.channels = {}
@@ -21,7 +21,69 @@ Channel.addButton = Button:new():setFunction(
   end)
 Channel.addButton.colors.background = colors.bbb
 lobby.clickables[Channel.addButton] = true
+
+local lw = love.window
+local function mentioned(text, channel)
+  if channel then channel.newMessage = true end
+  if string.find(text, lobby.username) then
+    if not channel:isActive() then
+      sound["ding"]:play()
+    end
+    if not lw.isOpen() then
+      lw.requestAttention( )
+      sound["ding"]:play()
+    end
+    return true
+  end
+  return false
+end
+
+local profanity = {
+  "[c]+[u]+[n]+t",
+  "[f]+[u]+[c]+[k]+",
+  "[s]+[h]+[i]+[t]+",
+  "b[a]+[s]+[t]+ard",
+  "[b]+[i]+t[c]+h",
+  "[n]+[i]+[g]+g[e]+[r]+",
+  "[r]+[e]+[t]+[a]+[r]+[d]+"
+}
+
+local function profanity_filter(text) --because we love f'ing swearing
+  for i = 1, #profanity do
+    text = string.gsub(text, profanity[i], "****")
+  end
+  return text
+end
+
+local formatTab = {
+    ["user"] = "[%s] <%s> %s",
+    ["mention"] = "[%s] <%s> %s",
+    ["ingame"] = "[%s] [%s] %s",
+    ["ex"] = "[%s] *%s* %s",
+    ["system"] = "[%s] %s",
+    ["green"] = "[%s] <%s> %s"
+  }
+
+function Channel.onMessage(text, channelname, username, battle, ex)
+  if settings.profanity_filter then text = profanity_filter(text) end
+  local channel = battle and Battle:getActive().channel or Channel.s[channelname or username]
+  local mention = mentioned(text, channel)
+  local drawType = username and
+                (ex and "ex"
+                or mention and
+                "mention" or "user")
+                or "system"
+                
+  local formatStr = formatTab[drawType]
   
+  if drawType == "system" then
+    table.insert(channel.lines, formatStr:format(os.date("%X"), text))
+  else
+    table.insert(channel.lines, formatStr:format(os.date("%X"), username, text))
+  end
+  table.insert(channel.line_types, drawType)
+end
+
 function Channel:new(o, bool)
   o = o or {}
   setmetatable(o, Channel.mt)
@@ -38,8 +100,9 @@ function Channel:new(o, bool)
   o.tab.parent = o
   o.tab:setText(title):setFont(fonts.latochantab)
   
-  o.font = fonts.latobold12
+  o.font = fonts.freesansbold12
   o.lines = {}
+  o.line_types = {}
   o.users = {} 
   o.sents = {}
   o.display = true
@@ -50,12 +113,12 @@ function Channel:new(o, bool)
 end
 
 ServerChannel = Channel:new({title = "server", isServer = true})
-BattleChannel = Channel:new({title = "battle", isBattle = true}, true)
-BattleChannel.mt = {__index = BattleChannel}
+--BattleChannel = Channel:new({title = "battle", isBattle = true}, true)
+--BattleChannel.mt = {__index = BattleChannel}
 lobby.serverChannel = Channel.s["server"]
 Channel.active = lobby.serverChannel
 
-function BattleChannel:new(o)
+--[[function BattleChannel:new(o)
   o = Channel:new(o)
   o.isBattle = true
   o.tab:setText("Battle")
@@ -63,7 +126,7 @@ function BattleChannel:new(o)
   o.infoBoxScrollBar = ScrollBar:new():setScrollBarLength(-20):setScrollSpeed(o.font:getHeight())
   setmetatable(o, BattleChannel.mt)
   return o
-end
+end]]
 
 function Channel:broadcast(msg)
   for i, k in pairs(self.s) do
@@ -116,12 +179,12 @@ local channel_dimensions = {
       w = lobby.width - 10,
       h = lobby.height - lobby.fixturePoint[2].y - 1} end,
   ["battle"] = function() return {
-      x = lobby.fixturePoint[1].x + 5,
+      x = 5,
       y = lobby.fixturePoint[1].y,
-      w = lobby.width - lobby.fixturePoint[1].x - 10,
+      w = lobby.width - 10,
       h = lobby.height - lobby.fixturePoint[2].y - 1} end,
   ["replays"] = function() return {
-      x = lobby.fixturePoint[1].x + 5,
+      x = 5,
       y = lobby.fixturePoint[1].y,
       w = lobby.width - 10,
       h = lobby.height - lobby.fixturePoint[2].y - 1} end,
@@ -135,7 +198,7 @@ function Channel.refresh()
   Channel.y = channel_dimensions[lobby.state]().y
   Channel.w = channel_dimensions[lobby.state]().w
   Channel.h = channel_dimensions[lobby.state]().h
-  Channel.textbox:setPosition(Channel.x + 1, Channel.y + Channel.h - 21):setDimensions(Channel.w - 2, 20)
+  Channel.textbox:setPosition(Channel.x + 1, Channel.y + Channel.h - 36):setDimensions(Channel.w - 2, 35)
   Channel:refreshTabs()
 end
 
@@ -166,12 +229,12 @@ function Channel:getText()
 end
 
 local drawFunc = {
-  ["user"] = function(u, t) return  "<" .. u .. ">" .. t  end,
-  ["mention"] = function(u, t) lg.setColor(1,0,0) return  "<" .. u .. ">" .. t  end,
-  ["ingame"] = function(u, t) lg.setColor(colors.mo) return  "[" .. u .. "]" .. t end,
-  ["ex"] = function(u, t) lg.setColor(colors.green) return  "*" .. u .. "*" .. t  end,
-  ["system"] = function(u, t) lg.setColor(1,0,0) return  "::: ".. t .. " :::" end,
-  ["green"] = function(u, t) lg.setColor(colors.textblue) return "*" .. t .. "*" end
+  ["user"] = function(l) return l end,
+  ["mention"] = function(l) lg.setColor(1,0,0) return  l  end,
+  ["ingame"] = function(l) lg.setColor(colors.mo) return l end,
+  ["ex"] = function(l) lg.setColor(colors.green) return l end,
+  ["system"] = function(l) lg.setColor(249/255, 54/255, 38/255) return  "::: ".. l .. " :::" end,
+  ["green"] = function(l) lg.setColor(colors.textblue) return l end
 }
 
 local function sbOffsetMax(n, h, fh)
@@ -192,7 +255,7 @@ function Channel:render()
 
   lg.setColor(colors.text)
   local i = #self.lines
-  local y = 20 - self.scrollBar:getOffset()
+  local y = 35 - self.scrollBar:getOffset()
   while i > 0 do
     while y < 20 do
       y = y + fontHeight
@@ -200,13 +263,9 @@ function Channel:render()
     end
     if i < 1 then return end
     local line = self.lines[i]
-    local drawType = line.user and
-                    (line.ex and "ex"
-                    or line.mention and
-                    "mention" or "user")
-                    or "system"
-    local align = line.user and "left" or "center"
-    local text = "[" .. line.time .. "] " .. drawFunc[drawType](line.user, line.msg)
+    local drawType = self.line_types[i]
+    local align = "left" --line.user and "left" or "center"
+    local text = drawFunc[drawType](line)
     local w, wt = self.font:getWrap(text, self.w - 5)
     local j = #wt
     repeat
@@ -253,7 +312,7 @@ function ServerChannel:render()
   lg.setColor(1,1,1)
 end
 
-function BattleChannel:render()
+--[[function BattleChannel:render()
   local battle = Battle:getActiveBattle()
   lg.setFont(self.font)
   local fontHeight = self.font:getHeight()
@@ -324,7 +383,7 @@ function BattleChannel:render()
     local text = drawFunc[drawType](line.user, line.msg)
     local ttext = "[" .. line.time .. "] "
     local ttextw = self.font:getWidth(ttext)
-    local align = line.user and "left" or "center"
+    local align = "left" --line.user and "left" or "center"
     local _, wt = self.font:getWrap(text, w - 10 - ttextw)
     local j = #wt
     repeat
@@ -340,7 +399,7 @@ function BattleChannel:render()
   --
   
   lg.setColor(1,1,1)
-end
+end]]
 
 --[[for link in wt[j]:gmatch("http[s]*://%S+") do
   local si = string.find(wt[j], link)

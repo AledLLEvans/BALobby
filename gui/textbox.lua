@@ -13,7 +13,7 @@ function Textbox:new(box)
   box.w = box.w or 0
   box.h = box.h or 0
   box.colors = {
-    background = {9/255, 10/255, 15/255},
+    background = {8/255, 9/255, 12/255},
     outline = false, --{112/255, 112/255, 112/255, 255/255},
     text = colors.text
   }
@@ -24,7 +24,7 @@ function Textbox:new(box)
   box.timer = 0
   box.line = false
   box.charoffset = 0
-  box.font = fonts.latobold
+  box.font = fonts.freesansbold12
   
   setmetatable(box, Textbox.mt)
   
@@ -223,11 +223,12 @@ end
 
 function Textbox:renderText()
   lg.setFont(self.font)
+  local fh = self.font:getHeight()
   local text = self.displaytext
   if self.line and self:isActive() then text = self.displaytextbar end
   lg.setColor(self.colors.text)
   lg.printf(text,
-            self.x + 2, self.y,
+            self.x + 5, self.y + (self.h - fh)/2 - 2,
             self.w, 'left')
   lg.setColor(1,1,1)
 end
@@ -238,3 +239,5 @@ function Textbox:clearText()
   self.displaytextbar = "|"
   self.charoffset = 0
 end
+
+return Textbox
