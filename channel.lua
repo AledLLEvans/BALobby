@@ -98,7 +98,11 @@ function Channel:new(o, bool)
   o.tab.textWidth = fonts.latochantab:getWidth(title)
   o.tab.w = fonts.latochantab:getWidth(title)
   o.tab.parent = o
-  o.tab:setText(title):setFont(fonts.latochantab)
+  if o.isBattle then
+    o.tab:setText("Battle"):setFont(fonts.latochantab)
+  else
+    o.tab:setText(title):setFont(fonts.latochantab)
+  end
   
   o.font = fonts.freesansbold12
   o.lines = {}
@@ -198,7 +202,7 @@ function Channel.refresh()
   Channel.y = channel_dimensions[lobby.state]().y
   Channel.w = channel_dimensions[lobby.state]().w
   Channel.h = channel_dimensions[lobby.state]().h
-  Channel.textbox:setPosition(Channel.x + 1, Channel.y + Channel.h - 36):setDimensions(Channel.w - 2, 35)
+  Channel.textbox:setPosition(Channel.x + 1, Channel.y + Channel.h - 29):setDimensions(Channel.w - 2, 28)
   Channel:refreshTabs()
 end
 
@@ -255,7 +259,7 @@ function Channel:render()
 
   lg.setColor(colors.text)
   local i = #self.lines
-  local y = 35 - self.scrollBar:getOffset()
+  local y = 28 - self.scrollBar:getOffset()
   while i > 0 do
     while y < 20 do
       y = y + fontHeight
@@ -290,7 +294,7 @@ function ServerChannel:render()
 
   lg.setColor(colors.text)
   local i = #self.lines 
-  local y = 20 - self.scrollBar:getOffset()
+  local y = 28 - self.scrollBar:getOffset()
   while i > 0 do
     while y < 20 do
       y = y + fontHeight

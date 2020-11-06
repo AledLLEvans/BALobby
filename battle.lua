@@ -4,6 +4,7 @@ local lg = love.graphics
 local lfs = love.filesystem
 local nfs = require("lib/nativefs")
 local spring = require "spring"
+local lm = love.mouse
 
 Battle.s = {}
 
@@ -24,39 +25,42 @@ function Battle.initialize()
   Battle.canvas = lg.newCanvas(lobby.width, lobby.height)
   Battle.buttons = {
       ["map"] = ImageButton:new()
-        :resetPosition(function() return lobby.fixturePoint[2].x - 45, lobby.fixturePoint[2].y - 300 end)
+        :resetPosition(function() return lobby.fixturePoint[2].x - 45, 60 end)
         :setDimensions(40, 35)
-        :setImage(img.magnifier)
-        :onClick(function() Battle.addbot() end),
+        :setImage(img.map):setHighlightColor(colors.textblue)
+        :onClick(function() Battle.pickmap() end),
       ["addbot"] = ImageButton:new()
-        :resetPosition(function() return lobby.fixturePoint[2].x - 45, lobby.fixturePoint[2].y - 260 end)
+        :resetPosition(function() return lobby.fixturePoint[2].x - 45, 100 end)
         :setDimensions(40, 35)
-        :setImage(img.bot)
+        :setImage(img.bot):setHighlightColor(colors.textblue)
         :onClick(function() Battle.addbot() end),
       ["info"] = ImageButton:new()
-        :resetPosition(function() return lobby.fixturePoint[2].x - 45, lobby.fixturePoint[2].y - 220 end)
+        :resetPosition(function() return lobby.fixturePoint[2].x - 45, 140 end)
         :setDimensions(40, 35)
-        :setImage(img.gear)
-        :onClick(function() Battle.addbot() end),
+        :setImage(img.gear):setHighlightColor(colors.textblue)
+        :onClick(function() Battle.info() end),
       ["ally"] = BattleButton:new()
         :resetPosition(function() return lobby.fixturePoint[1].x + 10, lobby.fixturePoint[2].y - 75 end)
-        :setDimensions(40, 35)
-        :setText("Ally")
-        :onClick(function() Battle.ally() end),
+        :setDimensions(45, 25)
+        :setText("Ally"):setFont(fonts.latobold12)
+        :onPreClick(function() Battle.ally:on() end)
+        :setRoundedCorners(10),
       ["team"] = BattleButton:new()
-        :resetPosition(function() return lobby.fixturePoint[1].x + 90, lobby.fixturePoint[2].y - 75 end)
-        :setDimensions(40, 35)
-        :setText("Team")
-        :onClick(function() Battle.team() end),
+        :resetPosition(function() return lobby.fixturePoint[1].x + 80, lobby.fixturePoint[2].y - 75 end)
+        :setDimensions(50, 25)
+        :setText("Team"):setFont(fonts.latobold12)
+        :onClick(function() Battle.team() end)
+        :setRoundedCorners(10),
       ["faction"] = BattleButton:new()
-        :resetPosition(function() return lobby.fixturePoint[1].x + 155, lobby.fixturePoint[2].y - 75 end)
-        :setDimensions(60, 35)
-        :setText("Faction")
-        :onClick(function() Battle.faction() end),
+        :resetPosition(function() return lobby.fixturePoint[1].x + 150, lobby.fixturePoint[2].y - 75 end)
+        :setDimensions(70, 25)
+        :setText("Faction"):setFont(fonts.latobold12)
+        :onClick(function() Battle.faction() end)
+        :setRoundedCorners(6),
       ["colour"] = BattleButton:new()
-        :resetPosition(function() return  lobby.fixturePoint[1].x + 240, lobby.fixturePoint[2].y - 75 end)
-        :setDimensions(60, 35)
-        :setText("Colour")
+        :resetPosition(function() return  lobby.fixturePoint[1].x + 230, lobby.fixturePoint[2].y - 72 end)
+        :setDimensions(60, 20)
+        :setText("Colour"):setFont(fonts.latobold12)
         :onClick(function() Battle.faction() end),
       --[[["exit"] = BattleButton:new()
         :resetPosition(function() return 3*lobby.width/4 - 255, lobby.fixturePoint[2].y - 35 end)
@@ -83,8 +87,8 @@ function Battle.initialize()
         :onClick(function() if User.s[lobby.username].spectator then lobby.launchOnGameStart = not lobby.launchOnGameStart end end),
       ["launch"] = BattleButton:new()
         :resetPosition(function() return lobby.fixturePoint[1].x + 250, lobby.fixturePoint[2].y - 38 end)
-        :setDimensions(45, 25)
-        :setText("Start")
+        :setDimensions(45, 25):setBackgroundHighlightColor(colors.readygreen):setBackgroundColor(colors.startgreen):setTextColor(colors.bbb)
+        :setText("Start"):setRoundedCorners(12)
         :onClick(function()
           local battle = Battle:getActive()
           if battle.isMyBattle or battle.founder.ingame then
@@ -130,7 +134,66 @@ function Battle.initialize()
   Battle.showMap = "minimap"
 end
 
+function Battle.pickmap()
+  
+end
+
 function Battle.addbot()
+  
+end
+
+local showModOptions = false
+function Battle.info()
+  sound.check:play()
+  showModOptions = not showModOptions
+  Battle.buttons["info"].highlight = not Battle.buttons["info"].highlight
+  Battle.render()
+end
+
+
+Battle.ally = {}
+function Battle.ally:on()
+  --lm.setVisible( false )
+  self.cd = 0
+  self.x = Battle.buttons["ally"].x + Battle.buttons["ally"].w/2
+  self.value = Battle:getActive().users[lobby.username].allyTeamNo
+  self.newvalue = self.value
+  lobby.events[self] = true
+end
+
+function Battle.ally:update(dt)
+  local msx, msy = lm.getPosition()
+  if self.cd > 0 then self.cd = self.cd - dt return end
+  if msx > self.x + 5 then
+    self.newvalue = math.min(15, self.newvalue + 1)
+    self.cd = 0.05
+  elseif msx < self.x - 5 then
+    self.newvalue = math.max(0, self.newvalue - 1)
+    self.cd = 0.05
+  end
+  lm.setPosition(math.max(math.min(msx, self.x+10), self.x-10), msy)
+  if not lm.isDown( 1 ) then self:off() end
+  Battle.render()
+end
+
+function Battle.ally:off()
+  --lm.setVisible( true )
+  lobby.events[self] = nil
+  if self.newvalue == self.value then return end
+  User.s[lobby.username].newAllyTeamNo = self.value
+  lobby.sendMyBattleStatus()
+end
+
+
+function Battle.team()
+  
+end
+
+function Battle.faction()
+  
+end
+
+function Battle.colour()
   
 end
 
@@ -153,7 +216,7 @@ function Battle:resetButtons()
   end
 end
 
-function Battle:leave()
+function Battle:leave(kicked)
   for _, button in pairs(Battle.buttons) do
     lobby.clickables[button] = false
   end
@@ -169,7 +232,7 @@ function Battle:leave()
   --[[Battle.modoptionsScrollBar = nil
   Battle.spectatorsScrollBar = nil
   Battle.mapScrollBar = nil]]
-  lobby.send("LEAVEBATTLE")
+  if not kicked then lobby.send("LEAVEBATTLE") end
   Battle.active = nil
   lobby.resize(lobby.width, lobby.height)
   canvas:pop(Battle.canvas)
@@ -307,12 +370,14 @@ end
 function lobby.sendMyBattleStatus()
   local user = User.s[lobby.username]
   --local status = user.battleStatus
-  local b = {
-    user.ready and 1 or 0,
-    user.spectator and 0 or 1,
-    user.synced and 1 or 0
-  }
-  local newstatus = b[1] * 2 + b[2] * 2 ^ 10 + 2 ^ (23 - b[3])
+  --user.ready and 1 or 0
+  --user.spectator and 0 or 1
+  --user.synced and 1 or 0
+  local newstatus = (user.ready and 1 or 0) * 2 +
+  (user.newAllyTeamNo % 2) * 2 ^ 6 + math.floor((user.newAllyTeamNo % 4)/2) * 2 ^ 7 + (math.floor((user.newAllyTeamNo % 8)/4)) * 2 ^ 8 + math.floor(user.newAllyTeamNo/8) * 2 ^ 9 + 
+  (user.spectator and 0 or 1) * 2 ^ 10 +
+  2 ^ (23 - (user.synced and 1 or 0))
+  
   local color = user.color
   lobby.send("MYBATTLESTATUS " .. newstatus .. " " .. color)
 end
@@ -384,17 +449,30 @@ local rectColors = {
 function Battle.render()
   lg.setCanvas(Battle.canvas)
   lg.clear()
-  Battle:getActive():draw()
+  if Battle:getActive() then Battle:getActive():draw() else lobby.state = "landing" end
   lg.setCanvas()
 end
     
 function Battle:draw()
   self.midpoint = math.max(280, lobby.width * 0.45)
-  lg.line(lobby.fixturePoint[1].x, 0, lobby.fixturePoint[1].x, lobby.height)
-  lg.line(self.midpoint, 0, self.midpoint, lobby.height)
-  lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.height)
+  --lg.line(lobby.fixturePoint[1].x, 0, lobby.fixturePoint[1].x, lobby.height)
+  --lg.line(self.midpoint, 0, self.midpoint, lobby.height)
+  --lg.line(lobby.fixturePoint[2].x, 0, lobby.fixturePoint[2].x, lobby.height)
+  
   --Buttons
-
+  local me = self.users[lobby.username]
+  if me and me.battleStatus then
+    if me.isSpectator then
+      Battle.buttons.ally:setText("Ally")
+      Battle.buttons.team:setText("Team")
+      Battle.buttons.faction:setText("Faction")
+    else
+      Battle.buttons.ally:setText("Ally " .. me.newAllyTeamNo + 1)
+      Battle.buttons.team:setText("Team " .. me.newTeamNo)
+      Battle.buttons.faction:setText("Faction " .. me.newSide)
+    end
+  end
+  
   for k, button in pairs(Battle.buttons) do
     button:draw()
   end
@@ -439,13 +517,14 @@ end
 function Battle:drawMap(height)
   local fontHeight = fonts.roboto:getHeight()
   local x, w, h
-  local xmin = lobby.fixturePoint[1].x
+  local xmin = lobby.fixturePoint[1].x + 10
   local xmax = lobby.fixturePoint[2].x - 50
   local ymin = 30 + 2*fontHeight
   local ymax = lobby.fixturePoint[2].y - 60 - (math.floor(lobby.height/100))*fonts.latoitalic:getHeight() - 10
+  if not showModOptions then ymax = lobby.fixturePoint[2].y - 80 end
   lg.setFont(fonts.freesansbold16)
-  lg.setColor(colors.bt)
-  if not self.single then if (self.teamCount < 3) then lg.print("Duel", xmax, 32 + fontHeight) elseif self.ffa then lg.print("FFA", xmax, 32 + fontHeight) end end
+  lg.setColor(colors.textblue)
+  if not self.single then if (self.teamCount < 3) then lg.print("Duel", xmax, 32) elseif self.ffa then lg.print("FFA", xmax, 32) else lg.print("Teams", xmax - 10, 32) end end
   lg.setColor(1,1,1)
   -- couldnt find a better way to do this
   local aw, ah = xmax - xmin, ymax - ymin
@@ -541,6 +620,7 @@ function Battle:drawMap(height)
 end
 
 function Battle:drawModOptions(h)
+  if not showModOptions then return end
   local fontHeight = fonts.roboto:getHeight()
   local x = lobby.fixturePoint[1].x + 10
   local ymin = 10 + 3*fontHeight + (h or 1024/8)
@@ -627,6 +707,7 @@ function Battle:drawPlayers()
       drawBackRect = not drawBackRect
       draw.readyButton[user.ready](xmax - 50, y + 8)
       lg.setColor(1,1,1)
+      if user.syncStatus ~= 1 then lg.draw(img.exclamation, xmax - 50, y + 8, 0, 1/2, 1/2, 16, 16) end
       lg.draw(user.flag, 43, 3 + y)
       lg.draw(user.insignia, 61, y, 0, 1/2)
       lg.setColor(user.teamColorUnpacked[1]/255, user.teamColorUnpacked[2]/255, user.teamColorUnpacked[3]/255, 0.4)
@@ -663,7 +744,7 @@ function Battle:drawSpectators(y)
   self.spectatorsScrollBar:getZone():setPosition(25, y)
   self.spectatorsScrollBar:getZone():setDimensions(lobby.fixturePoint[1].x + 25, lobby.fixturePoint[2].y - y)
   local ymin = math.max(8*fontHeight, y + 6)
-  self.spectatorsScrollBar:setPosition(xmax - 20, ymin + 3*fontHeight/2)
+  self.spectatorsScrollBar:setPosition(xmax - 30, ymin + 3*fontHeight/2)
   local ymax = lobby.fixturePoint[1].y
   y = ymin - self.spectatorsScrollBar:getOffset()
   y = y + 3*fontHeight/2
@@ -682,6 +763,7 @@ function Battle:drawSpectators(y)
         drawBackRect = not drawBackRect
         --draw.specButton(xmax - 50, 7 + y)
         lg.setColor(1,1,1)
+        if user.syncStatus ~= 1 then lg.draw(img.exclamation, xmax - 50, y + 8, 0, 1/2, 1/2, 16, 16) end
         lg.draw(user.flag, 23, 3 + y)
         lg.draw(user.insignia, 41, y, 0, 1/2)
         --local w = fonts.latosmall:getWidth(username)

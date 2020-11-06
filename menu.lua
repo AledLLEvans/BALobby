@@ -226,6 +226,7 @@ function Button:new()
     highlight = colors.bbh,
     text = colors.text
   }
+  o.r = 0
   
   --o.func = function() end
   
@@ -256,7 +257,7 @@ function Button:draw()
   else
     lg.setColor(self.colors.background)
   end
-  lg.rectangle("fill", self.x, self.y, self.w, self.h)
+  lg.rectangle("fill", self.x, self.y, self.w, self.h, self.r)
   lg.setColor(self.colors.text)
   lg.setFont(self.font)
   lg.draw(self.text, self.x, self.y + self.h/2 - self.font:getHeight()/2)
@@ -284,13 +285,37 @@ function Button:onClick(func)
   return self
 end
 
+function Button:onPreClick(func)
+  self.preClick = true
+  self.func = func
+  return self
+end
+
 function Button:setBackgroundColor(c)
   self.colors.background = c
   return self
 end
 
+function Button:setBackgroundHighlightColor(c)
+  self.colors.highlight = c
+  return self
+end
+
 function Button:setTextColor(c)
   self.colors.text = c
+  return self
+end
+
+function Button:resetPosition(f)
+  if f then
+    self.resetFunc = f
+  end
+  self:setPosition(self.resetFunc())
+  return self
+end
+
+function Button:setRoundedCorners(r)
+  self.r = r
   return self
 end
 
@@ -301,7 +326,13 @@ function ImageButton:new()
   local o = Button:new()
   setmetatable(o, ImageButton.mt)
   o.clickSound = "click"
+  o.highlight = false
   return o
+end
+
+function ImageButton:setHighlightColor(c)
+  self.c = c
+  return self
 end
 
 function ImageButton:setImage(img)
@@ -312,7 +343,7 @@ function ImageButton:setImage(img)
 end
 
 function ImageButton:draw()
-  --if self.highlight then lg.setColor(0.5, 0.5, 0.5) end
+  if self.c and self.highlight then lg.setColor(self.c) end
   lg.draw(self.image, self.x, self.y)
 end
   
@@ -329,7 +360,7 @@ function Checkbox:new()
   o.ticked = false
   o.color = {
     back = colors.bb,
-    highlight = colors.bbh,
+    highlight = colors.bt,
     outline = colors.bt,
     inside = colors.bt
   }
@@ -350,14 +381,20 @@ function Checkbox:setText(str)
 end
 
 function Checkbox:draw()
-  if self.highlighted then lg.setColor(self.color.highlight) else lg.setColor(self.color.back) end
-  lg.rectangle("fill", self.x, self.y, self.w, self.h)
-  lg.setColor(self.color.outline)
-  lg.rectangle("line", self.x, self.y, self.w, self.h)
+  if self.highlighted then lg.setColor(self.color.highlight) else lg.setColor(1,1,1) end
   if self.checkfunc() then
+    lg.draw(img.ticked, self.x - 6, self.y - 6)
+  else
+    lg.draw(img.unticked, self.x - 6, self.y - 6)
+  end
+ --[[if self.checkfunc() then
     lg.setColor(self.color.inside)
     lg.rectangle("fill", self.x + 4, self.y + 4, self.w - 8, self.h - 8)
-  end
+  else
+    lg.rectangle("fill", self.x, self.y, self.w, self.h)
+    lg.setColor(self.color.outline)
+    lg.rectangle("line", self.x, self.y, self.w, self.h)
+  end]]
   lg.setFont(self.font)
   lg.setColor(colors.text)
   lg.draw(self.text, self.x + self.w + 2, self.y)
@@ -420,11 +457,9 @@ function ChannelTab:click(x,y,b)
       Channel:refreshTabs()
     elseif b == 2 then
       sound.cancel:play()
-      if (self.parent.isChannel or self.parent.isUser) and not self.parent.isServer and not self.parent.isBattle then
+      if (self.parent.isChannel or self.parent.isUser) and not self.parent.isServer and not self.parent.isBattle and not self.parent.isMain then
         lobby.send("LEAVE " .. self.parent.title)
-        self.parent.display = false
-        if self.parent == Channel.active then Channel.active = Channel.s[next(Channel.s, Channel.active.title)] end
-        Channel:refreshTabs()
+        --self.parent.display = false
       end
     end
     return true
@@ -634,13 +669,7 @@ function BattleButton:new()
   return new
 end
 
-function Button:resetPosition(f)
-  if f then
-    self.resetFunc = f
-  end
-  self:setPosition(self.resetFunc())
-  return self
-end
+
 
 UserButton = Button:new()
 UserButton.mt = {__index = UserButton}

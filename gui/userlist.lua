@@ -38,7 +38,7 @@ function userlist:initialize()
     self.w = userlist.bar.shutw
     self.h = userlist.bar.shuth
     lobby.fixturePoint[2].x = lobby.width - userlist.bar.shutw
-    --if lobby.state == "battle" then Battle:getActive():resetButtons() end
+    if lobby.state == "battle" then Battle:getActive():resetButtons() end
     self.func = self.shutfunc
     self.state = "shutting"
     lobby.clickables[userlist] = nil
@@ -123,7 +123,7 @@ function userlist:initialize()
                   lobby.fixturePoint[2].x,
                   36,
                   lobby.width - lobby.fixturePoint[2].x,
-                  lobby.fixturePoint[1].y - 36 + 1)
+                  lobby.fixturePoint[1].y - 36 + 3)
       lg.setColor(1,1,1)
       if lobby.darkMode then lg.draw(img["playerslistBlue"], self.x, self.y) else lg.draw(img["playerslist_light"], self.x, self.y) end
       local list = User.s
@@ -236,12 +236,7 @@ function userlist:initialize()
     for channel_name in pairs(lobby.channels) do
       m = m + fontHeight
       if y > m + fontHeight and y < m + 2*fontHeight and x > lobby.fixturePoint[2].x + 60 and x < lobby.fixturePoint[2].x + 70 + fonts.latobold:getWidth(channel_name)  then
-        if Channel.s[channel_name] then
-          Channel.s[channel_name]:open()
-          Channel:refreshTabs()
-        else
-          lobby.send("JOIN " .. channel_name)
-        end
+        lobby.send("JOIN " .. channel_name)
         return true
       end
       if m > lobby.width - 36 - fontHeight then return false end

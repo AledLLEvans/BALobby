@@ -137,7 +137,7 @@ local function CLIENTBATTLESTATUS(words, sentences)
   user.allyTeamNo = tab[9]*8 + tab[8]*4 + tab[7]*2 + tab[6] + 1
   user.isSpectator = tab[10] == 0
   user.handicap = tab[11]*64 + tab[12]*32 + tab[13]*16 + tab[14]*8 + tab[15]*4 + tab[16]*2 + tab[17]
-  user.syncStatus = tab[22]*2 + tab[23]
+  user.syncStatus = tab[23]*2 + tab[22]
   user.side = tab[24]*8 + tab[25]*4 + tab[26]*2 + tab[27]
   
   user.teamColor = teamColor
@@ -225,7 +225,7 @@ local function CLIENTSTATUS(words, sentences)
   user.isBot = statusTable[6] == 1
   user.isHuman = not user.isBot
   
-  user.icon = user.isBot and "monitor" or user.ingame and "gamepad" or user.away and "nothome" or false
+  user.icon = user.isBot and "server" or user.ingame and "gamepad" or user.away and "nothome" or false
   
   
   local battle = Battle:getActive()
@@ -257,8 +257,7 @@ local function FAILED(words, sentences)
 end
 local function FORCEQUITBATTLE(words, sentences)
   local battle = Battle:getActive()
-  if battle then battle:leave() end
-  lobby.state = "landing"
+  if battle then battle:leave(true) end
   lw.showMessageBox("For your information", "You were kicked from the battle!", "info" )
 end
 local function HOSTPORT(words, sentences)
@@ -274,20 +273,23 @@ end
 local function IGNORELISTEND(words, sentences)
 end
 local function JOIN(words, sentences)
-  local chan = words[1]
-  if not Channel.s[chan] then
-    Channel:new({title = chan, isChannel = true})
-    if lobby.channel_topics[chan] then
+  local channelname = words[1]
+  local channel = Channel.s[channelname]
+  if not channel then
+    channel = Channel:new({title = channelname, isChannel = true})
+    if lobby.channel_topics[channel] then
+      Channel.onMessage(lobby.channel_topics[channelname] .. " **" .. "\n", channelname, "", false, true)
       --table.insert(Channel.s[chan].lines, lobby.channel_topics[chan])
     end
-    if chan == "main" then
+    if channelname == "main" then
+      channel.isMain = true
       for i = 1, #lobby.MOTD do
-        Channel.onMessage(lobby.MOTD[i].msg .. " **" .. "\n", chan, "", false, true)
+        Channel.onMessage(lobby.MOTD[i].msg .. " **" .. "\n", channelname, "", false, true)
         --table.insert(Channel.s[chan].lines, lobby.MOTD[i])
       end
     end
   end
-  Channel.s[chan]:open()
+  channel:open()
 end
 local function JOINBATTLE(words, sentences)
   local id = words[1]
@@ -295,7 +297,7 @@ local function JOINBATTLE(words, sentences)
   local channel = words[3]
   Battle.active = Battle.s[id]
   if not Battle.active.channel then
-    Battle.active.channel = Channel:new({title = "Battle_" .. id})
+    Battle.active.channel = Channel:new({title = "Battle_" .. id, isBattle = true})
   else
     Battle.active.channel.display = true
   end
@@ -343,11 +345,11 @@ end
 local function KICKFROMBATTLE(words, sentences)
 end
 local function LEFT(words, sentences)
-  local chan = words[1]
-  local user = words[2]
-  Channel.s[chan].users[user] = nil
-  if user == lobby.username then
-    Channel.s[chan].display = false
+  local channelname = words[1]
+  local username = words[2]
+  if username == lobby.username then
+    Channel.s[channelname].display = false
+    if not Channel.active then Channel.active = Channel.s["main"] end
     Channel:refreshTabs()
   end
   lobby.render.userlist()
@@ -441,8 +443,12 @@ local function REMOVEUSER(words, sentences)
   end
 end
 local function REQUESTBATTLESTATUS(words, sentences)
-  User.s[lobby.username].ready = false
-  User.s[lobby.username].spectator = false
+  local user = User.s[lobby.username]
+  user.ready = false
+  user.spectator = false
+  user.newAllyTeamNo = 0
+  user.newTeamNo = 0
+  user.newSide = 0
   lobby.sendMyBattleStatus()
 end
 local function RESENDVERIFICATIONACCEPTED(words, sentences)
@@ -630,6 +636,10 @@ local function UPDATEBATTLEINFO(words, sentences)
     battle.mapName = mapName
     local active_battle = Battle:getActive()
     if active_battle and active_battle.id == id then
+      battle.game.mapoptions = nil
+      for i = 1,16 do
+        battle.startrect[i] = nil
+      end
       if battle:mapHandler() then
         lobby.setSynced(true)
         battle:getMinimap()

@@ -270,6 +270,9 @@ function lobby.mousepressed(x,y,b)
     bool = sb:mousepressed(x,y) or bool
   end
   if bool then lobby.renderOnUpdate = true end
+  for v, bool in pairs(lobby.clickables) do
+    if bool and v.preClick then if v:click(x, y, b) then return end end
+  end
 end
 
 function lobby.mousereleased(x,y,b)
@@ -298,7 +301,7 @@ function lobby.mousereleased(x,y,b)
   end
   if not lobby.loginInfoEnd then return end
   for v, bool in pairs(lobby.clickables) do
-    if bool then if v:click(x, y, b) then return mrexit() end end
+    if bool and not v.preClick then if v:click(x, y, b) then return mrexit() end end
   end
   if lobby.state == "landing" and y > 40 and y < lobby.fixturePoint[1].y and x < lobby.fixturePoint[2].x then
     for id, bt in pairs(BattleTab.s) do
@@ -328,7 +331,7 @@ function lobby.wheelmoved(x, y)
   if Channel.active then
     if msx > Channel.x and msx < Channel.x + Channel.w and msy > Channel.y and msy < Channel.y + Channel.h then
       local sb = Channel.active.scrollBar
-      if Channel.active.isBattle and msx > Channel.x + Channel.w*(2/3) then sb = Channel.active.infoBoxScrollBar end
+      --if Channel.active.isBattle and msx > Channel.x + Channel.w*(2/3) then sb = Channel.active.infoBoxScrollBar end
       if y > 0 then
         sb:scrollUp()
       elseif y < 0 then
@@ -585,11 +588,6 @@ function lobby.render.background()
               0,
               lobby.width,
               32)
-  lg.rectangle("fill",
-              0,
-              lobby.fixturePoint[1].y + 3,
-              lobby.width,
-              lobby.height - lobby.fixturePoint[1].y + 3)
   lg.setColor(colors.cb)
   lg.rectangle("fill",
               0,
@@ -649,6 +647,17 @@ function lobby.render.foreground()
   
   lobby.topbar:draw()
   
+  if Channel:getActive() then
+    Channel:getActive():render()
+  end
+  
+  lg.setColor(colors.bbb)
+  lg.rectangle("fill",
+              0,
+              lobby.fixturePoint[1].y + 3,
+              lobby.width,
+              35)
+            
   for _, channel in pairs(Channel.s) do
     if channel.display then channel.tab:draw() end
   end
@@ -659,10 +668,6 @@ function lobby.render.foreground()
     h:draw()
   end]]
   
-  if Channel:getActive() then
-    Channel:getActive():render()
-  end
-
   if lobby.battleTabHoverWindow and lobby.state == "landing" then lobby.battleTabHoverWindow:draw() end
   
   Channel.textbox:draw()

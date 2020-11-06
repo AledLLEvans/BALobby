@@ -251,7 +251,7 @@ local IMAGE_FILES = {
   --"nomap",
   "gamepad",
   "nothome",
-  "monitor",
+  "server",
   --"MenuButtonLight",
  --"MenuButtonDark",
   --"MenuPanelLight",
@@ -271,8 +271,11 @@ local IMAGE_FILES = {
   "musicOff",
   "back",
   "gear",
-  "magnifier",
-  "bot"
+  "map",
+  "bot",
+  "exclamation",
+  "ticked",
+  "unticked"
 }
 
 --success = love.system.openURL( url )
@@ -408,7 +411,7 @@ function setDarkMode()
   colors.bgt = {28/255, 28/255, 28/255, 0.6}
   colors.bg = {12/255, 14/255, 17/255}
   colors.bb = {4/255, 5/255, 5/255} --colors.bb = {33/255, 33/255, 33/255}
-  colors.brb = {0/255, 0/255, 0/255}
+  colors.brb = {2/255, 6/255, 7/255, 0.6}
   colors.bbb = {0/255, 0/255, 0/255}
   colors.bbh = {8/255, 9/255, 12/255}
   colors.bd = {7/255, 9/255, 12/255}
@@ -421,6 +424,7 @@ function setDarkMode()
   colors.yellow = {1, 1, 0}
   colors.green = {28/255,252/255,139/255}
   colors.readygreen = {33/255, 235/255, 62/255}
+  colors.startgreen = {33/255, 235/255, 104/255}
   colors.readyred = {230/255,39/255,30/255}
   lg.setBackgroundColor(colors.bg)
 end
