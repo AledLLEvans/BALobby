@@ -28,7 +28,6 @@ end
 function canvas:clean()
   local i = 0
   while table.remove(self) do i = i + 1 end
-  print("cleaned: ", i)
 end
 
 lobby.MOTD = {}
@@ -43,6 +42,7 @@ lobby.header = require "gui/header"
 lobby.battlezoom = require "gui/battlezoom"
 Map = require "maps"
 function lobby.initialize()
+  spring.initialize()
   love.graphics.setLineStyle( 'rough' )
   love.graphics.setDefaultFilter("nearest", "nearest")
   login.video = nil
@@ -180,6 +180,7 @@ function lobby.resize( w, h )
   end
   --lobby.battlezoom:resize(w, h)
   
+  lobby.userlist.resize()
   resize[lobby.state]()
   Map.resize()
 
@@ -187,7 +188,6 @@ function lobby.resize( w, h )
   
   lobby.topbar.resize()
   
-  lobby.userlist.resize()
   lobby.battlelist.resize()
   
   lobby.render.background()
@@ -202,9 +202,11 @@ function lobby.pickCursor(x,y)
   end
 end
 
+local Map = require "maps"
 function lobby.mousemoved( x, y, dx, dy, istouch )
   if not lobby.loginInfoEnd then return end
   if settings.borderless then draggable.move(dx, dy) end
+  Map.dragger:mousemoved(x, y, dx, dy)
   lobby.pickCursor(x, y)
   local Ymin = 90*3 + 70 + 40
   local Ymax = lobby.height - 100
@@ -243,6 +245,7 @@ function lobby.mousemoved( x, y, dx, dy, istouch )
       button.highlighted = false
     end
   end
+  lobby.render.battlelist()
   lobby.render.background()
   lobby.render.userlist()
   lobby.render.foreground()
@@ -256,6 +259,7 @@ local function mrexit( )
 end
 
 function lobby.mousepressed(x,y,b)
+  if Map.isOpen() and y < lobby.fixturePoint[2].y and y > 32 then Map.dragger:start() return end
   if settings.borderless and draggable.start(x, y) then return end
   if math.abs(y - lobby.fixturePoint[1].y) < 10 and x > lobby.fixturePoint[1].x and x < lobby.fixturePoint[2].x  then
     lobby.dragY = true
@@ -276,6 +280,7 @@ function lobby.mousepressed(x,y,b)
 end
 
 function lobby.mousereleased(x,y,b)
+  if Map.isOpen() then if Map.dragger:stop(x, y, b) then return end end
   if draggable.stop() then return end
   if lobby.dropDown then
     lobby.dropDown:click(x,y)
@@ -321,6 +326,7 @@ end
 
 lobby.scrollBars = {}
 function lobby.wheelmoved(x, y)
+  Map:wheelmoved(x,y)
   local msx, msy = love.mouse.getPosition()
   for sb, on in pairs(lobby.scrollBars) do
     if on and sb:getZone():isOver(msx, msy) then

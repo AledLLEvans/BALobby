@@ -16,6 +16,7 @@ gamestates = {[0]=launchpad, [1]=login, [2]=lobby}
 local lfs = love.filesystem
 local nfs = require "lib/nativefs"
 local lg = love.graphics
+local lth = love.thread
 
 local function checkOS()
   local os = love.system.getOS()
@@ -45,7 +46,7 @@ local function checkOS()
   end
 end
 
-local version = {1, 1, 8}
+local version = {1, 1, 10}
 local versionString = "alpha-v"
 .. version[1] .. "."
 .. version[2] .. "."
@@ -77,11 +78,22 @@ local function makeColorWheel()
   return lg.newImage(imageData)
 end
 
+local dirs = {
+  "chatlogs",
+  "maps",
+  "maps/mini",
+  "maps/metal",
+  "maps/height",
+  "maps/info"
+  }
+
 function love.load()
   --checkVersion()
   checkOS()
-  if not lfs.getInfo("chatlogs") then
-    lfs.createDirectory("chatlogs")
+  for i = 1, #dirs do
+    if not lfs.getInfo(dirs[i]) then
+      lfs.createDirectory(dirs[i])
+    end
   end
   lg.setFont(fonts.robotosmall)
   if nfs.getInfo( lobby.exeFilePath ) then
@@ -152,6 +164,24 @@ function love.wheelmoved(x, y)
 end
 
 function love.quit()
+  if login.isDownloading() or login.isUnpacking() then
+    if love.window.showMessageBox("Exit", "Engine is being installed, you will lose all progress if you quit.", {"Exit", "Return", escapebutton = 2}) == 2 then return true end
+  end
+  
+  do
+    local channel = lth.getChannel("minimap")
+    channel:push("quit")
+    repeat until channel:peek() == "quit"
+  end
+  
+  --any other active downloads
+  for event, v in pairs(lobby.events) do
+    if event.thread and event.thread:isRunning() then
+      event.kchannel:push(1)
+      repeat until event.kchannel:peek( ) == 2
+    end
+  end
+  
   if tcp and tcp:getpeername() then
     tcp:send("EXIT" .. "\n")
   end

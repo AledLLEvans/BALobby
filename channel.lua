@@ -56,11 +56,11 @@ local function profanity_filter(text) --because we love f'ing swearing
 end
 
 local formatTab = {
-    ["user"] = "[%s] <%s> %s",
+    ["user"] = "[%s] <%s>%s",
     ["mention"] = "[%s] <%s> %s",
     ["ingame"] = "[%s] [%s] %s",
     ["ex"] = "[%s] *%s* %s",
-    ["system"] = "[%s] %s",
+    ["system"] = "[%s] ::: %s :::",
     ["green"] = "[%s] <%s> %s"
   }
 
@@ -234,10 +234,10 @@ end
 
 local drawFunc = {
   ["user"] = function(l) return l end,
-  ["mention"] = function(l) lg.setColor(1,0,0) return  l  end,
+  ["mention"] = function(l) lg.setColor(1,0,0) return l end,
   ["ingame"] = function(l) lg.setColor(colors.mo) return l end,
   ["ex"] = function(l) lg.setColor(colors.green) return l end,
-  ["system"] = function(l) lg.setColor(249/255, 54/255, 38/255) return  "::: ".. l .. " :::" end,
+  ["system"] = function(l) lg.setColor(colors.yellow) return l end,
   ["green"] = function(l) lg.setColor(colors.textblue) return l end
 }
 
@@ -246,8 +246,8 @@ local function sbOffsetMax(n, h, fh)
 end
 
 local function sbPosX() return Channel.x + Channel.w end
-local function sbPosY() return Channel.y + Channel.h - 25 end 
-local function sbLength() return - Channel.h + 65 end
+local function sbPosY() return Channel.y + Channel.h - 35 end 
+local function sbLength() return - Channel.h + 55 end
 
 function Channel:render()
   lg.setFont(self.font)

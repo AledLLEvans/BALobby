@@ -4,8 +4,10 @@ local download_finished = false
 
 local url, filename, filepath, channel_string = ...
 
-local progress_channel = love.thread.getChannel(channel_string)
+local channel = love.thread.getChannel(channel_string)
+local killchannel = love.thread.getChannel("k"..channel_string)
 
+local quit = false
 local function love_file_sink(filename, filepath)
   if filepath then
     local dir_ok = nativefs.createDirectory(filepath)
@@ -15,6 +17,7 @@ local function love_file_sink(filename, filepath)
   local ok, err = file:open("w")
   if not ok then error(err) end
   return function(chunk, err)
+    if killchannel:pop() == 1 then print("removing") file:close() print(nativefs.remove(filepath .. "\\" .. filename)) killchannel:push(2) return nil end
     if chunk then
       local ok, err = file:write(chunk, #chunk)
       if not ok then return nil, err end
@@ -29,12 +32,12 @@ end
 local function progress_sink(output_sink)
   return function(chunk, err)
     if chunk then
-      progress_channel:push({chunk = #chunk})
+      channel:push({chunk = #chunk})
     else
       if err then
-        progress_channel:push({error = err})
+        channel:push({error = err})
       else
-        progress_channel:push({finished = true, downloading = false})
+        channel:push({finished = true, downloading = false})
         download_finished = true
       end
     end
@@ -52,15 +55,14 @@ while not download_finished do
     local success, status_code, response_header = http.request(request)
     if success then
       if status_code == 200 then
-        file_size = response_header["content-length"]
-        progress_channel:push({file_size = tonumber(response_header["content-length"])})
+        channel:push({file_size = tonumber(response_header["content-length"])})
         proceed = true
       else
-        progress_channel:push({error = string.format("Received status code %d", tonumber(status_code))})
+        channel:push({error = string.format("Received status code %d", tonumber(status_code))})
       end
     else
       local err = status_code
-      progress_channel:push({error = err})
+      channel:push({error = err})
     end
   end
 
@@ -74,11 +76,11 @@ while not download_finished do
     local success, status_code = http.request(request)
     if success then
       if status_code ~= 200 then
-        progress_channel:push({error = string.format("Received status code %d", tonumber(status_code))})
+        channel:push({error = string.format("Received status code %d", tonumber(status_code))})
       end
     else
       local err = status_code
-      progress_channel:push({error = err})
+      channel:push({error = err})
     end
   end
 end

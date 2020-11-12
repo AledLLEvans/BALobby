@@ -5,5 +5,5 @@
 	IsHost = 0;
 	HostPort = 8454;
 	MyPlayerName = MastaAIi;
-	MyPasswd = 32693245845602;
+	MyPasswd = 25322589432919;
 }

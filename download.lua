@@ -13,6 +13,7 @@ function Download:new(o)
   o.thread = love.thread.newThread("thread/downloader.lua")
   o.channel_string = "download_" .. o.id
   o.channel = love.thread.getChannel(o.channel_string)
+  o.kchannel = love.thread.getChannel("k"..o.channel_string)
   
   o.downloading = false
   o.finished = false
@@ -56,6 +57,12 @@ function Download:update(dt)
   end
 end
 
+function Download:quit()
+  self.channel:push("quit")
+end
+
 function Download:release()
   self.thread:release()
 end
+
+return Download

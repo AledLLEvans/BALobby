@@ -351,6 +351,7 @@ Checkbox = Button:new()
 Checkbox.mt =  {__index = Checkbox}
 Checkbox.s = {}
 
+local almostwhite = {0.9, 0.9, 0.9}
 function Checkbox:new()
   local o = Button:new()
   setmetatable(o, Checkbox.mt)
@@ -360,7 +361,7 @@ function Checkbox:new()
   o.ticked = false
   o.color = {
     back = colors.bb,
-    highlight = colors.bt,
+    highlight = almostwhite,
     outline = colors.bt,
     inside = colors.bt
   }
@@ -397,38 +398,7 @@ function Checkbox:draw()
   end]]
   lg.setFont(self.font)
   lg.setColor(colors.text)
-  lg.draw(self.text, self.x + self.w + 2, self.y)
-end
-
-Hyperlink = Button:new()
-Hyperlink.mt =  {__index = Hyperlink}
-Hyperlink.s = {}
-
-function Hyperlink:new()
-  local o = {}
-  setmetatable(o, Hyperlink.mt)
-  o.text = ""
-  o.color = {6/255, 69/255, 173/255}
-  
-  Hyperlink.s[o] = true
-  return o
-end
-
-function Hyperlink:click(x, y)
-  if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
-    local success = love.system.openURL(self.text)
-    if success then self.color = {11/255, 0/255, 128/255} end
-    return success
-  end
-  return false
-end
-
-function Hyperlink:draw()
-  lg.setFont(fonts.latosmall)
-  lg.setColor(self.color)
-  lg.line(self.x, self.y + self.h, self.x + self.w, self.y + self.h)
-  lg.print(self.text, self.x, self.y)
-  lg.setColor(1,1,1)
+  lg.draw(self.text, self.x - self.text:getWidth() - 4, self.y)
 end
 
 ChannelTab = Button:new()
@@ -457,9 +427,15 @@ function ChannelTab:click(x,y,b)
       Channel:refreshTabs()
     elseif b == 2 then
       sound.cancel:play()
-      if (self.parent.isChannel or self.parent.isUser) and not self.parent.isServer and not self.parent.isBattle and not self.parent.isMain then
-        lobby.send("LEAVE " .. self.parent.title)
-        --self.parent.display = false
+      if not self.parent.isServer and not self.parent.isBattle and not self.parent.isMain then
+        if self.parent.isUser then
+          self.parent.display = false
+          if not Channel.active then Channel.active = Channel.s["main"] end
+          Channel:refreshTabs()
+        else
+          lobby.send("LEAVE " .. self.parent.title)
+          --self.parent.display = false
+        end
       end
     end
     return true
@@ -668,8 +644,6 @@ function BattleButton:new()
   lobby.clickables[new] = true
   return new
 end
-
-
 
 UserButton = Button:new()
 UserButton.mt = {__index = UserButton}

@@ -1,4 +1,4 @@
-battlelist = {}
+local battlelist = {}
 
 local lg = love.graphics
 
@@ -89,7 +89,7 @@ function battlelist:update(dt)
   if timer < 0 then
     if lobby.battleTabHover and not lobby.battleTabHoverWindow then
       lobby.battleTabHoverWindow = BattleTabHoverWindow:new(lobby.battleTabHover.battleid)
-      lobby.render.background()
+      lobby.render.foreground()
     end
   end
 end
@@ -98,7 +98,7 @@ function BattleTab:isOver(x,y)
   if y > 35 and y < lobby.fixturePoint[2].y then
     if x > self.x and x < self.x + self.w and y > self.y and y < self.y + self.h then
       lobby.battleTabHover = self
-      timer = 0.5
+      timer = 0.2
       self.highlighted = true
       return true
     end

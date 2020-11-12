@@ -227,7 +227,6 @@ local function CLIENTSTATUS(words, sentences)
   
   user.icon = user.isBot and "server" or user.ingame and "gamepad" or user.away and "nothome" or false
   
-  
   local battle = Battle:getActive()
   if battle and battle.founder == user and user.ingame and lobby.launchOnGameStart then
     lobby.launchSpring()
@@ -320,16 +319,17 @@ local function JOINED(words, sentences)
 end
 local function JOINEDBATTLE(words, sentences)
   local battleid = words[1]
-  local user = words[2]
+  local username = words[2]
   local scriptPassword = words[3]
-  User.s[user].battleid = battleid
-  Battle.s[battleid].users[user] = User.s[user]
+  User.s[username].battleid = battleid
+  Battle.s[battleid].users[username] = User.s[username]
   Battle.s[battleid].userCount = Battle.s[battleid].userCount + 1
   Battle.s[battleid].scriptPassword = scriptPassword
   local battle = Battle:getActive()
   if battle and battleid == battle.id then
     local chan = battle:getChannel()
     --table.insert(chan.lines, {time = os.date("%X"), green = true, msg = user .." has joined the battle."})
+    Channel.onMessage( username .." has joined the battle.", "Battle", nil, true, false)
     Battle.render()
   end
   
@@ -364,6 +364,7 @@ local function LEFTBATTLE(words, sentences)
   local battle = Battle:getActive()
   if battle and battleid == battle.id then
     local chan = battle:getChannel()
+    Channel.onMessage( user .." has left the battle.", nil, nil, true, false)
     --table.insert(chan.lines, {time = os.date("%X"), green = true, msg = user .." has left the battle."})
     Battle.render()
   end
@@ -581,8 +582,9 @@ end
 local function SERVERMSGBOX(words, sentences)
 end
 local function SETSCRIPTTAGS(words, sentences)
+  if sentences[1] then sentences[1] = sentences[1]:match("SETSCRIPTTAGS (.+)") end
   local battle = Battle:getActive()
-  for i = 2, #sentences do
+  for i = 1, #sentences do
     local tbl = battle
     for w in sentences[i]:gmatch("([^/]+)") do
       local k, v = w:match("(.+)=(.+)")
@@ -642,9 +644,9 @@ local function UPDATEBATTLEINFO(words, sentences)
       end
       if battle:mapHandler() then
         lobby.setSynced(true)
-        battle:getMinimap()
       end
     end
+    battle:getMinimap()
   end
   lobby.refreshBattleTabs()
 end

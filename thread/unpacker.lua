@@ -1,6 +1,6 @@
 local nfs = require "lib/nativefs"
 local lfs = love.filesystem
-local unpacker_channel = love.thread.getChannel("unpacker")
+local channel = love.thread.getChannel("unpacker")
 
 local function count(folder, c)
   c = c or 0
@@ -30,10 +30,14 @@ local function unzip(folder, saveDir)
 			nfs.createDirectory(saveFile)
 			unzip(file, saveFile)
 		else
-      unpacker_channel:push({pop = true})
+      channel:push({pop = true})
 			nfs.write(saveFile, tostring(lfs.read(file)))
 		end
 	end
+  
+  local pop = channel:pop()
+  if pop and pop == "quit" then channel:push("quit") return false end
+  
   return true
 end
 
@@ -42,9 +46,9 @@ local archive, destination = ...
 local fileData = nfs.newFileData(archive)
 local success = lfs.mount(fileData, "engine")
 if not success then
-  unpacker_channel:push({error = "could not mount engine 7zip"})
+  channel:push({error = "could not mount engine 7zip"})
 else
-  unpacker_channel:push({fileCount = count("engine")})
-  unpacker_channel:push({finished = unzip("engine", destination)})
+  channel:push({fileCount = count("engine")})
+  channel:push({finished = unzip("engine", destination)})
 end
 lfs.unmount(fileData)

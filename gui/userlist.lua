@@ -38,7 +38,7 @@ function userlist:initialize()
     self.w = userlist.bar.shutw
     self.h = userlist.bar.shuth
     lobby.fixturePoint[2].x = lobby.width - userlist.bar.shutw
-    if lobby.state == "battle" then Battle:getActive():resetButtons() end
+    if lobby.state == "battle" and Battle:getActive() then Battle:getActive():resetButtons() end
     self.func = self.shutfunc
     self.state = "shutting"
     lobby.clickables[userlist] = nil
@@ -46,13 +46,14 @@ function userlist:initialize()
     lobby.scrollBars[userlist.scrollBar] = nil
   end
   
+local Map = require "maps"
   function userlist.bar:open()
-    if self.state ~= "shut" then return end
+    if self.state ~= "shut" or Map.isOpen() then return end
     sound.userlist:play()
     self.w = userlist.bar.openw
     self.h = userlist.bar.openh
     lobby.fixturePoint[2].x = 3*lobby.width/4
-    if lobby.state == "battle" then Battle:getActive():resetButtons() end
+    if lobby.state == "battle" and Battle:getActive() then Battle:getActive():resetButtons() end
     self.func = self.openfunc
     self.state = "opening"
     lobby.clickables[userlist] = true
@@ -107,14 +108,14 @@ function userlist:initialize()
 
   function userlist.bar:draw()
     if self.state == "shut" then
-      lg.setColor(colors.cb)
+      --[[lg.setColor(colors.cb)
       lg.rectangle("fill",
                   lobby.fixturePoint[2].x,
                   36,
                   lobby.width - lobby.fixturePoint[2].x,
-                  lobby.fixturePoint[1].y - 36 + 1)
+                  lobby.fixturePoint[1].y - 36 + 1)]]
       lg.setColor(1,1,1)
-      lg.draw(img["playerslist_closedBlue"], self.x, self.y, 0, 1/2, (lobby.fixturePoint[2].y-30)/userlist.bar.shuth)
+      lg.draw(img["playerslist_closedBlue"], self.x + self.w/2, self.y, 0, 1/2, (lobby.fixturePoint[2].y-30)/userlist.bar.shuth)
       return
     end
     if self.state == "open" then

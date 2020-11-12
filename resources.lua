@@ -290,6 +290,7 @@ local function loadImages()
 		img[v] = lg.newImage("data/images/"..v..".png")
 	end
 end
+loadImages()
 
 cursor = {}
 cursor[2] = love.mouse.newCursor("data/images/scrollVertical.png", 25, 25)
@@ -301,9 +302,20 @@ local function loadFlags()
 		flag[v] = lg.newImage("data/images/png/"..v:lower()..".png")
 	end
 end
-
 loadFlags()
-loadImages()
+
+--[[MINIMAP = {}
+for _, map in pairs(lfs.getDirectoryItems("maps/mini")) do
+  MINIMAP[map] = lg.newImage("maps/mini/" .. map)
+end
+METALMAP = {}
+for _, map in pairs(lfs.getDirectoryItems("maps/metal")) do
+  METALMAP[map] = lg.newImage("maps/metal/" .. map)
+end
+HEIGHTMAP = {}
+for _, map in pairs(lfs.getDirectoryItems("maps/height")) do
+  HEIGHTMAP[map] = lg.newImage("maps/height/" .. map)
+end]]
 
 fonts = {}
 fonts.krone =                 lg.newFont("data/fonts/Krone/krone.extrabold.ttf", 30)
@@ -421,7 +433,7 @@ function setDarkMode()
   colors.barblue = {73/255, 203/255, 222/255}
   colors.textblue = {73/255, 203/255, 222/255}
   colors.orange = {240/255, 71/255, 71/255}
-  colors.yellow = {1, 1, 0}
+  colors.yellow = {33/255, 235/255, 104/255}
   colors.green = {28/255,252/255,139/255}
   colors.readygreen = {33/255, 235/255, 62/255}
   colors.startgreen = {33/255, 235/255, 104/255}
